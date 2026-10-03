@@ -1,0 +1,218 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  runtime      = "nodejs"
+  moduleFormat = "esm"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  PACIENTE
+  MEDICO
+  ENFERMERA
+  ADMINISTRADOR
+}
+
+enum AppointmentType {
+  CONSULTA
+  VACUNACION
+}
+
+enum AppointmentStatus {
+  DISPONIBLE
+  RESERVADO
+  CONFIRMADO
+  ATENDIDO
+  AUSENTE
+  CANCELADO
+  BLOQUEADO
+  NO_DISPONIBLE
+}
+
+enum MovementType {
+  INGRESO
+  EGRESO
+  AJUSTE
+}
+
+model UserProfile {
+  id        String    @id @default(uuid()) @db.Uuid
+  clerkId   String?   @unique @map("clerk_id")
+  email     String    @unique
+  dni       String?   @unique
+  firstName String    @map("first_name")
+  lastName  String    @map("last_name")
+  birthDate DateTime? @map("birth_date") @db.Date
+  phone     String?
+  role      Role      @default(PACIENTE)
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  doctor          Doctor?
+  patient         Patient?
+  stockMovements  StockMovement[]
+
+  @@index([role])
+  @@map("user_profile")
+}
+
+model Doctor {
+  id            String   @id @default(uuid()) @db.Uuid
+  profileId     String   @unique @map("profile_id") @db.Uuid
+  licenseNumber String?  @unique @map("license_number")
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  profile         UserProfile      @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  schedules       DoctorSchedule[]
+  appointments    Appointment[]
+  clinicalRecords ClinicalRecord[]
+
+  @@map("doctor")
+}
+
+model Patient {
+  id        String   @id @default(uuid()) @db.Uuid
+  profileId String   @unique @map("profile_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  profile         UserProfile      @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  appointments    Appointment[]
+  clinicalRecords ClinicalRecord[]
+
+  @@map("patient")
+}
+
+model DoctorSchedule {
+  id              String    @id @default(uuid()) @db.Uuid
+  doctorId        String    @map("doctor_id") @db.Uuid
+  weekday         Int
+  startTime       DateTime  @map("start_time") @db.Time(0)
+  endTime         DateTime  @map("end_time") @db.Time(0)
+  slotDurationMin Int       @default(30) @map("slot_duration_min")
+  validFrom       DateTime  @map("valid_from") @db.Date
+  validTo         DateTime? @map("valid_to") @db.Date
+  isActive        Boolean   @default(true) @map("is_active")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  doctor       Doctor        @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  appointments Appointment[]
+
+  @@unique([doctorId, weekday, startTime, validFrom], name: "doctor_schedule_slot_unique")
+  @@index([doctorId])
+  @@map("doctor_schedule")
+}
+
+model Appointment {
+  id                 String            @id @default(uuid()) @db.Uuid
+  patientId          String?           @map("patient_id") @db.Uuid
+  doctorId           String?           @map("doctor_id") @db.Uuid
+  scheduleId         String?           @map("schedule_id") @db.Uuid
+  type               AppointmentType   @default(CONSULTA)
+  status             AppointmentStatus @default(DISPONIBLE)
+  startAt            DateTime          @map("start_at") @db.Timestamptz(3)
+  endAt              DateTime          @map("end_at") @db.Timestamptz(3)
+  vaccineId          String?           @map("vaccine_id") @db.Uuid
+  vaccineLotId       String?           @map("vaccine_lot_id") @db.Uuid
+  notes              String?
+  cancellationReason String?           @map("cancellation_reason")
+  createdAt          DateTime          @default(now()) @map("created_at")
+  updatedAt          DateTime          @updatedAt @map("updated_at")
+
+  patient         Patient?        @relation(fields: [patientId], references: [id], onDelete: SetNull)
+  doctor          Doctor?         @relation(fields: [doctorId], references: [id], onDelete: SetNull)
+  schedule        DoctorSchedule? @relation(fields: [scheduleId], references: [id], onDelete: SetNull)
+  vaccine         Vaccine?        @relation(fields: [vaccineId], references: [id], onDelete: SetNull)
+  vaccineLot      VaccineLot?     @relation(fields: [vaccineLotId], references: [id], onDelete: SetNull)
+  stockMovements  StockMovement[]
+  clinicalRecord  ClinicalRecord?
+
+  @@unique([doctorId, startAt], name: "appointment_doctor_slot_unique")
+  @@index([doctorId, startAt])
+  @@index([patientId, startAt])
+  @@index([status, startAt])
+  @@map("appointment")
+}
+
+model Vaccine {
+  id                 String   @id @default(uuid()) @db.Uuid
+  name               String   @unique
+  biologicalName     String?  @map("biological_name")
+  laboratory         String
+  criticalStockLevel Int      @default(0) @map("critical_stock_level")
+  isActive           Boolean  @default(true) @map("is_active")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  lots           VaccineLot[]
+  appointments   Appointment[]
+  stockMovements StockMovement[]
+
+  @@map("vaccine")
+}
+
+model VaccineLot {
+  id                String   @id @default(uuid()) @db.Uuid
+  vaccineId         String   @map("vaccine_id") @db.Uuid
+  lotNumber         String   @map("lot_number")
+  expiresAt         DateTime @map("expires_at") @db.Date
+  quantityAvailable Int      @map("quantity_available")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  vaccine      Vaccine         @relation(fields: [vaccineId], references: [id], onDelete: Restrict)
+  movements    StockMovement[]
+  appointments Appointment[]
+
+  @@unique([vaccineId, lotNumber], name: "vaccine_lot_number_unique")
+  @@index([vaccineId, expiresAt])
+  @@map("vaccine_lot")
+}
+
+model StockMovement {
+  id            String       @id @default(uuid()) @db.Uuid
+  vaccineId     String       @map("vaccine_id") @db.Uuid
+  vaccineLotId  String       @map("vaccine_lot_id") @db.Uuid
+  movementType  MovementType @map("movement_type")
+  quantity      Int
+  reason        String?
+  actorId       String       @map("actor_id") @db.Uuid
+  appointmentId String?      @map("appointment_id") @db.Uuid
+  createdAt     DateTime     @default(now()) @map("created_at")
+
+  vaccine     Vaccine      @relation(fields: [vaccineId], references: [id], onDelete: Restrict)
+  vaccineLot  VaccineLot   @relation(fields: [vaccineLotId], references: [id], onDelete: Restrict)
+  actor       UserProfile  @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  appointment Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+
+  @@index([vaccineLotId, createdAt])
+  @@index([actorId])
+  @@map("stock_movement")
+}
+
+model ClinicalRecord {
+  id            String   @id @default(uuid()) @db.Uuid
+  patientId     String   @map("patient_id") @db.Uuid
+  doctorId      String   @map("doctor_id") @db.Uuid
+  appointmentId String   @unique @map("appointment_id") @db.Uuid
+  diagnosis     String   @db.Text
+  treatment     String?  @db.Text
+  indications   String?  @db.Text
+  recordedAt    DateTime @default(now()) @map("recorded_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  patient     Patient     @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  doctor      Doctor      @relation(fields: [doctorId], references: [id], onDelete: Restrict)
+  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Restrict)
+
+  @@index([patientId, recordedAt])
+  @@map("clinical_record")
+}
