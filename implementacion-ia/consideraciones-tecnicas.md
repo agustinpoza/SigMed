@@ -130,7 +130,17 @@ tiene el CHECK `> 0` (`stock_movement_quantity_positive`). Un ajuste a la baja
 
 **Decisión.** El formulario de US-3.2 ofrece solo `INGRESO` y `EGRESO`, que es
 literalmente lo que muestra el mockup de la historia. `AJUSTE` sigue en el enum
-—el seed lo usa— pero no se expone.
+—el seed lo usa y aparece en el historial— pero no se puede crear desde la
+aplicación.
+
+**El bloqueo está en dos capas.** `registerStockMovement` en `src/lib/stock.ts`
+rechaza cualquier tipo que no sea `INGRESO` o `EGRESO`, y la Server Action
+filtra lo mismo antes de llamar. La segunda capa es la que parece redundante:
+TypeScript ya impide pasar un `AJUSTE`. Está porque `src/lib/stock.ts` es una
+función pública que otras pantallas van a llamar —por ejemplo, el consumo de un
+turno en US-1.x—, y un `as MovementType` futuro destrozaría la reconciliación
+sin que el compilador avise. El historial sí muestra los `AJUSTE` del seed: la
+restricción es sobre lo que se puede crear, no sobre lo que se puede ver.
 
 **Pendiente.** Definir cómo modelar el ajuste a la baja cuando se aborde RF-13
 (alertas de stock crítico). Opciones: una columna `signedQuantity`, o separar
@@ -180,6 +190,14 @@ Dos cosas que aparecieron y conviene recordar:
   Sin el cast, falla con `P2010 UnsupportedNativeDataType`.
 - Las columnas `name`/`label` de las vistas del catálogo del sistema son el caso
   típico. Para consultas de introspección, castear siempre.
+- Lo mismo pasa con `pg_trigger.tgname` y `tgenabled`: castear a `::text`.
+- El `name:` de un `@@unique([...], name: "...")` **reemplaza** el nombre del
+  campo de la clave compuesta en el cliente generado. En `vaccine_lot` el
+  `@@unique` se llama `vaccine_lot_number_unique`, así que el `where` se escribe
+  `vaccine_lot_number_unique: { vaccineId, lotNumber }` y **no**
+  `vaccineId_lotNumber`, que es lo que genera Prisma cuando no se le da nombre.
+  El nombre por defecto no existe en los tipos y el error es un `TS2353` poco
+  descriptivo.
 
 ---
 
@@ -255,3 +273,8 @@ compartida y **no** se debe correr `prisma migrate reset` contra ella.
   `/medico`, `/enfermera`, `/admin` y `/paciente` no lleven segmento extra.
 - Las reglas que Prisma no puede expresar van en SQL manual con su comentario
   explicativo, como ya se hizo en `20261004061200_constraints`.
+- Las reglas de negocio que tocan la base van en `src/lib/stock.ts`, sin importar
+  `next/headers`, recibiendo el `actorId` como parámetro y lanzando
+  `StockRuleError` con errores de campo. Las Server Actions se quedan con el
+  `FormData`, el actor y la traducción. Así la lógica se puede probar de verdad
+  contra la base, en vez de copiar la transacción en un script y probar la copia.

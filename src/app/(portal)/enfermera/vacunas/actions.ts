@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { prisma, isUniqueViolation } from "@/lib/db";
 import { getCurrentActor } from "@/lib/dev-actor";
 import {
   type FieldErrors,
@@ -10,7 +9,7 @@ import {
   requiredInt,
   requiredText,
 } from "@/lib/forms";
-import { MovementType } from "@/generated/prisma/enums";
+import { StockRuleError, createVaccineWithInitialLot } from "@/lib/stock";
 
 export type VaccineFormState = {
   errors?: FieldErrors;
@@ -27,8 +26,6 @@ export async function createVaccine(
   _previous: VaccineFormState,
   formData: FormData,
 ): Promise<VaccineFormState> {
-  const actor = await getCurrentActor();
-
   const errors: FieldErrors = {};
 
   const name = requiredText(formData.get("name"), "name", errors, "El nombre");
@@ -83,6 +80,8 @@ export async function createVaccine(
     return { errors, values };
   }
 
+  const actor = await getCurrentActor();
+
   if (!actor) {
     return {
       message:
@@ -92,37 +91,18 @@ export async function createVaccine(
   }
 
   try {
-    await prisma.$transaction(async (tx) => {
-      const vaccine = await tx.vaccine.create({
-        data: { name, laboratory, criticalStockLevel },
-      });
-
-      const lot = await tx.vaccineLot.create({
-        data: {
-          vaccineId: vaccine.id,
-          lotNumber,
-          expiresAt,
-          quantityAvailable: quantity,
-        },
-      });
-
-      await tx.stockMovement.create({
-        data: {
-          vaccineId: vaccine.id,
-          vaccineLotId: lot.id,
-          movementType: MovementType.INGRESO,
-          quantity,
-          reason: "Alta inicial en el catalogo",
-          actorId: actor.id,
-        },
-      });
+    await createVaccineWithInitialLot({
+      name,
+      laboratory,
+      criticalStockLevel,
+      lotNumber,
+      expiresAt,
+      quantity,
+      actorId: actor.id,
     });
   } catch (error) {
-    if (isUniqueViolation(error)) {
-      return {
-        errors: { name: "Ya existe una vacuna con ese nombre en el catalogo." },
-        values,
-      };
+    if (error instanceof StockRuleError) {
+      return { errors: error.fields, values };
     }
 
     throw error;

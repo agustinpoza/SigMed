@@ -12,7 +12,7 @@ de `docs/user_stories_sprint_1.md`.
 | US-1.4 | Hoja de trabajo diaria del médico | `/medico/agenda` | Placeholder |
 | US-1.5 | Modificación de horarios por el administrador | `/admin/horarios` | Placeholder |
 | US-3.1 | Alta de nuevas vacunas | `/enfermera/vacunas` | **Completada** |
-| US-3.2 | Registro y actualización de stock | `/enfermera/inventario` | **A implementar** |
+| US-3.2 | Registro y actualización de stock | `/enfermera/inventario` | **Completada** |
 | US-3.6 | Asignación de turnos de vacunación | `/enfermera/turnos-vacunacion` | Fuera de alcance |
 | US-5.2 | Consulta remota de historial clínico | `/paciente/historial` | Placeholder |
 
@@ -159,23 +159,50 @@ actor atribuido). El clic en el navegador queda pendiente, igual que el actor.
 
 ---
 
-## Fase 5 — US-3.2: movimientos de stock
+## Fase 5 — US-3.2: movimientos de stock · COMPLETADA
 
-`enfermera/inventario/page.tsx` con el formulario de movimiento y el historial. El
-historial sale de `stock_movement` con join a `vaccine` y `user_profile` para la
-columna "RESPONSABLE".
+```
+src/lib/stock.ts                                reglas de stock, sin depender de Next
+src/app/(portal)/enfermera/inventario/actions.ts     Server Action createStockMovement
+src/app/(portal)/enfermera/inventario/movement-form.tsx
+src/app/(portal)/enfermera/inventario/page.tsx   alta + stock por lote + historial
+```
 
-Acción en transacción interactiva:
+**Las reglas de stock se separaron de Next.** `src/lib/stock.ts` no importa
+`next/headers`: recibe el `actorId` como parámetro y lanza `StockRuleError` con
+errores de campo. Las Server Actions solo parsean el `FormData`, resuelven el
+actor y traducen el error. Eso permite ejercitar la lógica real contra la base
+desde un script, en vez de copiar la transacción en el test y probar una copia.
 
-- `INGRESO`: incrementa el lote e inserta el movimiento.
-- `EGRESO`: `updateMany` con `where: { quantityAvailable: { gte: qty } }` y
-  `decrement`. Si `count === 0` se aborta con "stock insuficiente". Cubre la
-  tarea 3.2.3 en la aplicación, sin depender del CHECK de la base.
+**El lote es texto libre y el vencimiento se pide solo cuando hace falta.** El
+mockup mete lote y vencimiento en el mismo formulario. En un `INGRESO`, si el
+lote no existe se crea y el vencimiento pasa a ser obligatorio; si ya existe se
+suma al stock y el vencimiento se ignora. En un `EGRESO` el lote tiene que existir
+dentro de la vacuna elegida.
 
-`stock_movement` tiene trigger de inmutabilidad: las acciones solo insertan.
+**El `EGRESO` no puede dejar stock negativo, ni con concurrencia.** El descuento
+es un `updateMany` con `where: { quantityAvailable: { gte: cantidad } }`, que es
+una sola sentencia atómica: PostgreSQL reevalúa el `WHERE` contra la fila ya
+actualizada por la transacción ganadora. Con 90 unidades y dos egresos de 60 en
+paralelo, uno entra y el otro recibe "stock insuficiente". El `CHECK
+vaccine_lot_quantity_non_negative` queda como última red.
 
-El formulario ofrece solo `INGRESO` y `EGRESO`. Ver
-[consideraciones §6](consideraciones-tecnicas.md).
+**Los rechazos lanzan, no retornan.** Si la transacción devolviera un valor de
+error en lugar de lanzar, Prisma la commitearía con las escrituras parciales ya
+hechas. `StockRuleError` es una excepción, así que el rollback es automático.
+
+**Agregado al mockup:** una tabla de stock por lote. El historial solo muestra
+movimientos, y sin el saldo actual no se puede calcular un egreso con la cabeza.
+
+**Validación ejecutada:** `typecheck`, `lint`, `build`, y 24 pruebas sobre las
+funciones reales: alta con lote, nombre duplicado, ingreso sobre lote existente,
+ingreso que crea lote, ingreso sin vencimiento, egreso normal, egreso por sobre
+el stock, lote inexistente, vacuna dada de baja, los cuatro `movementType` no
+permitidos, y la carrera de dos egresos simultáneos. La reconciliación
+`stock = suma de movimientos` se comprueba después de cada operación.
+
+**Pendiente:** el clic en el navegador, por la misma razón que en las fases
+anteriores.
 
 ---
 
