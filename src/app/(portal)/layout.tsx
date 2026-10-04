@@ -1,6 +1,15 @@
 import Link from "next/link";
+import { getCurrentActor, isDevActorEnabled, listDevActorCandidates } from "@/lib/dev-actor";
+import DevActorPicker from "./dev-actor-picker";
 
-export default function PortalLayout({ children }: LayoutProps<"/">) {
+export const dynamic = "force-dynamic";
+
+export default async function PortalLayout({ children }: LayoutProps<"/">) {
+  const devEnabled = isDevActorEnabled();
+  const [actor, candidates] = devEnabled
+    ? await Promise.all([getCurrentActor(), listDevActorCandidates()])
+    : [null, []];
+
   return (
     <div className="flex min-h-full flex-col bg-zinc-50">
       <header className="border-b border-zinc-200 bg-white">
@@ -10,9 +19,16 @@ export default function PortalLayout({ children }: LayoutProps<"/">) {
           </Link>
 
           <div className="flex items-center gap-3">
-            <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800">
-              Sesion sin autenticar
-            </span>
+            {!devEnabled ? (
+              <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800">
+                Sesion sin autenticar
+              </span>
+            ) : (
+              <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-600">
+                Sin autenticacion · Clerk pendiente
+              </span>
+            )}
+
             <button
               type="button"
               disabled
@@ -23,6 +39,26 @@ export default function PortalLayout({ children }: LayoutProps<"/">) {
           </div>
         </div>
       </header>
+
+      {devEnabled && (
+        <div className="border-b border-amber-200 bg-amber-50/60">
+          <div className="mx-auto w-full max-w-6xl px-6 py-3">
+            <DevActorPicker
+              candidates={candidates}
+              current={
+                actor
+                  ? {
+                      id: actor.id,
+                      firstName: actor.firstName,
+                      lastName: actor.lastName,
+                      email: actor.email,
+                    }
+                  : null
+              }
+            />
+          </div>
+        </div>
+      )}
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">{children}</main>
     </div>

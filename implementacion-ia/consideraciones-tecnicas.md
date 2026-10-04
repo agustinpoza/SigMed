@@ -77,6 +77,30 @@ un `user_profile` desde una cookie de desarrollo. Cuando se integre Clerk, cambi
 solo el interior de esa función para resolver por `clerk_id`. **La interfaz no
 cambia y los Server Actions no se tocan.**
 
+**Server Actions en lugar de un endpoint HTTP.** La primera implementación usó
+`/api/dev/actor` con GET, POST y DELETE. Se eliminó y se rehízo con Server
+Actions (`setDevActor` / `clearDevActor`). Un route handler que escribe una cookie
+de identidad es una superficie de escalamiento de privilegios: cualquiera que lo
+alcance se elige a sí mismo. La Server Action no es intrínsecamente más segura,
+pero mantiene el control en el servidor y evita exponer el mecanismo.
+
+**Interruptor.** `isDevActorEnabled()` devuelve `true` si
+`SIGMED_DEV_ACTOR === "1"` o si `NODE_ENV !== "production"`. En producción sin el
+flag, `getCurrentActor()` devuelve `null` **sin tocar la base** y el selector no se
+renderiza. Las Server Actions que necesiten `actor_id` deben rechazar la
+operación cuando reciben `null`.
+
+**Trampa de prerender.** Durante `next build`, `NODE_ENV` es `production`, así que
+`isDevActorEnabled()` devuelve `false` y las páginas del portal se prerenderizan
+estáticas **sin el selector**. Poner `SIGMED_DEV_ACTOR=1` en un deploy no
+alcanzaría: se seguiría sirviendo el HTML horneado. Por eso
+`src/app/(portal)/layout.tsx` lleva `export const dynamic = "force-dynamic"`, que
+fuerza la evaluación de la cookie y del flag en cada request.
+
+**Pendiente.** El interruptor protege las escrituras pero **no las páginas**: las
+cuatro áreas siguen accesibles sin restricción. Para un despliegue real hace falta
+un gate de acceso adicional. Ver [§3](#3-rutas-sin-protección-en-esta-etapa).
+
 ---
 
 ## 5. Validación sin librería

@@ -37,7 +37,7 @@ reconcilian con sus movimientos.
 
 ---
 
-## Fase 2 — Esqueleto de rutas
+## Fase 2 — Esqueleto de rutas · COMPLETADA
 
 Route group `(portal)` con shell compartido y un layout por rol. Los prefijos
 públicos acordados no llevan segmento extra porque los route groups no aparecen
@@ -45,23 +45,81 @@ en la URL.
 
 ```
 src/app/(portal)/layout.tsx               shell comun
+src/app/(portal)/role-nav.tsx             nav con estado activo (client)
+src/app/(portal)/role-shell.tsx           badge de rol + nav + contenido
+src/app/(portal)/placeholder.tsx          pantalla placeholder reutilizable
 src/app/(portal)/medico/layout.tsx        + page.tsx, agenda/page.tsx
-src/app/(portal)/enfermera/layout.tsx     + page.tsx
-src/app/(portal)/enfermera/vacunas/      US-3.1
-src/app/(portal)/enfermera/inventario/    US-3.2
+src/app/(portal)/enfermera/layout.tsx     + page.tsx, vacunas/, inventario/
 src/app/(portal)/admin/layout.tsx         + page.tsx, horarios/page.tsx
 src/app/(portal)/paciente/layout.tsx      + page.tsx, historial/page.tsx
 ```
 
 `src/app/page.tsx` y `src/app/api/health/route.ts` quedan sin tocar.
 
+**Rutas generadas (11).** `/medico`, `/medico/agenda`, `/enfermera`,
+`/enfermera/vacunas`, `/enfermera/inventario`, `/admin`, `/admin/horarios`,
+`/paciente`, `/paciente/historial`, más `/` y `/api/health`.
+
+**Validación ejecutada:** `build` (12/12 páginas), `typecheck`, `lint`, y las
+11 rutas verificadas con `next start` respondiendo `200`. Se comprobó además que
+el estado activo de la navegación se renderiza en el HTML del servidor.
+
+**Detalle de tipos.** `LayoutProps<"/medico">` y similares no existen hasta que el
+build regenera `.next/types/routes.d.ts`. El orden correcto es: crear los
+archivos → `npm run build` → `npm run typecheck`. Al revés, `tsc` falla.
+
+**Pendiente de esta fase:** las páginas son placeholders. No hay autenticación,
+por lo que las cuatro áreas son accesibles sin restricción. El badge "Sesion sin
+autenticar" y el botón "Salir" deshabilitado son el único elemento del mockup que
+pudimos reproducir; el resto espera a Clerk.
+
 ---
 
-## Fase 3 — Actor de desarrollo
+## Fase 3 — Actor de desarrollo · COMPLETADA
 
-`src/lib/dev-actor.ts` con `getCurrentActor()`. Habilitado solo con
-`SIGMED_DEV_ACTOR=1` o `NODE_ENV !== "production"`. Ver
-[consideraciones §4](consideraciones-tecnicas.md).
+`getCurrentActor()` resuelve quién es el usuario actual. Con Clerk, solo cambia el
+interior de la función para resolver por `clerk_id`; la interfaz no se toca y los
+Server Actions de las fases 4 y 5 no se enteran del cambio.
+
+```
+src/lib/dev-actor.ts                     getCurrentActor, isDevActorEnabled,
+                                         listDevActorCandidates
+src/app/(portal)/dev-actor-actions.ts    Server Actions setDevActor / clearDevActor
+src/app/(portal)/dev-actor-picker.tsx    selector con useActionState
+```
+
+Se implementó con **Server Actions, no con un endpoint HTTP**. Un route handler
+que fija una cookie de identidad habría sido una superficie de escalamiento de
+privilegios; la Server Action además valida que el perfil exista y esté activo
+antes de escribir. Se llegó a escribir `/api/dev/actor` y se eliminó: quedaba
+código muerto.
+
+**Interruptor.** `isDevActorEnabled()` devuelve `true` si
+`SIGMED_DEV_ACTOR === "1"` o si `NODE_ENV !== "production"`. En producción sin el
+flag, `getCurrentActor()` devuelve `null` sin tocar la base y el selector no se
+renderiza.
+
+**Trampa: prerender.** Como `isDevActorEnabled()` es `false` durante
+`next build` (donde `NODE_ENV=production`), las páginas del portal se prerendere
+ban estáticas **sin el selector**. El portal lleva `export const dynamic =
+"force-dynamic"` justamente para que la cookie y el flag se evalúen en cada
+request. Sin eso, activar `SIGMED_DEV_ACTOR=1` en un deploy no alcanzaría: se
+serviría el HTML ya horneado.
+
+**Validación ejecutada:** `build` (12 rutas, las 9 del portal ahora dinámicas),
+`typecheck`, `lint`. Y con `next dev`:
+
+| Prueba | Resultado |
+| :--- | :--- |
+| El selector lista los perfiles del seed | 7 perfiles |
+| Cookie válida → layout muestra "Actuando como Lucia Ferreyra" | OK |
+| Cookie con UUID inexistente → vuelve a "Sin actor" | OK |
+| Sin cookie → "Sin actor" | OK |
+
+**No verificado automáticamente:** el round trip completo del clic, es decir
+Server Action → `cookies().set()` → re-render. No se puede simular con `curl`
+porque Next 16 exige el header `Next-Action` con el *server reference id*, que no
+aparece en el HTML. Queda pendiente de un clic en el navegador.
 
 ---
 
