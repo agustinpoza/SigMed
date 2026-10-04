@@ -44,17 +44,23 @@ DATABASE_URL_UNPOOLED="postgresql://USER:PASSWORD@ep-xxxx.sa-east-1.aws.neon.tec
 
 ```bash
 npm install
-npx prisma migrate dev --create-only --name init
-```
-
-Pegar al final de `prisma/migrations/<timestamp>_init/migration.sql` el contenido
-de [`prisma/constraints.sql`](prisma/constraints.sql) y despues aplicar:
-
-```bash
 npx prisma migrate dev
 npm run db:seed
 npm run db:studio
 ```
+
+Las migraciones ya estan en el repo, asi que esto alcanza para crear la base desde
+cero. Para reconstruirla desde el cero de una vez: `npm run db:reset`.
+
+El repo tiene dos migraciones:
+
+| Migracion | Que hace |
+| :--- | :--- |
+| `20261004060848_init` | Las 9 tablas, enums, claves foraneas e indices que genera Prisma |
+| `20261004061200_constraints` | Las reglas que Prisma no puede modelar (origen: `prisma/constraints.sql`) |
+
+Van separadas a proposito: editar una migracion ya aplicada cambia su checksum y
+`prisma migrate deploy` deja de funcionar en Vercel.
 
 Si `migrate dev` falla al crear la shadow database, crear una branch en Neon y
 apuntar `SHADOW_DATABASE_URL` a esa branch en el `.env`.
@@ -71,6 +77,7 @@ apuntar `SHADOW_DATABASE_URL` a esa branch en el `.env`.
 | `npm run db:deploy` | Aplica migraciones pendientes (Vercel / produccion) |
 | `npm run db:seed` | Carga los datos de demo |
 | `npm run db:reset` | Borra todo, reaplica migraciones y vuelve a sembrar |
+| `npm run db:verify` | Comprueba que la base hace cumplir las constraints |
 | `npm run db:studio` | GUI de la base de datos |
 
 ## Modelo de datos
@@ -119,7 +126,7 @@ user_profile    1──1 doctor          personas del sistema + rol (RF-22/23/24
 
 ### Reglas que viven en la base (no solo en la aplicacion)
 
-En `prisma/constraints.sql`:
+En `prisma/migrations/20261004061200_constraints/migration.sql`:
 
 - `stock >= 0` en `vaccine_lot` (tarea 3.2.3).
 - `quantity > 0` en `stock_movement`.
@@ -127,6 +134,10 @@ En `prisma/constraints.sql`:
 - Indice unico parcial para que dos turnos de vacunacion no ocupen el mismo horario.
 - Exclusion constraint para que un paciente no tenga dos turnos superpuestos.
 - Triggers de inmutabilidad sobre `stock_movement`.
+
+`npm run db:verify` intenta violar cada una contra la base real y muestra el error
+que devuelve PostgreSQL, asi que se puede demostrar que las reglas se cumplen a
+nivel de motor y no de aplicacion.
 
 ## Deploy en Vercel
 

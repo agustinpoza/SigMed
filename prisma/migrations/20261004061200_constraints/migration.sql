@@ -1,18 +1,14 @@
 -- ============================================================================
 -- SigMed - restricciones que Prisma 7 no puede expresar en schema.prisma
 -- ============================================================================
--- Estas reglas viven en una migracion propia, separada de la inicial:
---   prisma/migrations/20261004061200_constraints/migration.sql
---
--- Se mantienen aparte a proposito: editar una migracion ya aplicada cambia su
--- checksum y `prisma migrate deploy` deja de funcionar en Vercel.
---
--- Flujo si se vuelve a modificar el schema:
---   1. npx prisma migrate dev --create-only --name <nombre>
---   2. Editar prisma/migrations/<timestamp>_<nombre>/migration.sql
+-- Este bloque se agrega al final de la migracion inicial.
+-- Flujo:
+--   1. npx prisma migrate dev --create-only --name init
+--   2. Pegar este contenido al final de prisma/migrations/<timestamp>_init/migration.sql
 --   3. npx prisma migrate dev
 --
--- Para comprobar que la base realmente las hace cumplir: npm run db:verify
+-- A partir de ese momento las reglas quedan garantizadas por el motor de la
+-- base y no solo por la capa de aplicacion.
 -- ============================================================================
 
 -- ----------------------------------------------------------------------------
