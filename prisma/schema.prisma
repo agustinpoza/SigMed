@@ -9,13 +9,6 @@ datasource db {
   provider = "postgresql"
 }
 
-enum Role {
-  PACIENTE
-  MEDICO
-  ENFERMERA
-  ADMINISTRADOR
-}
-
 enum AppointmentType {
   CONSULTA
   VACUNACION
@@ -47,7 +40,6 @@ model UserProfile {
   lastName  String    @map("last_name")
   birthDate DateTime? @map("birth_date") @db.Date
   phone     String?
-  role      Role      @default(PACIENTE)
   isActive  Boolean   @default(true) @map("is_active")
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
@@ -56,7 +48,6 @@ model UserProfile {
   patient         Patient?
   stockMovements  StockMovement[]
 
-  @@index([role])
   @@map("user_profile")
 }
 

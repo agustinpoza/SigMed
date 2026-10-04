@@ -5,7 +5,6 @@ import {
   AppointmentStatus,
   AppointmentType,
   MovementType,
-  Role,
 } from "../src/generated/prisma/enums";
 
 const prisma = new PrismaClient({
@@ -51,7 +50,6 @@ async function main() {
       dni: "30111222",
       firstName: "Ana",
       lastName: "Rios",
-      role: Role.ADMINISTRADOR,
     },
   });
 
@@ -61,7 +59,6 @@ async function main() {
       dni: "30222333",
       firstName: "Lucia",
       lastName: "Ferreyra",
-      role: Role.ENFERMERA,
     },
   });
 
@@ -71,7 +68,6 @@ async function main() {
       dni: "30333444",
       firstName: "Martin",
       lastName: "Gomez",
-      role: Role.MEDICO,
     },
   });
 
@@ -81,7 +77,6 @@ async function main() {
       dni: "30444555",
       firstName: "Sofia",
       lastName: "Duarte",
-      role: Role.MEDICO,
     },
   });
 
@@ -92,7 +87,6 @@ async function main() {
       firstName: "Juan",
       lastName: "Perez",
       birthDate: dateOnly(new Date("1985-04-12T00:00:00Z")),
-      role: Role.PACIENTE,
     },
   });
 
@@ -103,7 +97,6 @@ async function main() {
       firstName: "Marta",
       lastName: "Lopez",
       birthDate: dateOnly(new Date("1992-11-30T00:00:00Z")),
-      role: Role.PACIENTE,
     },
   });
 
@@ -114,7 +107,6 @@ async function main() {
       firstName: "Diego",
       lastName: "Sosa",
       birthDate: dateOnly(new Date("1978-01-22T00:00:00Z")),
-      role: Role.PACIENTE,
     },
   });
 
@@ -213,7 +205,7 @@ const lotFiebreA = await prisma.vaccineLot.create({
       vaccineId: vaccineFiebre.id,
       lotNumber: "LT-FIEB-2402",
       expiresAt: dateOnly(new Date("2026-12-31T00:00:00Z")),
-      quantityAvailable: 10,
+      quantityAvailable: 14,
     },
   });
 

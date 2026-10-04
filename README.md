@@ -4,7 +4,11 @@ Sistema de agenda medica, gestion de vacunas e historial clinico para una sala
 medica. App web en Next.js con Clerk (autenticacion), Neon (PostgreSQL) y Prisma.
 
 Estado actual: **Fase 1** - base de datos creada, integrada con la aplicacion y
-desplegada en Vercel. Todavia no hay autenticacion ni pantallas por rol.
+desplegada en Vercel. El rol se movio a Clerk. Todavia no hay autenticacion ni
+pantallas por rol.
+
+La documentacion de decisiones, desvios y pendientes esta en
+[`implementacion-ia/`](implementacion-ia/README.md).
 
 ## Stack
 
@@ -22,7 +26,9 @@ desplegada en Vercel. Todavia no hay autenticacion ni pantallas por rol.
 ### 1. Crear el proyecto en Neon
 
 1. Crear una cuenta en [neon.tech](https://neon.tech) y un proyecto llamado `sigmed`.
-2. Elegir la region `South America (AWS sa-east-1)`, la mas cercana a Argentina.
+2. Elegir la region disponible mas cercana. El proyecto actual quedo en
+   `AWS us-east-1`; las connection strings de abajo son de ejemplo y hay que
+   copiar las reales desde **Connect**.
 3. En **Connect**, copiar las dos connection strings:
    - **Pooled connection**: es la que usa la aplicacion en runtime.
    - **Direct connection**: es la que usa la CLI de Prisma (migraciones, studio).
@@ -36,8 +42,8 @@ cp .env.example .env
 Descomentar y completar con los valores de Neon:
 
 ```bash
-DATABASE_URL="postgresql://USER:PASSWORD@ep-xxxx-pooler.sa-east-1.aws.neon.tech/sigmed?sslmode=require"
-DATABASE_URL_UNPOOLED="postgresql://USER:PASSWORD@ep-xxxx.sa-east-1.aws.neon.tech/sigmed?sslmode=require"
+DATABASE_URL="postgresql://USER:PASSWORD@ep-xxxx-pooler.REGION.aws.neon.tech/neondb?sslmode=require"
+DATABASE_URL_UNPOOLED="postgresql://USER:PASSWORD@ep-xxxx.REGION.aws.neon.tech/neondb?sslmode=require"
 ```
 
 ### 3. Instalar dependencias y crear las tablas
@@ -52,12 +58,13 @@ npm run db:studio
 Las migraciones ya estan en el repo, asi que esto alcanza para crear la base desde
 cero. Para reconstruirla desde el cero de una vez: `npm run db:reset`.
 
-El repo tiene dos migraciones:
+El repo tiene tres migraciones:
 
 | Migracion | Que hace |
 | :--- | :--- |
 | `20261004060848_init` | Las 9 tablas, enums, claves foraneas e indices que genera Prisma |
 | `20261004061200_constraints` | Las reglas que Prisma no puede modelar (origen: `prisma/constraints.sql`) |
+| `20261004135801_drop_user_profile_role` | Saca el enum `Role` y la columna `user_profile.role`; el rol pasa a Clerk |
 
 Van separadas a proposito: editar una migracion ya aplicada cambia su checksum y
 `prisma migrate deploy` deja de funcionar en Vercel.
@@ -85,20 +92,20 @@ apuntar `SHADOW_DATABASE_URL` a esa branch en el `.env`.
 Nueve tablas que cubren las seis user stories del Sprint 1.
 
 ```
-user_profile    1──1 doctor          personas del sistema + rol (RF-22/23/24/25)
-                1──1 patient
-                      │
-                      ├──< doctor_schedule     franjas de atención (RF-01/27)
-                      ├──< appointment >── doctor
-                      │        │
-                      │        ├── vaccine ──< vaccine_lot ──< stock_movement
-                      │        └── clinical_record
-                      └──> stock_movement      (actor del movimiento)
+user_profile    1──1 doctor          personas del sistema (rol en Clerk)
+                 1──1 patient
+                       │
+                       ├──< doctor_schedule     franjas de atención (RF-01/27)
+                       ├──< appointment >── doctor
+                       │        │
+                       │        ├── vaccine ──< vaccine_lot ──< stock_movement
+                       │        └── clinical_record
+                       └──> stock_movement      (actor del movimiento)
 ```
 
 | Tabla | Que modela | RF / US |
 | :--- | :--- | :--- |
-| `user_profile` | Personas del sistema y su rol. `clerk_id` queda NULL hasta integrar Clerk | RF-22, RF-23, RF-24, RF-25 |
+| `user_profile` | Personas del sistema. `clerk_id` queda NULL hasta integrar Clerk | RF-22, RF-23, RF-24, RF-25 |
 | `doctor` | Perfil profesional (matricula) | RF-01, RF-27 |
 | `patient` | Perfil de paciente | RF-18 |
 | `doctor_schedule` | Franjas horarias con vigencia, versionables sin pisar turnos publicados | RF-01, RF-27 / US-1.5 |
@@ -121,8 +128,14 @@ user_profile    1──1 doctor          personas del sistema + rol (RF-22/23/24
   `stock_movement`. El seed deja los dos consistentes.
 - **Inmutabilidad garantizada por la base**: `stock_movement` no tiene `updated_at`
   y tiene triggers que rechazan `UPDATE` y `DELETE`.
-- **Sin tabla `nurse`**: la enfermera es un `user_profile` con rol `ENFERMERA`, no
-  tiene datos propios.
+- **Sin tabla `nurse`**: la enfermera es un `user_profile` sin ficha propia; su rol
+  vive en Clerk.
+- **El rol no esta en la base.** Vive en Clerk como `publicMetadata.role`.
+  `user_profile` conserva la identidad y el vinculo `clerk_id`. Ver
+  [`implementacion-ia/consideraciones-tecnicas.md`](implementacion-ia/consideraciones-tecnicas.md)
+  seccion 1.
+- **`/admin` no hereda las areas de medico ni paciente.** Es una desviacion
+  consciente respecto de RF-26, registrada en la seccion 2 del mismo documento.
 
 ### Reglas que viven en la base (no solo en la aplicacion)
 
@@ -174,3 +187,15 @@ Verificacion post-deploy:
 `consultation_fee` (RF-34), obra social (RF-14), `audit_log` (RNF-04), pagos y
 facturas (RF-15/16), notificaciones por mail (RF-07/10) y la API para la app
 movil (RNF-05). Se resuelven en sus respectivos sprints.
+
+## Seguridad: exposicion de credencial aceptada
+
+Una contrasena de Neon quedo brevemente versionada durante el trabajo. La historia de
+Git ya esta saneada con `--force-with-lease`, asi que **no esta en el repositorio**;
+vive en `.env` y en las variables de Vercel.
+
+El propietario decidio **no rotarla**: el proyecto no es de uso critico y el riesgo
+se evaluo como aceptable. Queda registrado como decision consciente, no como
+omision, junto con la exposicion residual, en
+[`implementacion-ia/consideraciones-tecnicas.md`](implementacion-ia/consideraciones-tecnicas.md)
+seccion 10. Ahi tambien esta el procedimiento de rotacion por si se decide despues.
