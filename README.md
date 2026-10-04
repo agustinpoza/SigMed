@@ -131,11 +131,27 @@ En `prisma/constraints.sql`:
 ## Deploy en Vercel
 
 1. Importar el repositorio en [vercel.com](https://vercel.com).
-2. Cargar las variables de entorno `DATABASE_URL` y `DATABASE_URL_UNPOOLED` con los
-   valores de Neon.
+2. En **Settings > Environment Variables** cargar las dos variables para Production,
+   Preview y Development:
+
+   | Variable | Valor de Neon | Para que se usa |
+   | :--- | :--- | :--- |
+   | `DATABASE_URL` | Pooled connection | La app en runtime |
+   | `DATABASE_URL_UNPOOLED` | Direct connection | `prisma migrate deploy` |
+
+   Marcar las dos como **Sensitive** si el proyecto es publico.
 3. Build command: `prisma migrate deploy && next build`.
 
 `postinstall` ya corre `prisma generate`, asi que el cliente se compila solo.
+`prisma generate` es codegen puro y no necesita credenciales, por eso
+`prisma.config.ts` omite el `datasource` si no encuentra ninguna variable: asi
+`npm install` y `next build` funcionan aunque falten las variables. Lo que si
+exige `DATABASE_URL_UNPOOLED` es `migrate`, `db push`, `db seed` y `db studio`.
+
+Cuidado con los deploys de preview: si apuntan a la misma base que produccion,
+cada preview aplica las migraciones pendientes. Para evitarlo, usar una branch
+distinta de Neon en los previews o deployar la base con un job aparte en vez de
+incluir `migrate deploy` en el build.
 
 Verificacion post-deploy:
 
