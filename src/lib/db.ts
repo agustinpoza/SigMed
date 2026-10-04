@@ -1,4 +1,4 @@
-import { PrismaClient } from "@/generated/prisma/client";
+import { Prisma, PrismaClient } from "@/generated/prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
 
 const createClient = () =>
@@ -14,4 +14,10 @@ export const prisma = globalForPrisma.prisma ?? createClient();
 
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;
+}
+
+export function isUniqueViolation(error: unknown): boolean {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002"
+  );
 }

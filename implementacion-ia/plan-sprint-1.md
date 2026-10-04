@@ -11,7 +11,7 @@ de `docs/user_stories_sprint_1.md`.
 | --- | --- | --- | --- |
 | US-1.4 | Hoja de trabajo diaria del médico | `/medico/agenda` | Placeholder |
 | US-1.5 | Modificación de horarios por el administrador | `/admin/horarios` | Placeholder |
-| US-3.1 | Alta de nuevas vacunas | `/enfermera/vacunas` | **A implementar** |
+| US-3.1 | Alta de nuevas vacunas | `/enfermera/vacunas` | **Completada** |
 | US-3.2 | Registro y actualización de stock | `/enfermera/inventario` | **A implementar** |
 | US-3.6 | Asignación de turnos de vacunación | `/enfermera/turnos-vacunacion` | Fuera de alcance |
 | US-5.2 | Consulta remota de historial clínico | `/paciente/historial` | Placeholder |
@@ -123,18 +123,39 @@ aparece en el HTML. Queda pendiente de un clic en el navegador.
 
 ---
 
-## Fase 4 — US-3.1: alta de vacunas
+## Fase 4 — US-3.1: alta de vacunas · COMPLETADA
 
-`enfermera/vacunas/page.tsx` con formulario y catálogo, según el mockup. Las
-acciones en `actions.ts` con `"use server"`.
+```
+src/lib/forms.ts                              validadores a mano, sin Zod
+src/app/(portal)/enfermera/vacunas/actions.ts    Server Action createVaccine
+src/app/(portal)/enfermera/vacunas/vaccine-form.tsx   formulario con useActionState
+src/app/(portal)/enfermera/vacunas/page.tsx    alta + catálogo
+```
 
 Una sola acción, dentro de `$transaction`: crea `Vaccine` + `VaccineLot` inicial +
 `StockMovement` de tipo `INGRESO`. Así el lote queda cargado y trazable desde el
 mismo alta, que es lo que pide el método de verificación de RF-33.
 
-**Detalle abierto:** el mockup dice "Laboratorio / Origen: Seleccionar Opción",
-pero no hay tabla maestra de laboratorios. Se usa un `datalist` con los valores
-ya presentes en la base, sin agregar tablas.
+**El `actor_id` se resuelve al final, no al principio.** La acción valida el
+formulario completo antes de pedir el actor, para que una enfermera sin actor
+seleccionado vea primero los errores de sus campos en lugar de un mensaje
+genérico.
+
+**Conflicto de nombres.** El `findUnique` previo sobre `vaccine.name` deja pasar
+dos envíos concurrentes, así que el `P2002` también se captura y se traduce a un
+error de campo. Sin eso, el segundo envío sería un 500.
+
+**El laboratorio es texto libre con sugerencias.** El mockup dice "Seleccionar
+Opción" pero no hay tabla maestra de laboratorios. Se usa un `datalist` con los
+valores ya presentes, sin agregar tablas.
+
+**La baja de una vacuna no existe, y no por falta de endpoint.** El trigger
+`stock_movement_no_delete` más el `onDelete: Restrict` de `vaccine_lot` impiden
+borrar. Ver [consideraciones §11](consideraciones-tecnicas.md).
+
+**Validación ejecutada:** `typecheck`, `lint`, `build`, y 11 pruebas sobre los
+validadores y la transacción (`stock = suma de movimientos`, `P2002` capturado,
+actor atribuido). El clic en el navegador queda pendiente, igual que el actor.
 
 ---
 

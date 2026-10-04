@@ -206,17 +206,47 @@ redesplegar. No hay migración pendiente que afecte este cambio.
 
 ---
 
-## 11. Deuda técnica
+## 11. Un alta de vacuna es irreversible
+
+**Descubierto al probar la Fase 4.** No se puede borrar una vacuna del catálogo:
+`vaccine_lot` referencia a `vaccine` con `onDelete: Restrict`, y encima el trigger
+`stock_movement_no_delete` rechaza borrar movimientos. Los tres pasos de limpieza
+se bloquean en cadena.
+
+**Consecuencia de producto.** Si una enfermera escribe "Vacuna antitetanica" y le
+equivoca la grafía, el registro queda permanente. No hay ningún camino de
+corrección en la UI.
+
+**Por qué no se agrega un "borrar".** Rompería la trazabilidad que US-3.2 CA2
+exige. El movimiento de stock es la evidencia; si se puede borrar la fila que lo
+origina, el historial deja de significar algo.
+
+**Qué corresponde.** El schema ya tiene `vaccine.is_active` y `user_profile.is_active`,
+que es la vía prevista: desactivar en lugar de borrar. Falta la pantalla que lo
+permita, y conviene que el catálogo ofrezca esa opción desde el principio para que
+un error de tipeo tenga arreglo.
+
+**Alcance de la prueba.** Durante la validación se creó una vacuna de prueba y
+hubo que limpiarla. Se hizo desactivando el trigger dentro de una transacción, de
+modo que si algo fallaba el trigger volvía a su estado anterior. El DDL de
+Postgres es transaccional y ese es el mecanismo, pero es una operación que solo
+debe hacerse con una base descartable: la de este proyecto es una base Neon
+compartida y **no** se debe correr `prisma migrate reset` contra ella.
+
+---
+
+## 12. Deuda técnica
 
 - [ ] `npm audit` reporta vulnerabilidades **high** sin resolver. No se corrió
       `npm audit fix --force` para no tocar versiones mayores sin decisión explícita.
 - [ ] Prisma 7.10.0 tiene disponible 8.0.0-rc.19. Actualización mayor, no
       prioridad actual.
-- [ ] Los documentos de `docs/` estaban sin commitear al momento de escribir esto.
+- [ ] No hay forma de desactivar una vacuna desde la UI, aunque `vaccine.is_active`
+      ya exista en el schema. Ver [§11](#11-un-alta-de-vacuna-es-irreversible).
 
 ---
 
-## 12. Convenciones observadas
+## 13. Convenciones observadas
 
 - Tipos generados de Next.js 16 en props: `PageProps<"/enfermera/vacunas">`,
   `LayoutProps<"/">`. No `params: Promise<...>` manuales.
