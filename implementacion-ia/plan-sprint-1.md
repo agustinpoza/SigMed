@@ -111,10 +111,15 @@ serviría el HTML ya horneado.
 
 | Prueba | Resultado |
 | :--- | :--- |
-| El selector lista los perfiles del seed | 7 perfiles |
-| Cookie válida → layout muestra "Actuando como Lucia Ferreyra" | OK |
-| Cookie con UUID inexistente → vuelve a "Sin actor" | OK |
-| Sin cookie → "Sin actor" | OK |
+| El panel lista los perfiles del seed | 7 perfiles, 7 botones |
+| Cookie válida → el botón dice "Actuando como Lucia Ferreyra" | OK |
+| Cookie con UUID inexistente → vuelve a "Sesion sin autenticar" | OK |
+| Sin cookie → muestra la pista de que las escrituras fallarán | OK |
+
+El control es el botón "Sesión sin autenticar" del header: al presionarlo se
+despliega el panel con los usuarios y se elige uno con un click. El "Salir" del
+header también funciona. Antes era una banda ámbar con un `<select>` y un botón
+"Aplicar".
 
 **No verificado automáticamente:** el round trip completo del clic, es decir
 Server Action → `cookies().set()` → re-render. No se puede simular con `curl`

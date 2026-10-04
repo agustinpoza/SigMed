@@ -84,11 +84,42 @@ de identidad es una superficie de escalamiento de privilegios: cualquiera que lo
 alcance se elige a sí mismo. La Server Action no es intrínsecamente más segura,
 pero mantiene el control en el servidor y evita exponer el mecanismo.
 
+**El control vive en el header, no en una banda.** La primera versión era una
+banda ámbar con un `<select>` y un botón "Aplicar". Ahora el botón "Sesión sin
+autenticar" del header es el login provisional: al presionarlo se despliega un
+panel con un botón por usuario y basta con elegir uno. El "Salir" del header
+también pasó de `disabled` a funcional.
+
+**La lista no muestra roles.** No puede: en la Fase 1 el rol se sacó de la base
+para que la fuente de verdad sea Clerk, y Clerk todavía no está integrado. Se
+eligió mostrar nombre y email antes que inventar una etiqueta. Las relaciones
+`Doctor` y `Patient` permitirían inferir "Médico" y "Paciente", pero Ana y Lucía
+—las dos perfiles que más interesta distinguir— no tienen ninguna de las dos, así
+que el resultado habría sido engañoso a medias.
+
+**El panel se renderiza siempre, con `hidden`.** Con render condicional,
+`aria-controls` del botón apuntaba a un elemento inexistente mientras el menú
+estaba cerrado. Renderizarlo con `hidden` mantiene válida la referencia y saca
+los botones del orden de tabulación, porque `display: none` los hace
+infocalizables.
+
+**El panel se cierra al hacer click, no cuando termina la acción.** La primera
+versión cerraba con un `useEffect` que vigilaba `state.selectedId`, y eslint lo
+rechazó con `react-hooks/set-state-in-effect`: setState en el cuerpo de un efecto
+causa renders en cascada. Cerrar en el click evita eso, pero deja el error de la
+acción oculto detrás del panel cerrado, así que **el error se renderiza fuera**,
+en el mismo lugar donde aparecería el panel.
+
 **Interruptor.** `isDevActorEnabled()` devuelve `true` si
 `SIGMED_DEV_ACTOR === "1"` o si `NODE_ENV !== "production"`. En producción sin el
-flag, `getCurrentActor()` devuelve `null` **sin tocar la base** y el selector no se
-renderiza. Las Server Actions que necesiten `actor_id` deben rechazar la
-operación cuando reciben `null`.
+flag, `getCurrentActor()` devuelve `null` **sin tocar la base** y el control no se
+renderiza: queda el `<span>` estático. Las Server Actions que necesiten `actor_id`
+deben rechazar la operación cuando reciben `null`.
+
+**Elegir un usuario no da permisos.** El panel deja elegir cualquiera de los
+perfiles activos, así que un paciente puede registrar movimientos de stock igual
+que una enfermera. Es lo que habilita trabajar sin Clerk; el filtro por rol llega
+con la integración.
 
 **Trampa de prerender.** Durante `next build`, `NODE_ENV` es `production`, así que
 `isDevActorEnabled()` devuelve `false` y las páginas del portal se prerenderizan
