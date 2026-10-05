@@ -13,7 +13,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SigMed",
+  title: {
+    template: "%s | SigMed",
+    default: "SigMed",
+  },
   description: "Sistema de agenda, vacunas e historial clinico para la sala medica",
 };
 
@@ -23,7 +26,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col bg-gray-300">{children}</body>
     </html>
   );
 }

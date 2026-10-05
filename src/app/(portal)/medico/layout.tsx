@@ -1,4 +1,13 @@
+import { Metadata } from "next/dist/lib/metadata/types/metadata-interface";
 import RoleShell from "../role-shell";
+
+export const metadata: Metadata = {
+  title: {
+    template: "%s | Medico",
+    default: "Medico",
+  },
+  description: "Consultas de la jornada y organización de la atención propia"
+};
 
 const items = [
   { href: "/medico", label: "Inicio" },

@@ -22,7 +22,7 @@ export default async function PortalLayout({ children }: LayoutProps<"/">) {
 
   return (
     <div className="flex min-h-full flex-col bg-zinc-50">
-      <header className="border-b border-zinc-200 bg-white">
+      <header className="border-b border-zinc-200 bg-slate-600">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-6 py-4">
           <Link href="/" className="text-base font-semibold tracking-tight">
             SigMed
@@ -38,7 +38,7 @@ export default async function PortalLayout({ children }: LayoutProps<"/">) {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">{children}</main>
+      <main className="mx-auto w-full bg-gray-300 max-w-6xl flex-1 px-6 py-8">{children}</main>
     </div>
   );
 }
