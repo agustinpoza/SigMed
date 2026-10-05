@@ -1,7 +1,7 @@
 ---
 system: Sistema de Gestión de Sala Médica PSS 2026 - Comisión 10
 version: 1.0.0
-last_updated: 2026-09-30
+last_updated: 2026-10-05
 target_audience: AI_Agents / LLM_Context / Code_Generation
 entities_count: 16
 modules_count: 6
@@ -18,6 +18,45 @@ conventions:
 # Diccionario de Datos y Reglas de Negocio - Sala Médica
 
 Este documento contiene la especificación formal del modelo relacional, restricciones de integridad, máquinas de estado y reglas de negocio para el sistema de gestión de la sala médica.
+
+---
+
+## Desvíos de implementación
+
+Esta sección documenta las decisiones tomadas al llevar el modelo a `prisma/schema.prisma` que **se apartan de lo especificado más abajo**. Se listan acá y no en el cuerpo del documento para que el spec original quede intacto como referencia.
+
+### D-01 · Claves primarias UUID en lugar de autoincrementales
+Las 16 entidades usan `Uuid`. Los nombres físicos de las columnas conservan la nomenclatura del documento (`id_usuario`, `id_turno`). Razón: los identificadores secuenciales filtran cuántas altas hubo en el sistema y complican la integración con un proveedor externo de identidad.
+
+### D-02 · `usuario.rol` vuelve a la base de datos
+Una versión intermedia de este proyecto movió el rol a Clerk. Se revirtió: la base es la fuente de verdad y un trigger garantiza que no cambie tras el alta. El proveedor de autenticación lo refleja en `publicMetadata` como caché de lectura.
+
+### D-03 · `lote.quantity_available` se materializa
+La sección 0.1 define el stock como estado derivado. La columna se conserva como caché materializada porque las consultas de disponibilidad y el control de concurrencia la necesitan en lectura directa. Un trigger la recalcula en cada asiento de `movimiento_stock` tomando `FOR UPDATE` sobre el lote y sumando `cantidad`. El resultado es idéntico al derivado y el invariante `stock >= 0` queda garantizado por la base, no por la aplicación.
+
+### D-04 · `registro_clinico` no lleva `doctor_id`
+El autor se deriva de `turno.id_medico`. La columna se eliminó por redundancia.
+
+### D-05 · `medico.especialidad` es única global
+Se implementa de forma literal. **Consecuencia asumida: la sala admite como máximo un médico por especialidad, es decir 3 médicos con los valores del enum.** Si la intención era permitir relevos o rotaciones, hay que quitar el `UNIQUE` y modelar la agenda como una relación con vigencia.
+
+### D-06 · `movimiento_stock` no lleva `id_vacuna`
+Se elimina por redundancia: la vacuna se obtiene a través de `lote.id_vacuna`.
+
+### D-07 · `turno` y `turno_vacunacion` son tablas distintas
+El modelo anterior usaba una sola tabla de citas para turnos médicos y para aplicaciones de vacunas. Ahora quedan separadas y `turno_vacunacion` tiene su propia máquina de estados.
+
+### D-08 · Campos eliminados por no estar especificados
+`vacuna.laboratory`, `horario_atencion.valid_from`, `horario_atencion.valid_to`, `horario_atencion.slot_duration_min`, `appointment.type`, `appointment.notes`, `appointment.is_vaccination`, `appointment.schedule_id`, `usuario.is_active`, `usuario.birth_date`, `usuario.phone`. `duracion_consulta` pasa a vivir en `medico`.
+
+### D-09 · `dni` y `clerk_user_id` son obligatorios
+Los usuarios de desarrollo usan valores sintéticos en `clerk_user_id` (`seed_<slug>`) porque no tienen cuenta real en el proveedor de autenticación.
+
+### D-10 · Reglas que la base no puede expresar
+`horario_atencion` sin solapamiento, `turno` sin retroactividad, `turno.fecha_hora_fin` coherente con `medico.duracion_consulta`, el motivo obligatorio de cancelación según el rol del cancelador y el traspaso automático de `alerta_stock` se implementan con triggers de PL/pgSQL. La lista completa está en `prisma/migrations/*_reform_bd/migration.sql`.
+
+### Nota sobre la matriz de transición
+La sección final de este documento está incompleta: cierra el diagrama de `turno.estado` sin terminarlo y no cubre los demás ciclos. Para los estados de `turno_vacunacion` la fuente de verdad es `docs/Turno-vacunacion.txt`.
 
 ---
 
