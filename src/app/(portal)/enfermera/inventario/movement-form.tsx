@@ -9,7 +9,7 @@ const initialState: MovementFormState = {};
 export type VaccineOption = {
   id: string;
   name: string;
-  laboratory: string;
+  criticalLevel: number | null;
 };
 
 function SubmitButton() {
@@ -91,29 +91,27 @@ export function MovementForm({ vaccines }: { vaccines: VaccineOption[] }) {
             <option value="">Seleccionar...</option>
             {vaccines.map((vaccine) => (
               <option key={vaccine.id} value={vaccine.id}>
-                {vaccine.name} ({vaccine.laboratory})
+                {vaccine.name}
               </option>
             ))}
           </select>
         </Field>
 
-        <Field
-          id="movementType"
-          label="Tipo de movimiento"
-          error={errors.movementType}
-        >
-          <select
-            id="movementType"
-            name="movementType"
-            defaultValue={state.values?.movementType ?? "INGRESO"}
-            aria-invalid={Boolean(errors.movementType)}
-            aria-describedby={errors.movementType ? "movementType-error" : undefined}
-            className={controlClass}
-          >
-            <option value="INGRESO">Ingreso</option>
-            <option value="EGRESO">Egreso</option>
-          </select>
-        </Field>
+        <div>
+          <span className="block text-sm font-medium text-zinc-700">
+            Tipo de movimiento
+          </span>
+          <p className="mt-1 rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-900">
+            Ingreso
+          </p>
+          <p className="mt-1 text-xs text-zinc-500">
+            Las salidas de stock se generan al aprobar un turno de vacunacion.
+          </p>
+          <input type="hidden" name="movementType" value="INGRESO" />
+          {errors.movementType ? (
+            <p className="mt-1 text-xs text-red-600">{errors.movementType}</p>
+          ) : null}
+        </div>
 
         <Field id="lotNumber" label="Lote" error={errors.lotNumber}>
           <input

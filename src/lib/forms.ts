@@ -60,6 +60,20 @@ export function requiredInt(
   return parsed;
 }
 
+export function optionalInt(
+  value: FormDataEntryValue | null,
+  field: string,
+  errors: FieldErrors,
+  label: string,
+  bounds: { min?: number; max?: number } = {},
+): number | null {
+  const raw = typeof value === "string" ? value.trim() : "";
+
+  if (!raw) return null;
+
+  return requiredInt(raw, field, errors, label, bounds);
+}
+
 export function requiredDate(
   value: FormDataEntryValue | null,
   field: string,

@@ -42,7 +42,7 @@ export default function DevActorPicker({
         }
       >
         {current
-          ? `Actuando como ${current.firstName} ${current.lastName}`
+          ? `${current.firstName} ${current.lastName}`
           : "Sesion sin autenticar"}
       </button>
 
@@ -95,6 +95,9 @@ export default function DevActorPicker({
                         <span className="text-xs text-zinc-500">
                           {candidate.email}
                         </span>
+                      </span>
+                      <span className="shrink-0 rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-zinc-600">
+                        {candidate.role}
                       </span>
                       {isCurrent ? (
                         <span className="text-xs font-medium text-zinc-500">

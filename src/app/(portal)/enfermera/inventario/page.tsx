@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { MovementForm } from "./movement-form";
+import { AlertStatus } from "@/generated/prisma/enums";
 
 export const metadata = {
   title: "Actualizacion de stock | SigMed",
@@ -15,11 +16,10 @@ const dateFormatterWithExpiry = new Intl.DateTimeFormat("es-AR", {
 });
 
 export default async function InventarioPage() {
-  const [vaccines, lots, movements] = await Promise.all([
+  const [vaccines, lots, movements, alerts] = await Promise.all([
     prisma.vaccine.findMany({
-      where: { isActive: true },
       orderBy: { name: "asc" },
-      select: { id: true, name: true, laboratory: true },
+      select: { id: true, name: true, criticalLevel: true },
     }),
     prisma.vaccineLot.findMany({
       orderBy: [{ expiresAt: "asc" }],
@@ -29,10 +29,16 @@ export default async function InventarioPage() {
       orderBy: { createdAt: "desc" },
       take: 50,
       include: {
-        vaccine: { select: { name: true } },
-        vaccineLot: { select: { lotNumber: true } },
+        lot: {
+          select: { lotNumber: true, vaccine: { select: { name: true } } },
+        },
         actor: { select: { firstName: true, lastName: true } },
       },
+    }),
+    prisma.stockAlert.findMany({
+      where: { status: AlertStatus.ACTIVA },
+      orderBy: { generatedAt: "asc" },
+      include: { vaccine: { select: { name: true } } },
     }),
   ]);
 
@@ -43,10 +49,27 @@ export default async function InventarioPage() {
           Actualizacion de stock
         </h1>
         <p className="mt-1 text-sm text-zinc-600">
-          Registra ingresos y egresos de dosis. Cada movimiento queda trazado con
-          su responsable.
+          Registra ingresos de dosis. Cada movimiento queda trazado con su
+          responsable. Las salidas se generan al aprobar un turno de vacunacion.
         </p>
       </header>
+
+      {alerts.length > 0 && (
+        <section className="rounded-lg border border-amber-200 bg-amber-50 p-6">
+          <h2 className="mb-3 text-base font-semibold text-amber-900">
+            Alertas de stock critico
+          </h2>
+          <ul className="space-y-1 text-sm text-amber-900">
+            {alerts.map((alert) => (
+              <li key={alert.id}>
+                <span className="font-medium">{alert.vaccine.name}</span>: stock{" "}
+                {alert.stockWhenGenerated} por debajo del nivel critico de{" "}
+                {alert.criticalLevelWhenGenerated}.
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
         <h2 className="mb-4 text-base font-semibold text-zinc-900">
@@ -121,7 +144,7 @@ export default async function InventarioPage() {
               </thead>
               <tbody className="divide-y divide-zinc-100">
                 {movements.map((movement) => {
-                  const isIncome = movement.movementType === "INGRESO";
+                  const isIncome = movement.quantity > 0;
 
                   return (
                     <tr key={movement.id}>
@@ -129,10 +152,10 @@ export default async function InventarioPage() {
                         {dateFormatter.format(movement.createdAt)}
                       </td>
                       <td className="px-4 py-3 font-medium text-zinc-900">
-                        {movement.vaccine.name}
+                        {movement.lot.vaccine.name}
                       </td>
                       <td className="px-4 py-3 text-zinc-600">
-                        {movement.vaccineLot.lotNumber}
+                        {movement.lot.lotNumber}
                       </td>
                       <td
                         className={
@@ -142,9 +165,9 @@ export default async function InventarioPage() {
                         }
                       >
                         {isIncome ? "+" : "-"}
-                        {movement.quantity}
+                        {Math.abs(movement.quantity)}
                         <span className="ml-1 text-xs font-normal text-zinc-500">
-                          ({movement.movementType.toLowerCase()})
+                          ({movement.type.toLowerCase()})
                         </span>
                       </td>
                       <td className="px-4 py-3 text-zinc-600">

@@ -6,19 +6,16 @@ export const metadata = {
 };
 
 export default async function VacunasPage() {
-  const [vaccines, laboratoryRows] = await Promise.all([
-    prisma.vaccine.findMany({
-      orderBy: { name: "asc" },
-      include: { lots: { select: { quantityAvailable: true } } },
-    }),
-    prisma.vaccine.findMany({
-      distinct: ["laboratory"],
-      orderBy: { laboratory: "asc" },
-      select: { laboratory: true },
-    }),
-  ]);
-
-  const laboratories = laboratoryRows.map((row) => row.laboratory);
+  const vaccines = await prisma.vaccine.findMany({
+    orderBy: { name: "asc" },
+    include: {
+      lots: { select: { quantityAvailable: true } },
+      alerts: {
+        where: { status: "ACTIVA" },
+        select: { id: true },
+      },
+    },
+  });
 
   return (
     <div className="space-y-8">
@@ -32,7 +29,7 @@ export default async function VacunasPage() {
       </header>
 
       <section className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
-        <VaccineForm laboratories={laboratories} />
+        <VaccineForm />
       </section>
 
       <section>
@@ -48,7 +45,6 @@ export default async function VacunasPage() {
               <thead className="border-b border-zinc-200 bg-zinc-50 text-xs uppercase tracking-wide text-zinc-500">
                 <tr>
                   <th scope="col" className="px-4 py-3 font-medium">Vacuna</th>
-                  <th scope="col" className="px-4 py-3 font-medium">Laboratorio</th>
                   <th scope="col" className="px-4 py-3 font-medium">Stock</th>
                   <th scope="col" className="px-4 py-3 font-medium">Umbral critico</th>
                   <th scope="col" className="px-4 py-3 font-medium">Estado</th>
@@ -60,17 +56,19 @@ export default async function VacunasPage() {
                     (total, lot) => total + lot.quantityAvailable,
                     0,
                   );
-                  const low = stock <= vaccine.criticalStockLevel;
+                  const low =
+                    vaccine.criticalLevel !== null &&
+                    stock <= vaccine.criticalLevel;
+                  const alerting = vaccine.alerts.length > 0;
 
                   return (
                     <tr key={vaccine.id}>
                       <td className="px-4 py-3 font-medium text-zinc-900">
                         {vaccine.name}
                       </td>
-                      <td className="px-4 py-3 text-zinc-600">{vaccine.laboratory}</td>
                       <td className="px-4 py-3 text-zinc-900">{stock}</td>
                       <td className="px-4 py-3 text-zinc-600">
-                        {vaccine.criticalStockLevel}
+                        {vaccine.criticalLevel ?? "Sin umbral"}
                       </td>
                       <td className="px-4 py-3">
                         <span
@@ -82,6 +80,11 @@ export default async function VacunasPage() {
                         >
                           {low ? "Bajo umbral" : "Disponible"}
                         </span>
+                        {alerting ? (
+                          <span className="ml-1 inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                            Alerta activa
+                          </span>
+                        ) : null}
                       </td>
                     </tr>
                   );

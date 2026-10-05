@@ -16,6 +16,7 @@ export default async function PortalLayout({ children }: LayoutProps<"/">) {
         firstName: actor.firstName,
         lastName: actor.lastName,
         email: actor.email,
+        role: actor.role,
       }
     : null;
 

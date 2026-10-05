@@ -10,8 +10,7 @@ export class StockRuleError extends Error {
 
 export type NewVaccineInput = {
   name: string;
-  laboratory: string;
-  criticalStockLevel: number;
+  criticalLevel: number | null;
   lotNumber: string;
   expiresAt: Date;
   quantity: number;
@@ -28,14 +27,19 @@ export type StockMovementInput = {
   actorId: string;
 };
 
+/**
+ * Alta de vacuna con su lote inicial. El stock del lote no se escribe: lo
+ * calcula el trigger fn_stock_movimiento_post al asentar el movimiento de
+ * ingreso, que ademas dispara o resuelve la alerta de stock critico.
+ */
 export async function createVaccineWithInitialLot(input: NewVaccineInput) {
   try {
     await prisma.$transaction(async (tx) => {
       const vaccine = await tx.vaccine.create({
         data: {
           name: input.name,
-          laboratory: input.laboratory,
-          criticalStockLevel: input.criticalStockLevel,
+          criticalLevel: input.criticalLevel,
+          createdById: input.actorId,
         },
       });
 
@@ -44,15 +48,14 @@ export async function createVaccineWithInitialLot(input: NewVaccineInput) {
           vaccineId: vaccine.id,
           lotNumber: input.lotNumber,
           expiresAt: input.expiresAt,
-          quantityAvailable: input.quantity,
+          registeredById: input.actorId,
         },
       });
 
       await tx.stockMovement.create({
         data: {
-          vaccineId: vaccine.id,
-          vaccineLotId: lot.id,
-          movementType: MovementType.INGRESO,
+          lotId: lot.id,
+          type: MovementType.INGRESO,
           quantity: input.quantity,
           reason: "Alta inicial en el catalogo",
           actorId: input.actorId,
@@ -70,63 +73,48 @@ export async function createVaccineWithInitialLot(input: NewVaccineInput) {
   }
 }
 
+/**
+ * Asienta un movimiento de stock.
+ *
+ * docs/BD.md no define un tipo de egreso libre: la salida de dosis ocurre solo
+ * por `asignacion_turno` y `devolucion_turno`, que exigen un turno de
+ * vacunacion. `ajuste` queda para correcciones tecnicas justificadas y sigue
+ * bloqueado desde la interfaz.
+ */
 export async function registerStockMovement(input: StockMovementInput) {
-  if (input.movementType !== MovementType.INGRESO && input.movementType !== MovementType.EGRESO) {
+  if (input.movementType !== MovementType.INGRESO) {
     throw new StockRuleError({
-      movementType: "Solo se admiten ingresos y egresos.",
+      movementType:
+        "Solo se admiten ingresos desde esta pantalla. Las salidas de stock se generan al aprobar un turno de vacunacion.",
     });
   }
 
   await prisma.$transaction(async (tx) => {
     const vaccine = await tx.vaccine.findFirst({
-      where: { id: input.vaccineId, isActive: true },
+      where: { id: input.vaccineId },
       select: { id: true },
     });
 
     if (!vaccine) {
       throw new StockRuleError({
-        vaccineId: "La vacuna no existe o esta dada de baja.",
+        vaccineId: "La vacuna no existe.",
       });
     }
 
     const lot = await tx.vaccineLot.findUnique({
       where: {
-        vaccine_lot_number_unique: {
+        vaccineId_lotNumber: {
           vaccineId: input.vaccineId,
           lotNumber: input.lotNumber,
         },
       },
-      select: { id: true, quantityAvailable: true },
+      select: { id: true },
     });
 
-    let vaccineLotId: string;
+    let lotId: string;
 
-    if (input.movementType === MovementType.EGRESO) {
-      if (!lot) {
-        throw new StockRuleError({
-          lotNumber: `La vacuna seleccionada no tiene el lote ${input.lotNumber}.`,
-        });
-      }
-
-      const updated = await tx.vaccineLot.updateMany({
-        where: { id: lot.id, quantityAvailable: { gte: input.quantity } },
-        data: { quantityAvailable: { decrement: input.quantity } },
-      });
-
-      if (updated.count === 0) {
-        throw new StockRuleError({
-          quantity: `Stock insuficiente: el lote ${input.lotNumber} tiene ${lot.quantityAvailable} unidades.`,
-        });
-      }
-
-      vaccineLotId = lot.id;
-    } else if (lot) {
-      await tx.vaccineLot.update({
-        where: { id: lot.id },
-        data: { quantityAvailable: { increment: input.quantity } },
-      });
-
-      vaccineLotId = lot.id;
+    if (lot) {
+      lotId = lot.id;
     } else {
       if (!input.expiresAt) {
         throw new StockRuleError({
@@ -140,18 +128,17 @@ export async function registerStockMovement(input: StockMovementInput) {
           vaccineId: input.vaccineId,
           lotNumber: input.lotNumber,
           expiresAt: input.expiresAt,
-          quantityAvailable: input.quantity,
+          registeredById: input.actorId,
         },
       });
 
-      vaccineLotId = created.id;
+      lotId = created.id;
     }
 
     await tx.stockMovement.create({
       data: {
-        vaccineId: input.vaccineId,
-        vaccineLotId,
-        movementType: input.movementType,
+        lotId,
+        type: input.movementType,
         quantity: input.quantity,
         reason: input.reason,
         actorId: input.actorId,

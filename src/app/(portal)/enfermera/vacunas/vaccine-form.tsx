@@ -23,11 +23,13 @@ function SaveButton() {
 function Field({
   id,
   label,
+  hint,
   error,
   children,
 }: {
   id: string;
   label: string;
+  hint?: string;
   error?: string;
   children: ReactNode;
 }) {
@@ -41,6 +43,8 @@ function Field({
         <p id={`${id}-error`} className="mt-1 text-xs text-red-600">
           {error}
         </p>
+      ) : hint ? (
+        <p className="mt-1 text-xs text-zinc-500">{hint}</p>
       ) : null}
     </div>
   );
@@ -49,7 +53,7 @@ function Field({
 const controlClass =
   "w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900";
 
-export function VaccineForm({ laboratories }: { laboratories: string[] }) {
+export function VaccineForm() {
   const [state, formAction] = useActionState(createVaccine, initialState);
   const errors = state.errors ?? {};
 
@@ -68,12 +72,6 @@ export function VaccineForm({ laboratories }: { laboratories: string[] }) {
         </p>
       ) : null}
 
-      <datalist id="laboratories">
-        {laboratories.map((laboratory) => (
-          <option key={laboratory} value={laboratory} />
-        ))}
-      </datalist>
-
       <div className="grid gap-4 sm:grid-cols-2">
         <Field id="name" label="Nombre de la vacuna" error={errors.name}>
           <input
@@ -84,19 +82,6 @@ export function VaccineForm({ laboratories }: { laboratories: string[] }) {
             aria-describedby={errors.name ? "name-error" : undefined}
             className={controlClass}
             placeholder="Triple viral"
-          />
-        </Field>
-
-        <Field id="laboratory" label="Laboratorio / Origen" error={errors.laboratory}>
-          <input
-            id="laboratory"
-            name="laboratory"
-            list="laboratories"
-            defaultValue={state.values?.laboratory}
-            aria-invalid={Boolean(errors.laboratory)}
-            aria-describedby={errors.laboratory ? "laboratory-error" : undefined}
-            className={controlClass}
-            placeholder="Sanofi"
           />
         </Field>
 
@@ -140,20 +125,21 @@ export function VaccineForm({ laboratories }: { laboratories: string[] }) {
         </Field>
 
         <Field
-          id="criticalStockLevel"
+          id="criticalLevel"
           label="Nivel critico de stock"
-          error={errors.criticalStockLevel}
+          hint="Opcional. Si se completa, el sistema avisa cuando el stock total cae por debajo de ese numero."
+          error={errors.criticalLevel}
         >
           <input
-            id="criticalStockLevel"
-            name="criticalStockLevel"
+            id="criticalLevel"
+            name="criticalLevel"
             type="number"
             min={0}
             step={1}
-            defaultValue={state.values?.criticalStockLevel}
-            aria-invalid={Boolean(errors.criticalStockLevel)}
+            defaultValue={state.values?.criticalLevel}
+            aria-invalid={Boolean(errors.criticalLevel)}
             aria-describedby={
-              errors.criticalStockLevel ? "criticalStockLevel-error" : undefined
+              errors.criticalLevel ? "criticalLevel-error" : undefined
             }
             className={controlClass}
             placeholder="20"

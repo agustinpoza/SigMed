@@ -5,6 +5,7 @@ import { getCurrentActor } from "@/lib/dev-actor";
 import {
   type FieldErrors,
   hasErrors,
+  optionalInt,
   requiredDate,
   requiredInt,
   requiredText,
@@ -29,12 +30,6 @@ export async function createVaccine(
   const errors: FieldErrors = {};
 
   const name = requiredText(formData.get("name"), "name", errors, "El nombre");
-  const laboratory = requiredText(
-    formData.get("laboratory"),
-    "laboratory",
-    errors,
-    "El laboratorio",
-  );
   const lotNumber = requiredText(
     formData.get("lotNumber"),
     "lotNumber",
@@ -54,9 +49,9 @@ export async function createVaccine(
     "La cantidad",
     { min: 1 },
   );
-  const criticalStockLevel = requiredInt(
-    formData.get("criticalStockLevel"),
-    "criticalStockLevel",
+  const criticalLevel = optionalInt(
+    formData.get("criticalLevel"),
+    "criticalLevel",
     errors,
     "El nivel critico de stock",
     { min: 0 },
@@ -64,19 +59,13 @@ export async function createVaccine(
 
   const values = {
     name,
-    laboratory,
     lotNumber,
     expiresAt: rawValue(formData, "expiresAt"),
     quantity: rawValue(formData, "quantity"),
-    criticalStockLevel: rawValue(formData, "criticalStockLevel"),
+    criticalLevel: rawValue(formData, "criticalLevel"),
   };
 
-  if (
-    hasErrors(errors) ||
-    expiresAt === null ||
-    quantity === null ||
-    criticalStockLevel === null
-  ) {
+  if (hasErrors(errors) || expiresAt === null || quantity === null) {
     return { errors, values };
   }
 
@@ -93,8 +82,7 @@ export async function createVaccine(
   try {
     await createVaccineWithInitialLot({
       name,
-      laboratory,
-      criticalStockLevel,
+      criticalLevel,
       lotNumber,
       expiresAt,
       quantity,

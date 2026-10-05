@@ -1,4 +1,4 @@
-import { cookies } from "next/headers";
+﻿import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
 import type { UserProfile } from "@/generated/prisma/client";
 
@@ -9,6 +9,7 @@ export type DevActorCandidate = {
   firstName: string;
   lastName: string;
   email: string;
+  role: string;
 };
 
 export function isDevActorEnabled() {
@@ -26,7 +27,7 @@ export async function getCurrentActor(): Promise<UserProfile | null> {
   if (!id) return null;
 
   return prisma.userProfile.findFirst({
-    where: { id, isActive: true },
+    where: { id },
   });
 }
 
@@ -35,6 +36,6 @@ export async function listDevActorCandidates(): Promise<DevActorCandidate[]> {
 
   return prisma.userProfile.findMany({
     orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
-    select: { id: true, firstName: true, lastName: true, email: true },
+    select: { id: true, firstName: true, lastName: true, email: true, role: true },
   });
 }

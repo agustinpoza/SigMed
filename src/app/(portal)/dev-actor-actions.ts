@@ -28,12 +28,12 @@ export async function setDevActor(
   }
 
   const profile = await prisma.userProfile.findFirst({
-    where: { id, isActive: true },
+    where: { id },
     select: { id: true },
   });
 
   if (!profile) {
-    return { error: "El perfil ya no existe o esta inactivo." };
+    return { error: "El perfil ya no existe." };
   }
 
   const store = await cookies();

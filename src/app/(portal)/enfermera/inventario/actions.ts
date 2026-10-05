@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 
 import { revalidatePath } from "next/cache";
 import { getCurrentActor } from "@/lib/dev-actor";
@@ -19,7 +19,7 @@ export type MovementFormState = {
   values?: Record<string, string>;
 };
 
-const ALLOWED_TYPES: MovementType[] = [MovementType.INGRESO, MovementType.EGRESO];
+const ALLOWED_TYPES: MovementType[] = [MovementType.INGRESO];
 
 function rawValue(formData: FormData, field: string) {
   const value = formData.get(field);
@@ -57,7 +57,7 @@ export async function createStockMovement(
   const movementType = ALLOWED_TYPES.find((type) => type === rawType);
 
   if (!movementType) {
-    errors.movementType = "El tipo de movimiento debe ser Ingreso o Egreso.";
+    errors.movementType = "Desde esta pantalla solo se admiten ingresos.";
   }
 
   if (vaccineId && !isUuid(vaccineId)) {
@@ -119,6 +119,6 @@ export async function createStockMovement(
   revalidatePath("/enfermera/inventario");
 
   return {
-    message: `Se registró ${movementType === "INGRESO" ? "un ingreso" : "un egreso"} de ${quantity} unidades.`,
+    message: `Se registró un ingreso de ${quantity} unidades.`,
   };
 }
