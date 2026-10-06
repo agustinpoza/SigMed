@@ -1,17 +1,24 @@
 // app/ui/medico/tabla-trabajo.tsx
-import { useEffect, useState } from "react";
+'use client';
+import { useState } from "react";
 
+type SearchParams = {
+    fecha?: string;
+    filtro?: string;
+    busqueda?: string;
+};
 interface TablaTrabajoProps {
-    filtro: string;
-    busqueda: string;
+    params?: SearchParams
 }
 
-export default function tablaTrabajo({ filtro, busqueda }: TablaTrabajoProps) {
+export default function tablaTrabajo({ params }: TablaTrabajoProps) {
+    const resolvedParams = params;
+    const fecha = resolvedParams?.fecha;
+    const filtro = resolvedParams?.filtro;
+    const busqueda = resolvedParams?.busqueda || "";
     const [turnos, setTurnos] = useState<[]>([]);
 
-    useEffect(() => {
-        //Consultar turnos segun filtros y busqueda
-    });
+    //Consultar turnos segun filtros y busqueda
 
     return (
         <div className="overflow-hidden rounded-xl border border-gray-400 m-2">
@@ -31,16 +38,16 @@ export default function tablaTrabajo({ filtro, busqueda }: TablaTrabajoProps) {
                             return (
                                 <tr key={0/*t.id*/} className="">
                                     <td>
-                                        XX:XX{/*t.hora*/}
+                                        XX:XX{/*t.startsAt*/}
                                     </td>
                                     <td>
-                                        Apellido, Nombre{/*t.paciente*/}
+                                        Apellido, Nombre{/*t.patient.profile.lastName, t.patient.profile.firstName*/}
                                     </td>
                                     <td>
-                                        XX.XXX.XXX{/*t.dni*/}
+                                        XX.XXX.XXX{/*t.patient.profile.dni*/}
                                     </td>
                                     <td className="text-black bg-gray-300 rounded-lg">
-                                        Estado{/*t.estado*/}
+                                        Estado{/*t.status*/}
                                     </td>
                                     <td className="text-white bg-slate-600 rounded-sm">
                                         Accion
@@ -50,7 +57,7 @@ export default function tablaTrabajo({ filtro, busqueda }: TablaTrabajoProps) {
                         })
                     ) : (
                         <tr>
-                            <td className="text-lg text-black italic">
+                            <td className="text-center text-lg text-black italic">
                                 No hay turnos para mostrar
                             </td>
                         </tr>

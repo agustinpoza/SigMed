@@ -2,25 +2,39 @@
 'use client';
 import TablaTrabajo from "@/app/ui/medico/tabla-trabajo";
 import { useState } from "react";
-import { AiOutlineSearch } from 'react-icons/ai';
+import { HiOutlineChevronLeft, HiOutlineChevronRight, HiOutlineSearch } from "react-icons/hi";
 
-const FILTROS = ["opcionA", "opcionB", "opcionC"];
+const FILTROS = ["Atendido", "Reservado", "Cancelado", "Ausente"];
 
 export default function AgendaPage() {
   const [filtro, setFiltro] = useState<string>(FILTROS[0]);
   const [busqueda, setBusqueda] = useState("");
+  const [fecha, setFecha] = useState<string>("");
 
   return (
-  <section className="flex flex-col gap-2 p-4 bg-white border border-gray-500 rounded-md shadow-md">
-    <span className="text-lg font-bold text-black border-b border-gray-500 m-2 p-2">
+  <section className="flex flex-col gap-2 p-2 bg-white border border-gray-500 rounded-md shadow-md">
+    <span className="text-lg font-bold text-black m-2 p-2">
       Tabla de Trabajo Diario
     </span>
-    <div className="flex flex-row justify-center text-black m-2">
-      Selector de fecha
+    <div className="flex flex-row justify-center border-y border-gray-300 p-4 gap-3">
+      <button className="flex flex-row items-center border bg-gray-200 rounded-md text-sm text-slate-500 p-1 gap-2">
+        <HiOutlineChevronLeft /> Anterior
+      </button>
+      <input
+      id="fecha"
+      name="fecha"
+      type="date"
+      value={fecha}
+      onChange={(e) => setFecha(e.target.value)}
+      className="border border-gray-300 rounded-md text-black p-0.5"
+      />
+      <button className="flex flex-row items-center border bg-gray-200 rounded-md text-sm text-slate-500 p-1 gap-2">
+        Siguiente <HiOutlineChevronRight />
+      </button>
     </div>
     <div className="flex justify-around rounded-sm bg-gray-200 m-2 p-2">
       <div className="flex flex-row text-black gap-2">
-        Filtros:
+          Filtros:
         {/* Ajustar según la cantidad de filtros y como se obtienen */}
         {FILTROS.map((opcion) => (
           <label key={opcion}>
@@ -29,7 +43,7 @@ export default function AgendaPage() {
               name="filtro"
               value={opcion}
               checked={filtro === opcion}
-              onChange={() => setFiltro(opcion)}
+              onChange={() => setFiltro(opcion.toUpperCase)}
               required
             />
             {opcion}
@@ -38,7 +52,7 @@ export default function AgendaPage() {
       </div>
       <div>
         <div className="flex flex-row items-center border-2 border-gray-300 rounded-xl bg-white px-2">
-          <AiOutlineSearch className="text-gray-400 text-lg mr-4" />
+          <HiOutlineSearch className="text-gray-400 text-lg mr-4" />
           <input
             className="text-base text-gray-400 placeholder-gray-400 focus:outline-none rounded-xl"
             type="search"
@@ -49,7 +63,7 @@ export default function AgendaPage() {
         </div>
       </div>
     </div>
-    <TablaTrabajo filtro={filtro} busqueda={busqueda} />
+    <TablaTrabajo params={{fecha, filtro, busqueda}} />
   </section>
   );
 }
