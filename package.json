@@ -16,7 +16,8 @@
     "db:seed": "prisma db seed",
     "db:reset": "prisma migrate reset",
     "db:verify": "tsx scripts/verify-constraints.ts",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "test:vaccination": "tsx scripts/verify-vaccination.ts"
   },
   "dependencies": {
     "@prisma/adapter-neon": "^7.10.0",

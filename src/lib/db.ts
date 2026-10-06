@@ -20,4 +20,11 @@ export function isUniqueViolation(error: unknown): boolean {
   return (
     error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002"
   );
+  
+}
+/** Deadlock o conflicto de escritura: la transaccion se puede reintentar. */
+export function isTransactionConflict(error: unknown): boolean {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034"
+  );
 }
