@@ -1,15 +1,21 @@
 import { prisma } from "@/lib/db";
 import { VaccineForm } from "./vaccine-form";
+import { CriticalLevelInput } from "./critical-level-input";
 
 export const metadata = {
   title: "Alta de vacunas | SigMed",
 };
 
+function isExpired(expiresAt: Date): boolean {
+  const today = new Date().toISOString().slice(0, 10);
+  return expiresAt.toISOString().slice(0, 10) < today;
+}
+
 export default async function VacunasPage() {
   const vaccines = await prisma.vaccine.findMany({
     orderBy: { name: "asc" },
     include: {
-      lots: { select: { quantityAvailable: true } },
+      lots: { select: { quantityAvailable: true, expiresAt: true } },
       alerts: {
         where: { status: "ACTIVA" },
         select: { id: true },
@@ -52,13 +58,20 @@ export default async function VacunasPage() {
               </thead>
               <tbody className="divide-y divide-zinc-100">
                 {vaccines.map((vaccine) => {
+                  const expired = vaccine.lots.filter((lot) =>
+                    isExpired(lot.expiresAt),
+                  );
+                  const expiredStock = expired.reduce(
+                    (total, lot) => total + lot.quantityAvailable,
+                    0,
+                  );
                   const stock = vaccine.lots.reduce(
                     (total, lot) => total + lot.quantityAvailable,
                     0,
                   );
                   const low =
                     vaccine.criticalLevel !== null &&
-                    stock <= vaccine.criticalLevel;
+                    stock - expiredStock <= vaccine.criticalLevel;
                   const alerting = vaccine.alerts.length > 0;
 
                   return (
@@ -66,9 +79,19 @@ export default async function VacunasPage() {
                       <td className="px-4 py-3 font-medium text-zinc-900">
                         {vaccine.name}
                       </td>
-                      <td className="px-4 py-3 text-zinc-900">{stock}</td>
-                      <td className="px-4 py-3 text-zinc-600">
-                        {vaccine.criticalLevel ?? "Sin umbral"}
+                      <td className="px-4 py-3 text-zinc-900">
+                        {stock - expiredStock}
+                        {expiredStock > 0 ? (
+                          <span className="ml-1 text-xs text-zinc-400">
+                            (+{expiredStock} vencidos)
+                          </span>
+                        ) : null}
+                      </td>
+                      <td className="px-4 py-3">
+                        <CriticalLevelInput
+                          vaccineId={vaccine.id}
+                          initial={vaccine.criticalLevel}
+                        />
                       </td>
                       <td className="px-4 py-3">
                         <span

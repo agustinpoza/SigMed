@@ -11,7 +11,7 @@ interface TablaTrabajoProps {
     params?: SearchParams
 }
 
-export default function tablaTrabajo({ params }: TablaTrabajoProps) {
+export default function TablaTrabajo({ params }: TablaTrabajoProps) {
     const resolvedParams = params;
     const fecha = resolvedParams?.fecha;
     const filtro = resolvedParams?.filtro;

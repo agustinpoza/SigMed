@@ -1,5 +1,11 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
+import {
+  getCurrentActor,
+  isDevActorEnabled,
+  listDevActorCandidates,
+} from "@/lib/dev-actor";
+import { LoginPanel } from "./login-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -77,7 +83,21 @@ async function checkConnection(): Promise<ConnectionState> {
 }
 
 export default async function Home() {
+  const devEnabled = isDevActorEnabled();
+  const [actor, candidates] = devEnabled
+    ? await Promise.all([getCurrentActor(), listDevActorCandidates()])
+    : [null, []];
   const connection = await checkConnection();
+
+  const current = actor
+    ? {
+        id: actor.id,
+        firstName: actor.firstName,
+        lastName: actor.lastName,
+        email: actor.email,
+        role: actor.role,
+      }
+    : null;
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-6 py-16">
@@ -87,6 +107,14 @@ export default async function Home() {
           Sistema de agenda, vacunas e historial clinico para la sala medica.
         </p>
       </header>
+
+      {devEnabled ? (
+        <LoginPanel candidates={candidates} current={current} />
+      ) : (
+        <span className="w-fit rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800">
+          Sesion sin autenticar
+        </span>
+      )}
 
       <section className="rounded-lg border border-zinc-200 p-6">
         <h2 className="mb-4 text-lg font-medium">Estado de la base de datos</h2>

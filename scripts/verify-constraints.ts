@@ -2,6 +2,7 @@ import "dotenv/config";
 import { PrismaNeon } from "@prisma/adapter-neon";
 import { PrismaClient } from "../src/generated/prisma/client";
 import {
+  AlertStatus,
   AppointmentState,
   MovementType,
   ReceiptType,
@@ -9,6 +10,11 @@ import {
   VaccinationAppointmentState,
   Weekday,
 } from "../src/generated/prisma/enums";
+import {
+  StockRuleError,
+  createVaccineWithInitialLot,
+  registerStockMovement,
+} from "../src/lib/stock";
 
 const prisma = new PrismaClient({
   adapter: new PrismaNeon({ connectionString: process.env.DATABASE_URL }),
@@ -38,6 +44,23 @@ async function expectOk(label: string, fn: () => Promise<unknown>) {
     failures += 1;
     const message = error instanceof Error ? error.message.split("\n").at(-1) : String(error);
     console.log(`FALLA  ${label}: ${message?.slice(0, 100)}`);
+  }
+}
+
+async function expectAppError(label: string, fn: () => Promise<unknown>) {
+  try {
+    await fn();
+    failures += 1;
+    console.log(`FALLA  ${label}: debio rechazarse (regla de stock) y NO lo hizo`);
+  } catch (error) {
+    if (error instanceof StockRuleError) {
+      console.log(`OK     ${label}: ${Object.values(error.fields)[0]}`);
+    } else {
+      failures += 1;
+      const message =
+        error instanceof Error ? error.message.split("\n").at(-1) : String(error);
+      console.log(`FALLA  ${label}: error inesperado: ${message?.slice(0, 100)}`);
+    }
   }
 }
 
@@ -184,6 +207,51 @@ await expectError("ajuste sin motivo", () =>
   }),
 );
 
+console.log("--- stock: validaciones de la app (src/lib/stock.ts) ---");
+await expectAppError("ingreso de cantidad cero", () =>
+  registerStockMovement({
+    vaccineId: lot.vaccineId,
+    lotNumber: "PRUEBA-0",
+    expiresAt: futuro(30),
+    quantity: 0,
+    movementType: MovementType.INGRESO,
+    reason: null,
+    actorId: enfermera.id,
+  }),
+);
+await expectAppError("ajuste sin motivo", () =>
+  registerStockMovement({
+    vaccineId: lot.vaccineId,
+    lotNumber: "NO-EXISTE",
+    expiresAt: null,
+    quantity: -3,
+    movementType: MovementType.AJUSTE,
+    reason: "",
+    actorId: enfermera.id,
+  }),
+);
+await expectAppError("ingreso a un lote ya vencido", () =>
+  registerStockMovement({
+    vaccineId: lot.vaccineId,
+    lotNumber: "VENCIDO-2020",
+    expiresAt: new Date("2020-01-01T00:00:00.000Z"),
+    quantity: 5,
+    movementType: MovementType.INGRESO,
+    reason: null,
+    actorId: enfermera.id,
+  }),
+);
+await expectAppError("alta de un lote con vencimiento pasado", () =>
+  createVaccineWithInitialLot({
+    name: `PRUEBA-VENCIDA-${Date.now()}`,
+    criticalLevel: null,
+    lotNumber: "L-2020",
+    expiresAt: new Date("2020-01-01T00:00:00.000Z"),
+    quantity: 5,
+    actorId: enfermera.id,
+  }),
+);
+
 console.log("--- stock materializado: trigger fn_stock_movimiento_post ---");
 const stockAntes = lot.quantityAvailable;
 await expectError("ingreso que dejaria el lote en negativo", () =>
@@ -206,6 +274,66 @@ if (stockDespues.quantityAvailable !== stockAntes) {
 } else {
   console.log(`OK     el stock del lote quedo en ${stockAntes} tras el rechazo`);
 }
+
+await expectOk("ajuste con motivo recalcula el stock (transaccion revertida)", async () => {
+  const lote = await prisma.vaccineLot.findFirstOrThrow();
+  const antes = lote.quantityAvailable;
+  let stockOk = false;
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.stockMovement.create({
+        data: {
+          lotId: lote.id,
+          type: MovementType.AJUSTE,
+          quantity: 7,
+          reason: "Verificacion de ajuste",
+          actorId: enfermera.id,
+        },
+      });
+
+      const despues = await tx.vaccineLot.findUniqueOrThrow({
+        where: { id: lote.id },
+      });
+
+      if (despues.quantityAvailable !== antes + 7) {
+        throw new Error(
+          `el stock no se recalculo: ${antes} -> ${despues.quantityAvailable}`,
+        );
+      }
+
+      stockOk = true;
+      throw new Error("ROLLBACK_PRUEBA_AJUSTE");
+    });
+  } catch (error) {
+    if (!(error instanceof Error && error.message === "ROLLBACK_PRUEBA_AJUSTE")) {
+      throw error;
+    }
+  }
+
+  const final = await prisma.vaccineLot.findUniqueOrThrow({ where: { id: lote.id } });
+
+  if (!stockOk || final.quantityAvailable !== antes) {
+    throw new Error(
+      `el lote quedo modificado tras el rollback: ${antes} -> ${final.quantityAvailable}`,
+    );
+  }
+});
+
+console.log("--- alerta_stock: una sola activa por vacuna ---");
+const alertaActiva = await prisma.stockAlert.findFirstOrThrow({
+  where: { status: AlertStatus.ACTIVA },
+});
+await expectError("una segunda alerta activa para la misma vacuna", () =>
+  prisma.stockAlert.create({
+    data: {
+      vaccineId: alertaActiva.vaccineId,
+      stockWhenGenerated: 3,
+      criticalLevelWhenGenerated: 7,
+      status: AlertStatus.ACTIVA,
+    },
+  }),
+);
 
 console.log("--- turno_vacunacion: lote coherente y no vencido ---");
 // lote.id pertenece a lot.vaccineId, asi que asignarlo a otra vacuna debe fallar

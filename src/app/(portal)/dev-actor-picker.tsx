@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
-import { clearDevActor, setDevActor, type ActorState } from "./dev-actor-actions";
+import { clearDevActor, setDevActor, type ActorState } from "@/lib/dev-actor-actions";
 import type { DevActorCandidate } from "@/lib/dev-actor";
 
 const initialState: ActorState = {};

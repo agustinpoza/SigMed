@@ -15,11 +15,16 @@ const dateFormatterWithExpiry = new Intl.DateTimeFormat("es-AR", {
   dateStyle: "short",
 });
 
+function isExpired(expiresAt: Date): boolean {
+  const today = new Date().toISOString().slice(0, 10);
+  return expiresAt.toISOString().slice(0, 10) < today;
+}
+
 export default async function InventarioPage() {
   const [vaccines, lots, movements, alerts] = await Promise.all([
     prisma.vaccine.findMany({
       orderBy: { name: "asc" },
-      select: { id: true, name: true, criticalLevel: true },
+      select: { id: true, name: true },
     }),
     prisma.vaccineLot.findMany({
       orderBy: [{ expiresAt: "asc" }],
@@ -49,8 +54,9 @@ export default async function InventarioPage() {
           Actualizacion de stock
         </h1>
         <p className="mt-1 text-sm text-zinc-600">
-          Registra ingresos de dosis. Cada movimiento queda trazado con su
-          responsable. Las salidas se generan al aprobar un turno de vacunacion.
+          Registra ingresos y ajustes de dosis. Cada movimiento queda trazado
+          con su responsable. Las salidas por vacunacion se generan al aprobar
+          un turno.
         </p>
       </header>
 
@@ -95,28 +101,41 @@ export default async function InventarioPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-100">
-                {lots.map((lot) => (
-                  <tr key={lot.id}>
-                    <td className="px-4 py-3 font-medium text-zinc-900">
-                      {lot.vaccine.name}
-                    </td>
-                    <td className="px-4 py-3 text-zinc-600">{lot.lotNumber}</td>
-                    <td className="px-4 py-3 text-zinc-600">
-                      {dateFormatterWithExpiry.format(lot.expiresAt)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={
-                          lot.quantityAvailable === 0
-                            ? "font-medium text-red-700"
-                            : "font-medium text-zinc-900"
-                        }
-                      >
-                        {lot.quantityAvailable}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                {lots.map((lot) => {
+                  const vencido = isExpired(lot.expiresAt);
+
+                  return (
+                    <tr key={lot.id}>
+                      <td className="px-4 py-3 font-medium text-zinc-900">
+                        {lot.vaccine.name}
+                      </td>
+                      <td className="px-4 py-3 text-zinc-600">{lot.lotNumber}</td>
+                      <td className="px-4 py-3 text-zinc-600">
+                        <span className="flex items-center gap-2">
+                          {dateFormatterWithExpiry.format(lot.expiresAt)}
+                          {vencido ? (
+                            <span className="inline-flex rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
+                              Vencido
+                            </span>
+                          ) : null}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={
+                            vencido
+                              ? "text-zinc-400 line-through"
+                              : lot.quantityAvailable === 0
+                                ? "font-medium text-red-700"
+                                : "font-medium text-zinc-900"
+                          }
+                        >
+                          {lot.quantityAvailable}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

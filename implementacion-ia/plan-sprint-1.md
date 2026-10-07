@@ -84,8 +84,9 @@ Server Actions de las fases 4 y 5 no se enteran del cambio.
 ```
 src/lib/dev-actor.ts                     getCurrentActor, isDevActorEnabled,
                                          listDevActorCandidates
-src/app/(portal)/dev-actor-actions.ts    Server Actions setDevActor / clearDevActor
+src/lib/dev-actor-actions.ts             Server Actions setDevActor / clearDevActor
 src/app/(portal)/dev-actor-picker.tsx    selector con useActionState
+src/app/login-panel.tsx                  login basico en la pagina de inicio
 ```
 
 Se implementó con **Server Actions, no con un endpoint HTTP**. Un route handler
@@ -176,38 +177,38 @@ src/app/(portal)/enfermera/inventario/page.tsx   alta + stock por lote + histori
 **Las reglas de stock se separaron de Next.** `src/lib/stock.ts` no importa
 `next/headers`: recibe el `actorId` como parámetro y lanza `StockRuleError` con
 errores de campo. Las Server Actions solo parsean el `FormData`, resuelven el
-actor y traducen el error. Eso permite ejercitar la lógica real contra la base
-desde un script, en vez de copiar la transacción en el test y probar una copia.
+actor (con guard de rol enfermera/administrador) y traducen el error. Eso
+permite ejercitar la lógica real contra la base desde un script, en vez de copiar
+la transacción en el test y probar una copia.
 
-**El lote es texto libre y el vencimiento se pide solo cuando hace falta.** El
-mockup mete lote y vencimiento en el mismo formulario. En un `INGRESO`, si el
-lote no existe se crea y el vencimiento pasa a ser obligatorio; si ya existe se
-suma al stock y el vencimiento se ignora. En un `EGRESO` el lote tiene que existir
-dentro de la vacuna elegida.
+**El stock lo calcula la base, no la app.** Tras la reforma (D-03),
+`lote.quantity_available` es una caché materializada que recalcula el trigger
+`fn_stock_movimiento_post` en cada asiento, tomando `FOR UPDATE` sobre el lote.
+La app solo asienta movimientos; no hay `updateMany` que descontar.
 
-**El `EGRESO` no puede dejar stock negativo, ni con concurrencia.** El descuento
-es un `updateMany` con `where: { quantityAvailable: { gte: cantidad } }`, que es
-una sola sentencia atómica: PostgreSQL reevalúa el `WHERE` contra la fila ya
-actualizada por la transacción ganadora. Con 90 unidades y dos egresos de 60 en
-paralelo, uno entra y el otro recibe "stock insuficiente". El `CHECK
-vaccine_lot_quantity_non_negative` queda como última red.
+**Tipos desde la pantalla.** `INGRESO` y `AJUSTE`. El ajuste admite cantidad con
+signo, exige motivo (CHECK `movimiento_stock_ajuste_motivado`) y es la única baja
+manual posible: no existe `EGRESO` (las salidas reales se generan al aprobar un
+turno de vacunación, US-3.6). El lote es texto libre: en un `INGRESO`, si el lote
+no existe se crea y el vencimiento (futuro) pasa a ser obligatorio; si ya existe,
+se suma y el vencimiento se ignora. Sobre un lote vencido no se ingresa más.
+
+**El stock nunca puede quedar negativo, ni con concurrencia.** El trigger recalcula
+con los asientos ya visibles y rechaza si el resultado sería menor a 0, con la
+serialización del `FOR UPDATE`. El CHECK `movimiento_stock_cantidad_distinta_de_cero`
+y el signo por tipo (`movimiento_stock_signo_por_tipo`) quedan como última red.
 
 **Los rechazos lanzan, no retornan.** Si la transacción devolviera un valor de
 error en lugar de lanzar, Prisma la commitearía con las escrituras parciales ya
 hechas. `StockRuleError` es una excepción, así que el rollback es automático.
 
-**Agregado al mockup:** una tabla de stock por lote. El historial solo muestra
-movimientos, y sin el saldo actual no se puede calcular un egreso con la cabeza.
+**Agregado al mockup:** una tabla de stock por lote, con marca de lote vencido.
 
-**Validación ejecutada:** `typecheck`, `lint`, `build`, y 24 pruebas sobre las
-funciones reales: alta con lote, nombre duplicado, ingreso sobre lote existente,
-ingreso que crea lote, ingreso sin vencimiento, egreso normal, egreso por sobre
-el stock, lote inexistente, vacuna dada de baja, los cuatro `movementType` no
-permitidos, y la carrera de dos egresos simultáneos. La reconciliación
-`stock = suma de movimientos` se comprueba después de cada operación.
-
-**Pendiente:** el clic en el navegador, por la misma razón que en las fases
-anteriores.
+**Validación ejecutada:** `typecheck`, `lint`, `build`, y `db:verify` con casos
+de ajuste sin motivo, cantidad 0, ingreso sobre lote vencido, alta con vencimiento
+pasado, stock negativo, recálculo de ajuste (en transacción revertida) y una sola
+alerta activa por vacuna. La reconciliación `stock = suma de movimientos` se
+comprueba después de cada operación.
 
 ---
 
@@ -216,13 +217,14 @@ anteriores.
 `db:generate`, `db:deploy`, `db:seed`, `db:verify`, `typecheck`, `lint`, `build`.
 
 Prueba manual del ciclo en `npm run dev`: dar de alta una vacuna, ingresar stock,
-intentar un egreso por sobre el disponible, y confirmar que el historial coincide
-con el stock actual.
+hacer un ajuste negativo con motivo, editar el nivel crítico y confirmar que el
+historial y las alertas coinciden con el stock actual.
 
 ---
 
 ## Fuera de alcance
 
 - Integración real de Clerk y `proxy.ts`.
-- US-3.6, turnos de vacunación.
-- RF-13, alertas de stock crítico.
+- US-3.6, turnos de vacunación (la pantalla de asignación existe; la interfaz de
+  US-3.6 completa queda en un siguiente sprint).
+- RF-20, reporte de stock y consumo.
