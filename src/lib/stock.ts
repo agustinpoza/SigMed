@@ -27,12 +27,24 @@ export type StockMovementInput = {
   actorId: string;
 };
 
+/** Coincide con el criterio del trigger (fecha_vencimiento >= CURRENT_DATE). */
+export function isExpired(expiresAt: Date): boolean {
+  const today = new Date().toISOString().slice(0, 10);
+  return expiresAt.toISOString().slice(0, 10) < today;
+}
+
 /**
  * Alta de vacuna con su lote inicial. El stock del lote no se escribe: lo
  * calcula el trigger fn_stock_movimiento_post al asentar el movimiento de
  * ingreso, que ademas dispara o resuelve la alerta de stock critico.
  */
 export async function createVaccineWithInitialLot(input: NewVaccineInput) {
+  if (isExpired(input.expiresAt)) {
+    throw new StockRuleError({
+      expiresAt: "La fecha de vencimiento debe ser futura.",
+    });
+  }
+
   try {
     await prisma.$transaction(async (tx) => {
       const vaccine = await tx.vaccine.create({
@@ -74,18 +86,44 @@ export async function createVaccineWithInitialLot(input: NewVaccineInput) {
 }
 
 /**
- * Asienta un movimiento de stock.
- *
- * docs/BD.md no define un tipo de egreso libre: la salida de dosis ocurre solo
- * por `asignacion_turno` y `devolucion_turno`, que exigen un turno de
- * vacunacion. `ajuste` queda para correcciones tecnicas justificadas y sigue
- * bloqueado desde la interfaz.
+ * Asienta un movimiento de stock. docs/BD.md no define un tipo de egreso
+ * libre: la salida de dosis ocurre solo por `asignacion_turno` y
+ * `devolucion_turno`, que exigen un turno de vacunacion. Desde la interfaz se
+ * admiten `ingreso` y `ajuste` (este ultimo con motivo obligatorio y cantidad
+ * con signo) para corregir o descontar stock manualmente.
  */
 export async function registerStockMovement(input: StockMovementInput) {
-  if (input.movementType !== MovementType.INGRESO) {
+  if (
+    input.movementType !== MovementType.INGRESO &&
+    input.movementType !== MovementType.AJUSTE
+  ) {
     throw new StockRuleError({
       movementType:
-        "Solo se admiten ingresos desde esta pantalla. Las salidas de stock se generan al aprobar un turno de vacunacion.",
+        "Desde esta pantalla solo se admiten ingresos y ajustes. Las salidas de stock se generan al aprobar un turno de vacunacion.",
+    });
+  }
+
+  if (input.quantity === 0) {
+    throw new StockRuleError({
+      quantity: "La cantidad no puede ser 0.",
+    });
+  }
+
+  if (
+    input.movementType === MovementType.INGRESO &&
+    input.quantity < 0
+  ) {
+    throw new StockRuleError({
+      quantity: "Un ingreso debe ser una cantidad positiva.",
+    });
+  }
+
+  if (
+    input.movementType === MovementType.AJUSTE &&
+    !input.reason?.trim()
+  ) {
+    throw new StockRuleError({
+      reason: "Un ajuste necesita un motivo justificado.",
     });
   }
 
@@ -108,18 +146,41 @@ export async function registerStockMovement(input: StockMovementInput) {
           lotNumber: input.lotNumber,
         },
       },
-      select: { id: true },
+      select: { id: true, expiresAt: true },
     });
 
     let lotId: string;
 
     if (lot) {
+      if (
+        input.movementType === MovementType.INGRESO &&
+        isExpired(lot.expiresAt)
+      ) {
+        throw new StockRuleError({
+          lotNumber:
+            "El lote ya vencio y no puede recibir mas unidades.",
+        });
+      }
+
       lotId = lot.id;
     } else {
+      if (input.movementType === MovementType.AJUSTE) {
+        throw new StockRuleError({
+          lotNumber:
+            "El lote no existe. Un ajuste se aplica sobre un lote ya cargado.",
+        });
+      }
+
       if (!input.expiresAt) {
         throw new StockRuleError({
           expiresAt:
             "Es la primera vez que aparece este lote, asi que la fecha de vencimiento es obligatoria.",
+        });
+      }
+
+      if (isExpired(input.expiresAt)) {
+        throw new StockRuleError({
+          expiresAt: "La fecha de vencimiento debe ser futura.",
         });
       }
 

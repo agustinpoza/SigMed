@@ -1,7 +1,6 @@
 ﻿"use server";
 
 import { revalidatePath } from "next/cache";
-import { getCurrentActor } from "@/lib/dev-actor";
 import {
   type FieldErrors,
   hasErrors,
@@ -12,6 +11,7 @@ import {
 } from "@/lib/forms";
 import { StockRuleError, registerStockMovement } from "@/lib/stock";
 import { MovementType } from "@/generated/prisma/enums";
+import { requireEnfermeraOAdministrador } from "@/lib/actor-guard";
 
 export type MovementFormState = {
   errors?: FieldErrors;
@@ -19,7 +19,10 @@ export type MovementFormState = {
   values?: Record<string, string>;
 };
 
-const ALLOWED_TYPES: MovementType[] = [MovementType.INGRESO];
+const ALLOWED_TYPES: MovementType[] = [
+  MovementType.INGRESO,
+  MovementType.AJUSTE,
+];
 
 function rawValue(formData: FormData, field: string) {
   const value = formData.get(field);
@@ -44,24 +47,42 @@ export async function createStockMovement(
     errors,
     "El lote",
   );
-  const quantity = requiredInt(
-    formData.get("quantity"),
-    "quantity",
-    errors,
-    "La cantidad",
-    { min: 1 },
-  );
   const reason = rawValue(formData, "reason");
+
+  if (vaccineId && !isUuid(vaccineId)) {
+    errors.vaccineId = "La vacuna seleccionada no es valida.";
+  }
 
   const rawType = rawValue(formData, "movementType");
   const movementType = ALLOWED_TYPES.find((type) => type === rawType);
 
   if (!movementType) {
-    errors.movementType = "Desde esta pantalla solo se admiten ingresos.";
+    errors.movementType = "Selecciona un tipo de movimiento valido.";
   }
 
-  if (vaccineId && !isUuid(vaccineId)) {
-    errors.vaccineId = "La vacuna seleccionada no es valida.";
+  let quantity: number | null = null;
+
+  if (movementType === MovementType.INGRESO) {
+    quantity = requiredInt(
+      formData.get("quantity"),
+      "quantity",
+      errors,
+      "La cantidad",
+      { min: 1 },
+    );
+  } else if (movementType === MovementType.AJUSTE) {
+    quantity = requiredInt(
+      formData.get("quantity"),
+      "quantity",
+      errors,
+      "La cantidad",
+    );
+
+    if (quantity === 0) {
+      errors.quantity = "La cantidad no puede ser 0.";
+    }
+
+    requiredText(formData.get("reason"), "reason", errors, "El motivo");
   }
 
   const expiresAtRaw = rawValue(formData, "expiresAt");
@@ -88,14 +109,10 @@ export async function createStockMovement(
     return { errors, values };
   }
 
-  const actor = await getCurrentActor();
+  const guard = await requireEnfermeraOAdministrador();
 
-  if (!actor) {
-    return {
-      message:
-        "No hay actor definido, asi que el movimiento no se puede atribuir. Selecciona uno en la barra superior.",
-      values,
-    };
+  if ("error" in guard) {
+    return { message: guard.error, values };
   }
 
   try {
@@ -106,7 +123,7 @@ export async function createStockMovement(
       quantity,
       movementType,
       reason: reason || null,
-      actorId: actor.id,
+      actorId: guard.actor.id,
     });
   } catch (error) {
     if (error instanceof StockRuleError) {
@@ -119,6 +136,9 @@ export async function createStockMovement(
   revalidatePath("/enfermera/inventario");
 
   return {
-    message: `Se registró un ingreso de ${quantity} unidades.`,
+    message:
+      movementType === MovementType.INGRESO
+        ? `Se registró un ingreso de ${quantity} unidades.`
+        : `Se registró un ajuste de ${quantity} unidades.`,
   };
 }

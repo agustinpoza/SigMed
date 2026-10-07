@@ -1,16 +1,18 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getCurrentActor } from "@/lib/dev-actor";
+import { prisma } from "@/lib/db";
 import {
   type FieldErrors,
   hasErrors,
+  isUuid,
   optionalInt,
   requiredDate,
   requiredInt,
   requiredText,
 } from "@/lib/forms";
 import { StockRuleError, createVaccineWithInitialLot } from "@/lib/stock";
+import { requireEnfermeraOAdministrador } from "@/lib/actor-guard";
 
 export type VaccineFormState = {
   errors?: FieldErrors;
@@ -69,14 +71,10 @@ export async function createVaccine(
     return { errors, values };
   }
 
-  const actor = await getCurrentActor();
+  const guard = await requireEnfermeraOAdministrador();
 
-  if (!actor) {
-    return {
-      message:
-        "No hay actor definido, asi que el movimiento no se puede atribuir. Selecciona uno en la barra superior.",
-      values,
-    };
+  if ("error" in guard) {
+    return { message: guard.error, values };
   }
 
   try {
@@ -86,7 +84,7 @@ export async function createVaccine(
       lotNumber,
       expiresAt,
       quantity,
-      actorId: actor.id,
+      actorId: guard.actor.id,
     });
   } catch (error) {
     if (error instanceof StockRuleError) {
@@ -99,4 +97,63 @@ export async function createVaccine(
   revalidatePath("/enfermera/vacunas");
 
   return { message: `${name} se cargo con ${quantity} unidades.` };
+}
+
+export async function updateVaccineCriticalLevel(
+  _previous: VaccineFormState,
+  formData: FormData,
+): Promise<VaccineFormState> {
+  const errors: FieldErrors = {};
+
+  const vaccineId = requiredText(
+    formData.get("vaccineId"),
+    "vaccineId",
+    errors,
+    "La vacuna",
+  );
+
+  if (vaccineId && !isUuid(vaccineId)) {
+    errors.vaccineId = "La vacuna seleccionada no es valida.";
+  }
+
+  const criticalLevel = optionalInt(
+    formData.get("criticalLevel"),
+    "criticalLevel",
+    errors,
+    "El nivel critico de stock",
+    { min: 0 },
+  );
+
+  if (hasErrors(errors)) {
+    return { errors };
+  }
+
+  const guard = await requireEnfermeraOAdministrador();
+
+  if ("error" in guard) {
+    return { message: guard.error };
+  }
+
+  const vaccine = await prisma.vaccine.findFirst({
+    where: { id: vaccineId },
+    select: { id: true },
+  });
+
+  if (!vaccine) {
+    return { errors: { vaccineId: "La vacuna ya no existe." } };
+  }
+
+  await prisma.vaccine.update({
+    where: { id: vaccineId },
+    data: { criticalLevel },
+  });
+
+  revalidatePath("/enfermera/vacunas");
+
+  return {
+    message:
+      criticalLevel === null
+        ? "Nivel critico desactivado."
+        : `Nivel critico fijado en ${criticalLevel}.`,
+  };
 }

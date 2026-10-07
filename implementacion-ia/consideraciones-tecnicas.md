@@ -153,29 +153,34 @@ las clases de error solo serían accesibles por una ruta interna del SDK: se evi
 
 ---
 
-## 6. Movimiento `AJUSTE`: hueco de modelo
+## 6. Movimiento `AJUSTE` y egresos
 
-**Problema.** El enum `MovementType` incluye `AJUSTE`, pero `stock_movement.quantity`
-tiene el CHECK `> 0` (`stock_movement_quantity_positive`). Un ajuste a la baja
-**no se puede representar**.
+**Problema.** El enum `MovementType` no tiene un tipo de *egreso libre*: la salida
+de dosis ocurre solo por `asignacion_turno` (`-1`, exige turno de vacunación) y
+`devolucion_turno` (`+1`, exige turno de vacunación). `docs/BD.md` no prevé ir a
+la farmacia a devolver stock.
 
-**Decisión.** El formulario de US-3.2 ofrece solo `INGRESO` y `EGRESO`, que es
-literalmente lo que muestra el mockup de la historia. `AJUSTE` sigue en el enum
-—el seed lo usa y aparece en el historial— pero no se puede crear desde la
-aplicación.
+**Decisión (post-reforma).** El formulario de US-3.2 ofrece `INGRESO` y `AJUSTE`.
+El ajuste admite **cantidad con signo** (negativa para descontar, positiva para
+rectificar), exige **motivo justificado** (CHECK `movimiento_stock_ajuste_motivado`)
+y sirve de baja manual de stock hasta que exista el flujo de turnos de vacunación
+(US-3.6). No existe `EGRESO`.
 
-**El bloqueo está en dos capas.** `registerStockMovement` en `src/lib/stock.ts`
-rechaza cualquier tipo que no sea `INGRESO` o `EGRESO`, y la Server Action
-filtra lo mismo antes de llamar. La segunda capa es la que parece redundante:
-TypeScript ya impide pasar un `AJUSTE`. Está porque `src/lib/stock.ts` es una
-función pública que otras pantallas van a llamar —por ejemplo, el consumo de un
-turno en US-1.x—, y un `as MovementType` futuro destrozaría la reconciliación
-sin que el compilador avise. El historial sí muestra los `AJUSTE` del seed: la
-restricción es sobre lo que se puede crear, no sobre lo que se puede ver.
+**Signo por tipo.** `docs/BD.md` define el signo de cada asiento: ingreso y
+devolución positivos, asignación igual a `-1`, ajuste libre (pero distinto de 0).
+El CHECK `movimiento_stock_signo_por_tipo` lo fuerza en la base y
+`registerStockMovement` lo replica antes de escribir.
 
-**Pendiente.** Definir cómo modelar el ajuste a la baja cuando se aborde RF-13
-(alertas de stock crítico). Opciones: una columna `signedQuantity`, o separar
-`AJUSTE` en `AJUSTE_POSITIVO` y `AJUSTE_NEGATIVO`.
+**Validaciones de app además de la base.** `src/lib/stock.ts` rechaza: cantidad 0,
+ingreso negativo, ajuste sin motivo, ingreso sobre un lote vencido (los lotes
+vencidos quedan inhabilitados para asignación *y* para recibir más unidades) y
+alta de un lote cuyo vencimiento ya pasó. `src/lib/stock.ts` es una función
+pública que otras pantallas van a llamar —por ejemplo, el consumo de un turno en
+US-1.x—, así que el chequeo vive en el servicio, no solo en la Server Action.
+
+**Alerta única.** La regla "a lo sumo una alerta activa por vacuna" de `docs/BD.md`
+la sostiene el trigger (`FOR UPDATE` sobre la vacuna) y la blinda un índice único
+parcial `alerta_stock_activa_unica` sobre `(id_vacuna) WHERE estado = 'activa'`.
 
 ---
 
