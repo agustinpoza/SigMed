@@ -1,48 +1,79 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-// import { actualizarHorarioMedico } from '@/lib/agenda'; // Lógica de base de datos futura
+import { actualizarHorarioMedico, AgendaRuleError } from '@/lib/agenda';
+import { getCurrentActor } from '@/lib/dev-actor';
 
-export async function modificarHorarios(formData: FormData) {
-  // 1. Extracción de datos del FormData
-  const doctorId = formData.get('doctorId') as string;
-  const dias = formData.getAll('dias') as string[];
-  const horaInicio = formData.get('horaInicio') as string;
-  const horaFin = formData.get('horaFin') as string;
-  const duracionStr = formData.get('duracion') as string;
+export type HorariosFormState = {
+  status: 'idle' | 'success' | 'error';
+  message: string;
+};
 
-  // 2. Validación manual estricta (Sin Zod)
-  if (!doctorId || typeof doctorId !== 'string') {
-    throw new Error('Debe seleccionar un profesional válido.');
+export async function modificarHorarios(
+  _previousState: HorariosFormState,
+  formData: FormData,
+): Promise<HorariosFormState> {
+  const actor = await getCurrentActor();
+  if (!actor || actor.role !== 'ADMINISTRADOR') {
+    return {
+      status: 'error',
+      message: 'No autorizado. Solo un administrador puede modificar los horarios.',
+    };
   }
-  if (!dias || dias.length === 0) {
-    throw new Error('Debe seleccionar al menos un día de atención.');
+
+  const doctorId = formData.get('doctorId');
+  const dias = formData.getAll('dias');
+  const horaInicio = formData.get('horaInicio');
+  const horaFin = formData.get('horaFin');
+  const duracionStr = formData.get('duracion');
+
+  if (typeof doctorId !== 'string' || !doctorId) {
+    return { status: 'error', message: 'Debe seleccionar un profesional válido.' };
   }
-  if (!horaInicio || !horaFin) {
-    throw new Error('Debe especificar la franja horaria completa.');
+  if (!dias.every((dia): dia is string => typeof dia === 'string')) {
+    return { status: 'error', message: 'La selección de días no es válida.' };
+  }
+  if (dias.length === 0) {
+    return { status: 'error', message: 'Debe seleccionar al menos un día de atención.' };
+  }
+  if (new Set(dias).size !== dias.length) {
+    return { status: 'error', message: 'No se puede repetir un día de atención.' };
+  }
+  if (dias.length > 2) {
+    return { status: 'error', message: 'Cada profesional puede atender como máximo dos días distintos por semana.' };
+  }
+  if (typeof horaInicio !== 'string' || typeof horaFin !== 'string' || !horaInicio || !horaFin) {
+    return { status: 'error', message: 'Debe especificar la franja horaria completa.' };
   }
   if (horaInicio >= horaFin) {
-    throw new Error('La hora de inicio debe ser anterior a la hora de fin.');
+    return { status: 'error', message: 'La hora de inicio debe ser anterior a la hora de fin.' };
   }
-  
-  const duracion = parseInt(duracionStr, 10);
-  if (isNaN(duracion) || duracion <= 0) {
-    throw new Error('Debe seleccionar una duración de turno válida.');
+  if (typeof duracionStr !== 'string') {
+    return { status: 'error', message: 'Debe seleccionar una duración de turno válida.' };
   }
 
-  // 3. Integración con la capa de negocio (Ejemplo de abstracción hacia lib/)
+  const duracion = Number.parseInt(duracionStr, 10);
+  if (!Number.isInteger(duracion) || duracion <= 0) {
+    return { status: 'error', message: 'Debe seleccionar una duración de turno válida.' };
+  }
+
   try {
-    // Aquí se llamaría a la función de src/lib/agenda.ts pasando el actorId y los datos
-    // await actualizarHorarioMedico(actorId, { doctorId, dias, horaInicio, horaFin, duracion });
-    
-    console.log('Horarios guardados exitosamente:', { doctorId, dias, horaInicio, horaFin, duracion });
+    await actualizarHorarioMedico(actor.id, { doctorId, dias, horaInicio, horaFin, duracion });
 
-    // 4. Actualizar la vista (Actualiza los turnos disponibles según el cambio - Tarea 1.5.3)
     revalidatePath('/admin/horarios');
-    revalidatePath('/medico/agenda'); // Impactar agenda pública
-    
-  } catch (error) {
-    console.error('Error al guardar los horarios:', error);
-    throw new Error('Ocurrió un problema al persistir los cambios.');
+    revalidatePath('/medico/agenda');
+
+    return { status: 'success', message: 'Los horarios se guardaron correctamente.' };
+  } catch (error: unknown) {
+    console.error('Error detallado de guardado:', error);
+
+    if (error instanceof AgendaRuleError) {
+      return { status: 'error', message: error.message };
+    }
+
+    return {
+      status: 'error',
+      message: 'No se pudieron guardar los horarios por un error inesperado. Intenta nuevamente.',
+    };
   }
 }

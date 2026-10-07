@@ -2,9 +2,10 @@ import { prisma } from "@/lib/db";
 import { Weekday } from '@/generated/prisma/client';
 
 export class AgendaRuleError extends Error {
-  constructor(public message: string, public field?: string) {
+  constructor(message: string, public field?: string) {
     super(message);
     this.name = 'AgendaRuleError';
+    Object.setPrototypeOf(this, AgendaRuleError.prototype);
   }
 }
 
@@ -16,7 +17,6 @@ interface HorarioData {
   duracion: number;
 }
 
-// Mapeo del formulario (string) al enum de Prisma
 const mapDiaToWeekday = (dia: string): Weekday => {
   const mapeo: Record<string, Weekday> = {
     'Lunes': 'LUNES',
@@ -27,47 +27,61 @@ const mapDiaToWeekday = (dia: string): Weekday => {
     'Sábado': 'SABADO',
     'Domingo': 'DOMINGO'
   };
-  return mapeo[dia] || 'LUNES';
+  const weekday = mapeo[dia];
+  if (!weekday) {
+    throw new AgendaRuleError(`El día seleccionado no es válido: ${dia}.`);
+  }
+  return weekday;
 };
 
-// Convierte "HH:MM" a un objeto Date base para el campo @db.Time(0)
+// SOLUCIÓN 1: Obligar a que la fecha sea estrictamente UTC para que Prisma
+// extraiga la hora exacta sin sumarle el offset de +3 horas de Argentina.
 const parseTime = (timeStr: string): Date => {
-  const [hours, minutes] = timeStr.split(':').map(Number);
-  const date = new Date(1970, 0, 1, hours, minutes, 0, 0);
-  return date;
+  return new Date(`1970-01-01T${timeStr}:00.000Z`);
 };
 
 export async function actualizarHorarioMedico(actorId: string, data: HorarioData) {
-  // 1. Validar que el actor existe (Se asume rol de admin validado previamente o por middleware)
   const actorProfile = await prisma.userProfile.findUnique({
     where: { id: actorId }
   });
 
   if (!actorProfile) {
-    throw new AgendaRuleError('No autorizado. El perfil del administrador no existe.');
+    throw new AgendaRuleError('No autorizado. El perfil del usuario no existe.');
+  }
+  if (actorProfile.role !== 'ADMINISTRADOR') {
+    throw new AgendaRuleError('No autorizado. Solo un administrador puede modificar los horarios.');
+  }
+
+  const doctorProfile = await prisma.doctor.findUnique({
+    where: { id: data.doctorId }
+  });
+
+  if (!doctorProfile) {
+    throw new AgendaRuleError('El profesional seleccionado no existe en la base de datos.');
   }
 
   const diasEnum = data.dias.map(mapDiaToWeekday);
+  if (new Set(diasEnum).size > 2) {
+    throw new AgendaRuleError('Cada profesional puede atender como máximo dos días distintos por semana.');
+  }
+  if (new Set(diasEnum).size !== diasEnum.length) {
+    throw new AgendaRuleError('No se puede repetir un día de atención.');
+  }
+
   const fechaInicio = parseTime(data.horaInicio);
   const fechaFin = parseTime(data.horaFin);
 
   try {
     await prisma.$transaction(async (tx) => {
-      // 2. Actualizar la duración global de la consulta en el perfil del médico
       await tx.doctor.update({
         where: { id: data.doctorId },
         data: { consultDuration: data.duracion }
       });
 
-      // 3. Eliminar los horarios anteriores para los días seleccionados
       await tx.doctorSchedule.deleteMany({
-        where: {
-          doctorId: data.doctorId,
-          weekday: { in: diasEnum }
-        }
+        where: { doctorId: data.doctorId }
       });
 
-      // 4. Insertar la nueva configuración de la agenda
       const nuevosHorarios = diasEnum.map(dia => ({
         doctorId: data.doctorId,
         weekday: dia,
@@ -81,8 +95,12 @@ export async function actualizarHorarioMedico(actorId: string, data: HorarioData
         data: nuevosHorarios
       });
     });
-  } catch (error) {
-    console.error("Error transaccional al actualizar horarios:", error);
-    throw new AgendaRuleError('Error al guardar en la base de datos.');
+  } catch (error: unknown) {
+    console.error("Error transaccional detallado:", error);
+
+    // SOLUCIÓN 2: Burbujear el mensaje real de Prisma hacia la pantalla
+    // en lugar de ocultarlo. Si falla de nuevo, veremos exactamente por qué.
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    throw new AgendaRuleError(`Rechazo de base de datos: ${errorMessage}`);
   }
 }
