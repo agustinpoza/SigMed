@@ -25,7 +25,7 @@ export function HorariosForm({ doctors }: { doctors: DoctorOption[] }) {
   }
 
   return (
-    <form action={formAction} className="space-y-6">
+    <form action={formAction} className="space-y-6 text-slate-900">
       <div className="flex items-center space-x-4 rounded-md bg-slate-50 p-4">
         <label
           htmlFor="doctorId"
@@ -36,10 +36,12 @@ export function HorariosForm({ doctors }: { doctors: DoctorOption[] }) {
         <select
           name="doctorId"
           id="doctorId"
-          className="flex-1 rounded-md border border-slate-300 p-2 focus:ring-blue-500"
+          className="flex-1 rounded-md border border-slate-300 bg-white p-2 text-slate-900 [color-scheme:light] focus:ring-blue-500"
           required
         >
-          <option value="">[Lista de Profesionales - Especialidad]</option>
+          <option value="" className="text-slate-500">
+            [Lista de Profesionales - Especialidad]
+          </option>
           {doctors.map((doctor) => (
             <option key={doctor.id} value={doctor.id}>
               {doctor.label}
@@ -65,9 +67,11 @@ export function HorariosForm({ doctors }: { doctors: DoctorOption[] }) {
                   checked={checked}
                   disabled={!checked && selectedDays.length >= 2}
                   onChange={(event) => toggleDay(day, event.target.checked)}
-                  className="rounded text-blue-600 focus:ring-blue-500"
+                  className="peer rounded text-blue-600 focus:ring-blue-500"
                 />
-                <span className="text-sm">{day}</span>
+                <span className="text-sm text-slate-700 peer-disabled:text-slate-500">
+                  {day}
+                </span>
               </label>
             );
           })}
@@ -78,39 +82,48 @@ export function HorariosForm({ doctors }: { doctors: DoctorOption[] }) {
 
         <div className="flex items-center space-x-6">
           <div className="flex items-center space-x-2">
-            <label htmlFor="horaInicio" className="text-sm font-semibold">
+            <label
+              htmlFor="horaInicio"
+              className="text-sm font-semibold text-slate-700"
+            >
               Hora Inicio
             </label>
             <input
               type="time"
               name="horaInicio"
               id="horaInicio"
-              className="rounded-md border p-2"
+              className="rounded-md border border-slate-300 bg-white p-2 text-slate-900 [color-scheme:light]"
               required
             />
           </div>
 
           <div className="flex items-center space-x-2">
-            <label htmlFor="horaFin" className="text-sm font-semibold">
+            <label
+              htmlFor="horaFin"
+              className="text-sm font-semibold text-slate-700"
+            >
               Hora Fin
             </label>
             <input
               type="time"
               name="horaFin"
               id="horaFin"
-              className="rounded-md border p-2"
+              className="rounded-md border border-slate-300 bg-white p-2 text-slate-900 [color-scheme:light]"
               required
             />
           </div>
 
           <div className="flex items-center space-x-2">
-            <label htmlFor="duracion" className="text-sm font-semibold">
+            <label
+              htmlFor="duracion"
+              className="text-sm font-semibold text-slate-700"
+            >
               Duración Turno
             </label>
             <select
               name="duracion"
               id="duracion"
-              className="rounded-md border p-2"
+              className="rounded-md border border-slate-300 bg-white p-2 text-slate-900 [color-scheme:light]"
               required
             >
               <option value="">XX min</option>
