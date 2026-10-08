@@ -149,6 +149,10 @@ formulario completo antes de pedir el actor, para que una enfermera sin actor
 seleccionado vea primero los errores de sus campos en lugar de un mensaje
 genérico.
 
+> **Nota (transitoria).** `requireEnfermeraOAdministrador()` no exige sesión:
+> sin actor usa el primer enfermera/administrador de la base como responsable.
+> Al llegar Clerk, recuperar el bloqueo.
+
 **Conflicto de nombres.** El `findUnique` previo sobre `vaccine.name` deja pasar
 dos envíos concurrentes, así que el `P2002` también se captura y se traduce a un
 error de campo. Sin eso, el segundo envío sería un 500.
@@ -181,7 +185,8 @@ src/app/(portal)/enfermera/inventario/page.tsx   alta + stock por lote + histori
 **Las reglas de stock se separaron de Next.** `src/lib/stock.ts` no importa
 `next/headers`: recibe el `actorId` como parámetro y lanza `StockRuleError` con
 errores de campo. Las Server Actions solo parsean el `FormData`, resuelven el
-actor (con guard de rol enfermera/administrador) y traducen el error. Eso
+actor (con guard de rol enfermera/administrador; sin sesión usa un actor por
+defecto) y traducen el error. Eso
 permite ejercitar la lógica real contra la base desde un script, en vez de copiar
 la transacción en el test y probar una copia.
 

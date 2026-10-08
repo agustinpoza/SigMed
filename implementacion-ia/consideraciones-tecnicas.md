@@ -60,9 +60,9 @@ verificar nada. **No desplegar a producción en este estado.**
 
 **Mitigación prevista.** Un interruptor `SIGMED_DEV_ACTOR` habilita el actor de
 desarrollo solo si `NODE_ENV !== "production"`. Las Server Actions que necesitan
-`actor_id` rechazan la operación cuando el actor es `null`. Eso limita el daño de
-las escrituras, pero **las páginas seguirían siendo accesibles**: para un
-despliegue real hace falta además un gate de acceso.
+`actor_id` hoy no bloquean sin sesión: resuelven un actor por defecto (ver §4).
+Eso limita el engorro de la demo, pero **las páginas seguirían siendo accesibles**:
+para un despliegue real hace falta además un gate de acceso.
 
 ---
 
@@ -113,8 +113,11 @@ en el mismo lugar donde aparecería el panel.
 **Interruptor.** `isDevActorEnabled()` devuelve `true` si
 `SIGMED_DEV_ACTOR === "1"` o si `NODE_ENV !== "production"`. En producción sin el
 flag, `getCurrentActor()` devuelve `null` **sin tocar la base** y el control no se
-renderiza: queda el `<span>` estático. Las Server Actions que necesiten `actor_id`
-deben rechazar la operación cuando reciben `null`.
+renderiza: queda el `<span>` estático. Las Server Actions resuelven el actor con
+`requireEnfermeraOAdministrador()`; hoy, si no hay sesión, esa función **no
+bloquea**: usa como actor por defecto el primer enfermera/administrador de la
+base para no cortar la demo. Es transitorio: al integrar Clerk la función debe
+volver a exigir sesión.
 
 **Elegir un usuario no da permisos.** El panel deja elegir cualquiera de los
 perfiles activos, así que un paciente puede registrar movimientos de stock igual
