@@ -1,6 +1,6 @@
 // app/ui/medico/filtros.tsx
 'use client';
-import { ESTADOS, ETIQUETAS_ESTADO } from "@/lib/turnos";
+import { ESTADOS, ETIQUETAS_ESTADO } from "@/lib/turnos-estados";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { HiOutlineChevronLeft, HiOutlineChevronRight, HiOutlineSearch } from "react-icons/hi";
 

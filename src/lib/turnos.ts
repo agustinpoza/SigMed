@@ -1,15 +1,8 @@
 // app/lib/turnos.ts
 import { prisma } from "@/lib/db";
-import type { AppointmentStatus, Prisma } from "@/generated/prisma/client";
+import type { AppointmentState, Prisma } from "@/generated/prisma/client";
 
-export const ESTADOS: AppointmentStatus[] = [ "Reservado", "Atendido", "Ausente", "Cancelado"];
-
-export const ETIQUETAS_ESTADO: Record<AppointmentStatus, string> = {
-    RESERVADO: "Reservado",
-    ATENDIDO: "Atendido",
-    AUSENTE: "Ausente",
-    CANCELADO: "Cancelado",
-};
+export { ESTADOS, ETIQUETAS_ESTADO } from "@/lib/turnos-estados";
 
 export async function obtenerTurnos(opts: {
   doctorId: string;
@@ -19,13 +12,13 @@ export async function obtenerTurnos(opts: {
 }) {
   const where: Prisma.AppointmentWhereInput = {
     doctorId: opts.doctorId,
-    startAt: {
+    startsAt: {
       gte: new Date(`${opts.fecha}T00:00:00-03:00`),
       lte: new Date(`${opts.fecha}T23:59:59.999-03:00`),
     },
   };
 
-  if (opts.estado) where.status = opts.estado;
+  if (opts.estado) where.status = opts.estado as AppointmentState;
 
   const q = opts.busqueda?.trim();
   if (q) {
@@ -42,10 +35,10 @@ export async function obtenerTurnos(opts: {
 
   return prisma.appointment.findMany({
     where,
-    orderBy: { startAt: "asc" },
+    orderBy: { startsAt: "asc" },
     select: {
       id: true,
-      startAt: true,
+      startsAt: true,
       status: true,
       patient: {
         select: { profile: { select: { firstName: true, lastName: true, dni: true } } },
