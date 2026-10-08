@@ -238,6 +238,7 @@ model Appointment {
 model Vaccine {
   id            String   @id @default(uuid()) @map("id_vacuna") @db.Uuid
   name          String   @unique @map("nombre")
+  laboratory    String   @default("Sin especificar") @map("laboratorio")
   criticalLevel Int?     @map("nivel_critico")
   createdById   String   @map("id_usuario_alta") @db.Uuid
   createdAt     DateTime @default(now()) @map("fecha_alta") @db.Timestamptz(3)

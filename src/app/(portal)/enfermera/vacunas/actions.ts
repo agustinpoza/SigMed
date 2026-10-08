@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { prisma } from "@/lib/db";
+import { prisma, isUniqueViolation } from "@/lib/db";
 import {
   type FieldErrors,
   hasErrors,
@@ -32,6 +32,12 @@ export async function createVaccine(
   const errors: FieldErrors = {};
 
   const name = requiredText(formData.get("name"), "name", errors, "El nombre");
+  const laboratory = requiredText(
+    formData.get("laboratory"),
+    "laboratory",
+    errors,
+    "El laboratorio u origen",
+  );
   const lotNumber = requiredText(
     formData.get("lotNumber"),
     "lotNumber",
@@ -61,6 +67,7 @@ export async function createVaccine(
 
   const values = {
     name,
+    laboratory: rawValue(formData, "laboratory"),
     lotNumber,
     expiresAt: rawValue(formData, "expiresAt"),
     quantity: rawValue(formData, "quantity"),
@@ -80,6 +87,7 @@ export async function createVaccine(
   try {
     await createVaccineWithInitialLot({
       name,
+      laboratory,
       criticalLevel,
       lotNumber,
       expiresAt,
@@ -99,7 +107,7 @@ export async function createVaccine(
   return { message: `${name} se cargo con ${quantity} unidades.` };
 }
 
-export async function updateVaccineCriticalLevel(
+export async function updateVaccine(
   _previous: VaccineFormState,
   formData: FormData,
 ): Promise<VaccineFormState> {
@@ -116,6 +124,13 @@ export async function updateVaccineCriticalLevel(
     errors.vaccineId = "La vacuna seleccionada no es valida.";
   }
 
+  const name = requiredText(formData.get("name"), "name", errors, "El nombre");
+  const laboratory = requiredText(
+    formData.get("laboratory"),
+    "laboratory",
+    errors,
+    "El laboratorio u origen",
+  );
   const criticalLevel = optionalInt(
     formData.get("criticalLevel"),
     "criticalLevel",
@@ -143,17 +158,27 @@ export async function updateVaccineCriticalLevel(
     return { errors: { vaccineId: "La vacuna ya no existe." } };
   }
 
-  await prisma.vaccine.update({
-    where: { id: vaccineId },
-    data: { criticalLevel },
-  });
+  try {
+    await prisma.vaccine.update({
+      where: { id: vaccineId },
+      data: { name, laboratory, criticalLevel },
+    });
+  } catch (error) {
+    if (isUniqueViolation(error)) {
+      return {
+        errors: { name: "Ya existe una vacuna con ese nombre en el catalogo." },
+      };
+    }
+
+    throw error;
+  }
 
   revalidatePath("/enfermera/vacunas");
 
   return {
     message:
       criticalLevel === null
-        ? "Nivel critico desactivado."
-        : `Nivel critico fijado en ${criticalLevel}.`,
+        ? "Vacuna actualizada."
+        : `Vacuna actualizada con nivel critico ${criticalLevel}.`,
   };
 }

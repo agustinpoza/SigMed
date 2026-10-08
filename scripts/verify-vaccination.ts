@@ -132,6 +132,7 @@ console.log(`Fecha de prueba: ${fecha} (${slots.length} horarios libres)\n`);
 const nameA = `PRUEBA US-3.6 A ${stamp}`;
 await createVaccineWithInitialLot({
   name: nameA,
+  laboratory: "Laboratorio de prueba",
   criticalLevel: null,
   lotNumber: `LEJOS-${stamp}`,
   expiresAt: dateValue(addDays(fecha, 400)),
@@ -165,6 +166,7 @@ const antes = lotA("ANTES");
 const nameB = `PRUEBA US-3.6 B ${stamp}`;
 await createVaccineWithInitialLot({
   name: nameB,
+  laboratory: "Laboratorio de prueba",
   criticalLevel: null,
   lotNumber: `UNICO-${stamp}`,
   expiresAt: dateValue(addDays(fecha, 400)),

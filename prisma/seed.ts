@@ -191,14 +191,15 @@ async function main() {
 
   console.log("Creando vacunas, lotes e ingresos...");
   const vacunas = [
-    { nombre: "Sarampión-Rubéola-Parotiditis", nivel_critico: 20 },
-    { nombre: "Hepatitis B", nivel_critico: 30 },
-    { nombre: "Influenza", nivel_critico: 15 },
+    { nombre: "Sarampión-Rubéola-Parotiditis", nivel_critico: 20, laboratory: "Instituto Biológico Argentino" },
+    { nombre: "Hepatitis B", nivel_critico: 30, laboratory: "Sinopharm" },
+    { nombre: "Influenza", nivel_critico: 15, laboratory: "Sanofi Pasteur" },
   ].map((v) =>
     prisma.vaccine.create({
       data: {
         id: crypto.randomUUID(),
         name: v.nombre,
+        laboratory: v.laboratory,
         criticalLevel: v.nivel_critico,
         createdById: enfermera,
       },

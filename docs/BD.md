@@ -47,13 +47,18 @@ Se elimina por redundancia: la vacuna se obtiene a través de `lote.id_vacuna`.
 El modelo anterior usaba una sola tabla de citas para turnos médicos y para aplicaciones de vacunas. Ahora quedan separadas y `turno_vacunacion` tiene su propia máquina de estados.
 
 ### D-08 · Campos eliminados por no estar especificados
-`vacuna.laboratory`, `horario_atencion.valid_from`, `horario_atencion.valid_to`, `horario_atencion.slot_duration_min`, `appointment.type`, `appointment.notes`, `appointment.is_vaccination`, `appointment.schedule_id`, `usuario.is_active`, `usuario.birth_date`, `usuario.phone`. `duracion_consulta` pasa a vivir en `medico`.
+`horario_atencion.valid_from`, `horario_atencion.valid_to`, `horario_atencion.slot_duration_min`, `appointment.type`, `appointment.notes`, `appointment.is_vaccination`, `appointment.schedule_id`, `usuario.is_active`, `usuario.birth_date`, `usuario.phone`. `duracion_consulta` pasa a vivir en `medico`.
+
+> **Nota:** `vacuna.laboratory` fue eliminado en este punto y luego **reintroducido** como `laboratorio` (ver D-11) porque el wireframe de US-3.1 lo exige en el formulario y en el listado.
 
 ### D-09 · `dni` y `clerk_user_id` son obligatorios
 Los usuarios de desarrollo usan valores sintéticos en `clerk_user_id` (`seed_<slug>`) porque no tienen cuenta real en el proveedor de autenticación.
 
 ### D-10 · Reglas que la base no puede expresar
 `horario_atencion` sin solapamiento, `turno` sin retroactividad, `turno.fecha_hora_fin` coherente con `medico.duracion_consulta`, el motivo obligatorio de cancelación según el rol del cancelador y el traspaso automático de `alerta_stock` se implementan con triggers de PL/pgSQL. La lista completa está en `prisma/migrations/*_reform_bd/migration.sql`.
+
+### D-11 · `laboratorio` en `vacuna` reintroducido
+`vacuna.laboratory` había sido eliminado en D-08 por no estar especificado, pero el wireframe de US-3.1 lo muestra en el formulario ("Laboratorio / Origen") y en el catálogo. Se reintroduce como `laboratorio`, **texto libre con sugerencias** (`datalist`, sin tabla maestra). Para no perder datos ni bloquear la migración las filas preexistentes reciben el valor por defecto `'Sin especificar'`; el formulario lo exige al dar de alta.
 
 ### Nota sobre la matriz de transición
 La sección final de este documento está incompleta: cierra el diagrama de `turno.estado` sin terminarlo y no cubre los demás ciclos. Para los estados de `turno_vacunacion` la fuente de verdad es `docs/Turno-vacunacion.txt`.
@@ -209,6 +214,7 @@ La sección final de este documento está incompleta: cierra el diagrama de `tur
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `id_vacuna` | Entero | PK | No nulo | | Identificador de la vacuna |
 | `nombre` | Texto | | No nulo | Único | Denominación comercial o genérica |
+| `laboratorio` | Texto | | No nulo | Texto libre con sugerencias (ver D-11) | Laboratorio u origen del biológico |
 | `nivel_critico` | Entero | | Nulo | $\ge 0$ | Umbral mínimo para disparar `alerta_stock` |
 | `id_usuario_alta`| Entero | FK → usuario | No nulo | Rol `enfermera` o `administrador` | Usuario que registró la vacuna |
 | `fecha_alta` | FechaHora | | No nulo | | Timestamp de alta en catálogo |

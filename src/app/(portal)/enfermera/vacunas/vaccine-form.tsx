@@ -3,6 +3,7 @@
 import { useActionState, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 import { createVaccine, type VaccineFormState } from "./actions";
+import { LABORATORIOS_SUGERIDOS } from "@/lib/laboratorios";
 
 const initialState: VaccineFormState = {};
 
@@ -15,8 +16,16 @@ function SaveButton() {
       disabled={pending}
       className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:bg-zinc-400"
     >
-      {pending ? "Guardando..." : "Guardar en catalogo"}
+      {pending ? "Guardando..." : "Guardar en Catálogo"}
     </button>
+  );
+}
+
+function SectionTitle({ children }: { children: ReactNode }) {
+  return (
+    <h3 className="text-sm font-semibold uppercase tracking-wide text-zinc-900">
+      {children}
+    </h3>
   );
 }
 
@@ -72,79 +81,111 @@ export function VaccineForm() {
         </p>
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field id="name" label="Nombre de la vacuna" error={errors.name}>
-          <input
-            id="name"
-            name="name"
-            defaultValue={state.values?.name}
-            aria-invalid={Boolean(errors.name)}
-            aria-describedby={errors.name ? "name-error" : undefined}
-            className={controlClass}
-            placeholder="Triple viral"
-          />
-        </Field>
+      <div>
+        <SectionTitle>Datos del Biológico a Incorporar</SectionTitle>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <Field id="name" label="Nombre de la Vacuna" error={errors.name}>
+            <input
+              id="name"
+              name="name"
+              defaultValue={state.values?.name}
+              aria-invalid={Boolean(errors.name)}
+              aria-describedby={errors.name ? "name-error" : undefined}
+              className={controlClass}
+              placeholder="Triple viral"
+            />
+          </Field>
 
-        <Field id="lotNumber" label="Lote inicial" error={errors.lotNumber}>
-          <input
-            id="lotNumber"
-            name="lotNumber"
-            defaultValue={state.values?.lotNumber}
-            aria-invalid={Boolean(errors.lotNumber)}
-            aria-describedby={errors.lotNumber ? "lotNumber-error" : undefined}
-            className={controlClass}
-            placeholder="L-2026-001"
-          />
-        </Field>
+          <Field
+            id="laboratory"
+            label="Laboratorio / Origen"
+            error={errors.laboratory}
+          >
+            <input
+              id="laboratory"
+              name="laboratory"
+              list="laboratorios-sugeridos"
+              defaultValue={state.values?.laboratory}
+              aria-invalid={Boolean(errors.laboratory)}
+              aria-describedby={
+                errors.laboratory ? "laboratory-error" : undefined
+              }
+              className={controlClass}
+              placeholder="Seleccionar opción o escribir..."
+            />
+            <datalist id="laboratorios-sugeridos">
+              {LABORATORIOS_SUGERIDOS.map((laboratorio) => (
+                <option key={laboratorio} value={laboratorio} />
+              ))}
+            </datalist>
+          </Field>
+        </div>
+      </div>
 
-        <Field id="expiresAt" label="Fecha de vencimiento" error={errors.expiresAt}>
-          <input
-            id="expiresAt"
-            name="expiresAt"
-            type="date"
-            defaultValue={state.values?.expiresAt}
-            aria-invalid={Boolean(errors.expiresAt)}
-            aria-describedby={errors.expiresAt ? "expiresAt-error" : undefined}
-            className={controlClass}
-          />
-        </Field>
+      <div>
+        <SectionTitle>Configuración de Inventario Inicial</SectionTitle>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <Field id="lotNumber" label="Lote Inicial" error={errors.lotNumber}>
+            <input
+              id="lotNumber"
+              name="lotNumber"
+              defaultValue={state.values?.lotNumber}
+              aria-invalid={Boolean(errors.lotNumber)}
+              aria-describedby={errors.lotNumber ? "lotNumber-error" : undefined}
+              className={controlClass}
+              placeholder="L-2026-001"
+            />
+          </Field>
 
-        <Field id="quantity" label="Cantidad ingresada" error={errors.quantity}>
-          <input
-            id="quantity"
-            name="quantity"
-            type="number"
-            min={1}
-            step={1}
-            defaultValue={state.values?.quantity}
-            aria-invalid={Boolean(errors.quantity)}
-            aria-describedby={errors.quantity ? "quantity-error" : undefined}
-            className={controlClass}
-            placeholder="120"
-          />
-        </Field>
+          <Field id="expiresAt" label="Fecha de Vencimiento" error={errors.expiresAt}>
+            <input
+              id="expiresAt"
+              name="expiresAt"
+              type="date"
+              defaultValue={state.values?.expiresAt}
+              aria-invalid={Boolean(errors.expiresAt)}
+              aria-describedby={errors.expiresAt ? "expiresAt-error" : undefined}
+              className={controlClass}
+            />
+          </Field>
 
-        <Field
-          id="criticalLevel"
-          label="Nivel critico de stock"
-          hint="Opcional. Si se completa, el sistema avisa cuando el stock total cae por debajo de ese numero."
-          error={errors.criticalLevel}
-        >
-          <input
+          <Field id="quantity" label="Cantidad Ingresada" error={errors.quantity}>
+            <input
+              id="quantity"
+              name="quantity"
+              type="number"
+              min={1}
+              step={1}
+              defaultValue={state.values?.quantity}
+              aria-invalid={Boolean(errors.quantity)}
+              aria-describedby={errors.quantity ? "quantity-error" : undefined}
+              className={controlClass}
+              placeholder="120"
+            />
+          </Field>
+
+          <Field
             id="criticalLevel"
-            name="criticalLevel"
-            type="number"
-            min={0}
-            step={1}
-            defaultValue={state.values?.criticalLevel}
-            aria-invalid={Boolean(errors.criticalLevel)}
-            aria-describedby={
-              errors.criticalLevel ? "criticalLevel-error" : undefined
-            }
-            className={controlClass}
-            placeholder="20"
-          />
-        </Field>
+            label="Nivel Stock Crítico"
+            hint="Opcional. El sistema avisa cuando el stock total cae por debajo de este número."
+            error={errors.criticalLevel}
+          >
+            <input
+              id="criticalLevel"
+              name="criticalLevel"
+              type="number"
+              min={0}
+              step={1}
+              defaultValue={state.values?.criticalLevel}
+              aria-invalid={Boolean(errors.criticalLevel)}
+              aria-describedby={
+                errors.criticalLevel ? "criticalLevel-error" : undefined
+              }
+              className={controlClass}
+              placeholder="20"
+            />
+          </Field>
+        </div>
       </div>
 
       <div className="flex justify-end gap-3 border-t border-zinc-200 pt-4">
@@ -152,7 +193,7 @@ export function VaccineForm() {
           type="reset"
           className="rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
         >
-          Limpiar formulario
+          Cancelar
         </button>
         <SaveButton />
       </div>

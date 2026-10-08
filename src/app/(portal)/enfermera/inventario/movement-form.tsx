@@ -20,7 +20,7 @@ function SubmitButton() {
       disabled={pending}
       className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:bg-zinc-400"
     >
-      {pending ? "Registrando..." : "Registrar movimiento"}
+      {pending ? "Registrando..." : "Registrar Movimiento"}
     </button>
   );
 }
@@ -82,7 +82,7 @@ export function MovementForm({ vaccines }: { vaccines: VaccineOption[] }) {
       ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field id="vaccineId" label="Vacuna del catalogo" error={errors.vaccineId}>
+        <Field id="vaccineId" label="Seleccionar Vacuna del Catálogo" error={errors.vaccineId}>
           <select
             id="vaccineId"
             name="vaccineId"
@@ -199,7 +199,7 @@ export function MovementForm({ vaccines }: { vaccines: VaccineOption[] }) {
           type="reset"
           className="rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
         >
-          Limpiar formulario
+          Cancelar
         </button>
         <SubmitButton />
       </div>

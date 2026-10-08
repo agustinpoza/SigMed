@@ -133,9 +133,11 @@ aparece en el HTML. Queda pendiente de un clic en el navegador.
 
 ```
 src/lib/forms.ts                              validadores a mano, sin Zod
-src/app/(portal)/enfermera/vacunas/actions.ts    Server Action createVaccine
+src/lib/laboratorios.ts                        sugerencias para "Laboratorio / Origen"
+src/app/(portal)/enfermera/vacunas/actions.ts    Server Actions createVaccine y updateVaccine
 src/app/(portal)/enfermera/vacunas/vaccine-form.tsx   formulario con useActionState
-src/app/(portal)/enfermera/vacunas/page.tsx    alta + catálogo
+src/app/(portal)/enfermera/vacunas/edit-vaccine-row.tsx   Editar inline (nombre / laboratorio / umbral)
+src/app/(portal)/enfermera/vacunas/page.tsx    alta + catálogo (Vacuna | Laboratorio | Umbral | Acciones)
 ```
 
 Una sola acción, dentro de `$transaction`: crea `Vaccine` + `VaccineLot` inicial +
@@ -153,7 +155,9 @@ error de campo. Sin eso, el segundo envío sería un 500.
 
 **El laboratorio es texto libre con sugerencias.** El mockup dice "Seleccionar
 Opción" pero no hay tabla maestra de laboratorios. Se usa un `datalist` con los
-valores ya presentes, sin agregar tablas.
+valores ya presentes, sin agregar tablas. La columna se **reintrodujo en la BD**
+(`vacuna.laboratorio`, migración `20261008042027_agrega_laboratorio_vacuna`) luego
+de haber sido eliminada en D-08; ver [BD.md D-11](../docs/BD.md).
 
 **La baja de una vacuna no existe, y no por falta de endpoint.** El trigger
 `stock_movement_no_delete` más el `onDelete: Restrict` de `vaccine_lot` impiden

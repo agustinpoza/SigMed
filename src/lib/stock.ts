@@ -10,6 +10,7 @@ export class StockRuleError extends Error {
 
 export type NewVaccineInput = {
   name: string;
+  laboratory: string;
   criticalLevel: number | null;
   lotNumber: string;
   expiresAt: Date;
@@ -39,6 +40,12 @@ export function isExpired(expiresAt: Date): boolean {
  * ingreso, que ademas dispara o resuelve la alerta de stock critico.
  */
 export async function createVaccineWithInitialLot(input: NewVaccineInput) {
+  if (!input.laboratory.trim()) {
+    throw new StockRuleError({
+      laboratory: "El laboratorio u origen es obligatorio.",
+    });
+  }
+
   if (isExpired(input.expiresAt)) {
     throw new StockRuleError({
       expiresAt: "La fecha de vencimiento debe ser futura.",
@@ -50,6 +57,7 @@ export async function createVaccineWithInitialLot(input: NewVaccineInput) {
       const vaccine = await tx.vaccine.create({
         data: {
           name: input.name,
+          laboratory: input.laboratory,
           criticalLevel: input.criticalLevel,
           createdById: input.actorId,
         },

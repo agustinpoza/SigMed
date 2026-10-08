@@ -244,6 +244,7 @@ await expectAppError("ingreso a un lote ya vencido", () =>
 await expectAppError("alta de un lote con vencimiento pasado", () =>
   createVaccineWithInitialLot({
     name: `PRUEBA-VENCIDA-${Date.now()}`,
+    laboratory: "Laboratorio de prueba",
     criticalLevel: null,
     lotNumber: "L-2020",
     expiresAt: new Date("2020-01-01T00:00:00.000Z"),
