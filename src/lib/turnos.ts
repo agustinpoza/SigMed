@@ -1,8 +1,11 @@
 // app/lib/turnos.ts
 import { prisma } from "@/lib/db";
 import type { AppointmentState, Prisma } from "@/generated/prisma/client";
+import { ESTADOS } from "@/lib/turnos-estados";
 
-export { ESTADOS, ETIQUETAS_ESTADO } from "@/lib/turnos-estados";
+function esAppointmentState(value: string): value is AppointmentState {
+  return ESTADOS.some((estado) => estado === value);
+}
 
 export async function obtenerTurnos(opts: {
   doctorId: string;
@@ -18,7 +21,12 @@ export async function obtenerTurnos(opts: {
     },
   };
 
-  if (opts.estado) where.status = opts.estado as AppointmentState;
+  if (opts.estado) {
+    if (!esAppointmentState(opts.estado)) {
+      throw new Error(`Estado de turno invalido: ${opts.estado}`);
+    }
+    where.status = opts.estado;
+  };
 
   const q = opts.busqueda?.trim();
   if (q) {
@@ -27,7 +35,6 @@ export async function obtenerTurnos(opts: {
         OR: [
           { lastName: { contains: q, mode: "insensitive" } },
           { firstName: { contains: q, mode: "insensitive" } },
-          { dni: { contains: q } },
         ],
       },
     };

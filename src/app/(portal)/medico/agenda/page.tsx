@@ -5,7 +5,7 @@ import { Suspense } from "react";
 
 type SearchParams = {
     fecha?: string;
-    filtro?: string;
+    estado?: string;
     busqueda?: string;
 };
 
@@ -18,7 +18,7 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
 
   const params = {
     fecha: resolvedParams.fecha || hoy,
-    filtro: resolvedParams.filtro || '',
+    estado: resolvedParams.estado || '',
     busqueda: resolvedParams.busqueda || '',
   };
 

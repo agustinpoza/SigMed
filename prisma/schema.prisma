@@ -60,6 +60,7 @@ enum BlockReason {
 }
 
 enum AppointmentState {
+  CONFIRMADO @map("confirmado")
   RESERVADO @map("reservado")
   CANCELADO @map("cancelado")
   ATENDIDO  @map("atendido")
