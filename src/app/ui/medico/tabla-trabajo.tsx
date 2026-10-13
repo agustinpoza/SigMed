@@ -34,10 +34,10 @@ export default async function TablaTrabajo({ props }: TablaTrabajoProps) {
     });
 
     return (
-        <div className="overflow-hidden rounded-xl border border-gray-400 m-2">
+        <div className="flex-1 min-h-0 overflow-y-auto rounded-xl border border-gray-400 m-2">
             <table className="w-full p-2">
-                <thead>
-                    <tr className="text-center text-lg text-uppercase text-slate-500 bg-gray-200">
+                <thead className="sticky top-0">
+                    <tr className="text-center text-lg text-slate-500 bg-gray-200">
                         <th>Hora</th>
                         <th>Paciente</th>
                         <th>DNI</th>
@@ -67,9 +67,17 @@ export default async function TablaTrabajo({ props }: TablaTrabajoProps) {
                                         {(t.status) ? ETIQUETAS_ESTADO[t.status] : "Estado no disponible"}
                                     </td>
                                     <td>
-                                        <div className="text-white bg-slate-600 rounded-sm m-1 p-1">
-                                            Acciones
-                                        </div>
+                                        {(t.status === ETIQUETAS_ESTADO.CONFIRMADO) ? (
+                                                <div className="flex flex-row gap-1">
+                                                    <button className="text-white bg-slate-600 rounded-sm m-1 p-1">
+                                                        Atendido
+                                                    </button>
+                                                    <button className="text-white bg-slate-600 rounded-sm m-1 p-1">
+                                                        Ausente
+                                                    </button>
+                                                </div>
+                                        ) : ("")
+                                        }
                                     </td>
                                 </tr>
                             );

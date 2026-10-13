@@ -23,7 +23,7 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
   };
 
   return (
-  <section className="flex flex-col gap-2 p-2 bg-white border border-gray-500 rounded-md shadow-md">
+  <section className="flex flex-col gap-2 p-2 flex-1 min-h-0 bg-white border border-gray-500 rounded-md shadow-md">
     <span className="text-lg font-bold text-black m-2 p-2">
       Tabla de Trabajo Diario
     </span>
