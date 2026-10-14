@@ -8,6 +8,8 @@ Esta clasificación precisa la [revisión de dudas](REVISION.md): una duda relac
 
 ## Avance posterior a esta clasificación
 
+SIG-BUG-01.1 tiene diagnóstico completado y SIG-BUG-01.2 está implementado y verificado visualmente con fixtures aislados en los anchos acordados. [Ver causa, capturas y límites](SIG-BUG-01-IMPLEMENTACION.md). [DEC-001](../../decisiones.md#dec-001--alcance-de-la-corrección-visual-sig-bug-01) registra el criterio aplicado; repetir la regresión si US-7.4/2.8 modifica el shell o el contenido médico.
+
 SIG-MEJ-03.1/03.2 ya están implementados con el alcance delimitado; [ver evidencia](SIG-MEJ-03-IMPLEMENTACION.md). SIG-MEJ-03.3 continúa como trabajo parcial y cierre de integración pendiente.
 
 SIG-MEJ-04.1/04.2/04.3 ya están implementados con el alcance aquí delimitado. [Ver evidencia y verificación](SIG-MEJ-04-IMPLEMENTACION.md). La clasificación siguiente conserva el criterio de inicio; no implica que esas tres tareas todavía carezcan de implementación.

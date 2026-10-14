@@ -2,7 +2,7 @@
 
 Fecha: 13/10/2026. Rama: `sprint-2/bugs-y-mejoras`.
 
-Se revisaron los **16 tickets** contra los requerimientos, historias, diseño documental y código existente. **Las dudas siguen abiertas:** no se seleccionó una regla de negocio para completarlas, no se cambió la aplicación y no se presume aprobación del cliente. Revisión documental y estática, sin reproducción funcional ni acceso a un tablero externo.
+Se revisaron los **16 tickets** contra los requerimientos, historias, diseño documental y código existente. La revisión inicial del 13/10/2026 fue documental y estática, sin seleccionar reglas de negocio ni presumir aprobación del cliente. Las implementaciones posteriores se registran en los tickets. Actualización del 14/10/2026: DU-01 tiene criterio y diagnóstico documentados; DU-12 cuenta con registro de decisiones, pero su jerarquía general sigue pendiente.
 
 ## Fuentes y criterio de lectura
 
@@ -54,7 +54,7 @@ Cada ticket contiene fuentes concretas, explícitos, supuestos del plan, datos f
 
 ## Registro de dudas
 
-Todas están **abiertas, sin respuesta registrada**. El registro conserva preguntas; no determina respuestas. Solo afecta a la parte de un ticket que dependa de la definición: diagnóstico, revisión y verificaciones de reglas explícitas pueden avanzar.
+Las entradas conservan las preguntas de la revisión original y registran su resolución cuando existe. DU-01 está definida para SIG-BUG-01 mediante DEC-001 y diagnóstico local; DU-12 solo avanza en el registro de decisiones. Las demás continúan pendientes de actualización formal. Una duda solo afecta a la parte del ticket que depende de su definición.
 
 ## DU-01
 
@@ -66,9 +66,9 @@ Todas están **abiertas, sin respuesta registrada**. El registro conserva pregun
 
 **Duda:** ¿En qué navegador, tamaño, tema y versión ocurrió? ¿Cuál es la referencia visual del área médica? No se requiere decidir un tema nuevo para diagnosticar la franja.
 
-**Tratamiento:** SIG-BUG-01.1 registra reproducción/causa. SIG-BUG-01.2 no asume altura fija, eliminación de tema ni maquetación nueva. Los tamaños del plan son muestras técnicas.
+**Tratamiento:** SIG-BUG-01.1 registra reproducción/causa. SIG-BUG-01.2 usa altura mínima de ventana y adaptación de filtros, sin eliminar la regla global de tema ni modificar funciones médicas.
 
-**Resolución:** pendiente. Al resolver, registrar decisión, fuente/evidencia, responsable y fecha; hasta entonces no adoptar una opción como regla de negocio.
+**Resolución para estos tickets (14/10/2026):** criterio DU-01 propuesto por el usuario y aplicado por su solicitud de implementar/resolver SIG-BUG-01.1/01.2. Chrome, anchos 360/768/1280 px, sin franja negra ni contenido inaccesible por recortes; no agregar modo oscuro. [DEC-001](../../decisiones.md#dec-001--alcance-de-la-corrección-visual-sig-bug-01) registra fuente y responsables. Se documenta la causa local: portal de altura porcentual sobre padre sin altura definida, exposición del fondo del body y desbordamiento de filtros. [Ver evidencia](SIG-BUG-01-IMPLEMENTACION.md). Las condiciones exactas del despliegue original permanecen desconocidas; no impiden verificar esta corrección en el alcance acordado.
 
 ## DU-02
 
@@ -222,7 +222,7 @@ Todas están **abiertas, sin respuesta registrada**. El registro conserva pregun
 
 **Tratamiento:** Cada decisión debe registrar fuente, responsable y fecha. No elegir una regla solo porque está implementada o en un archivo más reciente. Las estimaciones, dependencias entre tareas y herramientas son propuestas de planificación y se reestiman al aclarar dudas.
 
-**Resolución:** pendiente. Al resolver, registrar decisión, fuente/evidencia, responsable y fecha; hasta entonces no adoptar una opción como regla de negocio.
+**Resolución parcial (14/10/2026):** se creó [docs/decisiones.md](../../decisiones.md) y se registró DEC-001 con fuente, alcance, responsable y fecha. La jerarquía general y la autoridad para aprobar contradicciones entre requisitos siguen pendientes; esta entrada no las resuelve por inferencia.
 
 ## DU-13
 

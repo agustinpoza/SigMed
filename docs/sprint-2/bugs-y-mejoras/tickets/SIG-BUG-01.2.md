@@ -8,8 +8,17 @@
 | Tipo de tarea | Corrección visual |
 | Prioridad propuesta | P1 |
 | Estado inicial | Pendiente de diagnóstico |
+| Estado actual | Implementado y verificado visualmente con fixtures aislados; repetir tras integración de cambios del shell |
 | Esfuerzo orientativo | 3 h |
 | Predecesoras del plan de integración | [SIG-BUG-01.1](SIG-BUG-01.1.md) |
+
+## Implementación y evidencia
+
+Fecha: 14/10/2026. Base: `516414e`. Se utiliza el [diagnóstico completado](SIG-BUG-01.1.md) y el alcance [DEC-001](../../../decisiones.md#dec-001--alcance-de-la-corrección-visual-sig-bug-01).
+
+El portal tiene ahora `min-h-dvh`, texto explícito y espaciado lateral adaptable. Los filtros permiten acomodar fecha, estados y búsqueda en pantallas pequeñas. La tabla conserva el scroll existente, contiene ambos ejes y mantiene un ancho mínimo legible. No se cambian consultas, handlers, permisos ni asistencia.
+
+[Ver mediciones, capturas y comprobaciones](../SIG-BUG-01-IMPLEMENTACION.md). La validación visual usa los componentes y CSS reales con datos ficticios; no equivale a probar sesión, escrituras de datos o el despliegue compartido.
 
 ## Disponibilidad para arrancar
 
@@ -43,7 +52,7 @@ El commit bea3fd1, ya incorporado en la rama de trabajo, agrega flex-1/min-h-0 y
 
 La captura del documento evidencia espacio inferior negro; la solución concreta depende del diagnóstico de SIG-BUG-01.1.
 
-La evidencia de código corresponde a una revisión estática. Las verificaciones indicadas abajo están planificadas, no ejecutadas.
+El diagnóstico y la corrección ya se ejecutaron. La sección inicial conserva la referencia documental; el estado actual y la evidencia están arriba.
 
 ## Objetivo
 
@@ -57,13 +66,13 @@ Hacer que el fondo y el contenedor del portal cubran la ventana sin cortar conte
 
 ## Criterios de aceptación
 
-- [ ] **[Explícito en SIG-BUG-01]** No queda una franja negra innecesaria con contenido corto o tabla vacía.
-- [ ] **[Propuesta técnica]** Con contenido largo se puede llegar al final sin recortes ni superposición.
-- [ ] **[Propuesta técnica; soporte de dispositivos no definido]** En escritorio y móvil la hoja de trabajo mantiene filtros y tabla utilizables y consistencia con las otras áreas.
+- [x] **[Explícito en SIG-BUG-01; evidencia aislada]** No queda una franja negra con contenido corto o tabla vacía en los anchos acordados.
+- [x] **[Verificación de desplazamiento]** Con 40 turnos se llega a la última fila y a las columnas finales mediante scroll, sin ensanchar la página.
+- [x] **[DEC-001; presentación]** A 360/768/1280 px los filtros quedan dentro de la ventana y la tabla conserva desplazamiento propio; el portal cubre también las áreas paciente, enfermera y administrador ensayadas.
 
 ## Validación prevista
 
-Comparar capturas antes/después en los tres tamaños del diagnóstico y ambos temas. Recorrer médico, paciente, enfermera y administrador. Ejecutar lint y typecheck después de implementar.
+Comparar capturas y mediciones en Chrome for Testing a 360/768/1280×800, zoom 100%, con preferencias clara/oscura emuladas. Usar médico vacío/largo, historial vacío/con datos, inventario y shell administrativo con contenido breve. Ejecutar lint, typecheck y build. No se agrega modo oscuro.
 
 ## Archivos a revisar
 
@@ -71,6 +80,8 @@ Comparar capturas antes/después en los tres tamaños del diagnóstico y ambos t
 - [src/app/globals.css](../../../../src/app/globals.css)
 - [src/app/(portal)/layout.tsx](../../../../src/app/%28portal%29/layout.tsx)
 - [src/app/(portal)/role-shell.tsx](../../../../src/app/%28portal%29/role-shell.tsx)
+- [src/app/ui/medico/filtros.tsx](../../../../src/app/ui/medico/filtros.tsx)
+- [src/app/ui/medico/tabla-trabajo.tsx](../../../../src/app/ui/medico/tabla-trabajo.tsx)
 
 ## Límite de alcance
 
@@ -102,9 +113,9 @@ Las etiquetas de los criterios separan obligación explícita, interpretación p
 
 ### Datos faltantes o contradictorios
 
-Falta la causa reproducida. No imponer altura fija ni eliminar un tema como supuesto de solución.
+La causa está documentada en SIG-BUG-01.1. Se usa una altura mínima de ventana que permite crecer con el contenido; no se elimina la regla global de tema.
 
-**Dudas abiertas relacionadas:** [DU-01](../REVISION.md#du-01), [DU-12](../REVISION.md#du-12). No hay respuestas registradas; no se adopta una opción como regla por defecto.
+**Dudas relacionadas:** [DU-01](../REVISION.md#du-01), definida para este alcance mediante DEC-001; [DU-12](../REVISION.md#du-12), pendiente en su jerarquía general. La corrección visual no define reglas de negocio.
 
 ### Tratamiento de la duda y alcance seguro
 

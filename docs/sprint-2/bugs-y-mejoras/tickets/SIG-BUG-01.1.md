@@ -8,8 +8,19 @@
 | Tipo de tarea | Diagnóstico de bug visual |
 | Prioridad propuesta | P1 |
 | Estado inicial | Lista para iniciar |
+| Estado actual | Diagnóstico completado; evidencia visual aislada en navegador |
 | Esfuerzo orientativo | 2 h |
 | Predecesoras del plan de integración | Ninguna |
+
+## Diagnóstico realizado
+
+Fecha: 14/10/2026. Base: `516414e`, que ya incluye `bea3fd1`. [Decisión de alcance DEC-001](../../../decisiones.md#dec-001--alcance-de-la-corrección-visual-sig-bug-01).
+
+La altura porcentual `min-h-full` del portal no ocupa la ventana porque el `body` solo tiene altura mínima, sin una altura definida para resolver ese porcentaje. Con tabla vacía, a 1280×800 el portal termina a 503 px y expone el fondo del `body`. La regla global de preferencia oscura pinta ese fondo `#0a0a0a`; la clase de fondo del body no la reemplaza porque pertenece a una capa CSS de menor prioridad.
+
+A 360 px, los filtros que no permiten acomodar sus elementos producen un ancho de documento de 673 px. El ajuste previo de la tabla no resuelve ninguno de esos dos problemas.
+
+Se propone `min-h-dvh` en el portal, filtros adaptables y scroll contenido en la tabla. [Ver capturas, mediciones y límites de reproducción](../SIG-BUG-01-IMPLEMENTACION.md). Los filtros y la condición de las acciones médicas se conservan.
 
 ## Disponibilidad para arrancar
 
@@ -43,7 +54,7 @@ El commit bea3fd1, ya incorporado en la rama de trabajo, ajusta alturas/scroll d
 
 La captura image4.png muestra la hoja de trabajo y una franja negra inferior. El portal usa min-h-full dentro de un body con min-h-full; globals.css aplica un fondo oscuro según prefers-color-scheme. Son candidatos a revisar, no una causa demostrada en ejecución.
 
-La evidencia de código corresponde a una revisión estática. Las verificaciones indicadas abajo están planificadas, no ejecutadas.
+La situación anterior describe la hipótesis inicial. El diagnóstico ejecutado y su evidencia están registrados arriba; se usaron componentes reales con identidad y consultas simuladas, sin acceso a la base de datos.
 
 ## Objetivo
 
@@ -51,19 +62,19 @@ Identificar el elemento y la regla que dejan parte de la ventana fuera del fondo
 
 ## Trabajo y entregable
 
-- Reproducir /medico/agenda con tabla vacía y con turnos, tema claro y oscuro.
+- Reproducir los componentes de /medico/agenda con tabla vacía y con turnos; emular preferencia clara/oscura como diagnóstico del fondo existente.
 - Inspeccionar alturas calculadas de html, body, portal y main, y quién pinta el área negra.
 - Comparar con /paciente/historial y /enfermera/inventario; registrar la corrección mínima propuesta.
 
 ## Criterios de aceptación
 
-- [ ] **[Propuesta técnica]** Existe evidencia antes del cambio con tamaño de ventana y tema del sistema.
-- [ ] **[Propuesta técnica]** Se documenta una causa reproducible y los archivos afectados; si no se reproduce, registrar condiciones y diferencia con la captura sin inventar una causa.
-- [ ] **[Preservación funcional]** La propuesta conserva filtros, tabla y acciones médicas.
+- [x] **[DEC-001; evidencia aislada]** Existe evidencia antes del cambio con tamaño de ventana y preferencia de sistema emulada.
+- [x] **[Diagnóstico reproducido]** Se documenta la causa, los archivos afectados y la diferencia entre reproducción local y despliegue original.
+- [x] **[Preservación funcional]** La propuesta conserva filtros, tabla y acciones médicas; los cambios de código son de presentación.
 
 ## Validación prevista
 
-Inspección del navegador a 1366×768, 1920×1080 y 390×844. Entregar captura y diagnóstico; no hace falta agregar pruebas automatizadas para esta investigación.
+Chrome for Testing, zoom 100%, a 360×800, 768×800 y 1280×800 según DEC-001. Entregar capturas y mediciones con tabla vacía/larga; las preferencias clara/oscura se usan para diagnosticar el fondo, sin agregar un tema nuevo.
 
 ## Archivos a revisar
 
@@ -103,9 +114,9 @@ Las etiquetas de los criterios separan obligación explícita, interpretación p
 
 ### Datos faltantes o contradictorios
 
-Faltan navegador/tema/zoom y versión del despliegue en que ocurrió; la captura por sí sola no confirma la causa actual.
+La causa actual se reprodujo localmente y el criterio de cierre se registra en DEC-001. Se desconocen navegador/tema/zoom y versión exacta de la captura original; no se atribuyen al despliegue las condiciones del ensayo aislado.
 
-**Dudas abiertas relacionadas:** [DU-01](../REVISION.md#du-01), [DU-12](../REVISION.md#du-12). No hay respuestas registradas; no se adopta una opción como regla por defecto.
+**Dudas relacionadas:** [DU-01](../REVISION.md#du-01), definida para este alcance mediante DEC-001 y reproducción local; [DU-12](../REVISION.md#du-12), pendiente en su jerarquía general. Esta última no impide documentar una corrección visual autorizada.
 
 ### Tratamiento de la duda y alcance seguro
 

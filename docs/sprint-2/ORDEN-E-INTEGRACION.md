@@ -12,6 +12,8 @@ La [revisión e incorporación del commit bea3fd1](REVISION-COMMIT-bea3fd1.md) i
 
 ## Tipos de dependencia
 
+Actualización del 14/10/2026: SIG-BUG-01.1 tiene diagnóstico completado y SIG-BUG-01.2 está implementado y verificado visualmente con datos ficticios. [Ver evidencia](bugs-y-mejoras/SIG-BUG-01-IMPLEMENTACION.md). El criterio DU-01 está registrado en [DEC-001](../decisiones.md#dec-001--alcance-de-la-corrección-visual-sig-bug-01). La dependencia de diagnóstico se cumplió; compartir el shell conserva la necesidad de repetir la regresión tras cambios de US-7.4/2.8, sin esperar esas US para corregir la presentación.
+
 | Tipo | Significado |
 | --- | --- |
 | Funcional | El flujo final consume un resultado anterior definido por fuente/modelo: publicación requiere disponibilidad, registro clínico requiere turno ATENDIDO |

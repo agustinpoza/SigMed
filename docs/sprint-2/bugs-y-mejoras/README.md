@@ -8,6 +8,8 @@ Fecha de elaboración: 13/10/2026. Responsable del bloque: usuario.
 
 ## Avance de implementación
 
+SIG-BUG-01.1 tiene diagnóstico completado y SIG-BUG-01.2 está implementado: el portal cubre la ventana, los filtros se adaptan y el scroll de la tabla queda contenido. [Ver diagnóstico, capturas y verificación](SIG-BUG-01-IMPLEMENTACION.md). El alcance de DU-01 queda registrado en [DEC-001](../../decisiones.md#dec-001--alcance-de-la-corrección-visual-sig-bug-01); no se cambian funciones de las US médicas.
+
 SIG-MEJ-03.1 y SIG-MEJ-03.2 están implementados: selector Sumar/Descontar, entrada positiva, signo calculado en servidor y preservación de valores. Pasaron 38 pruebas nuevas de stock y las 28 de vacunación (66 en total), typecheck, lint sin errores y build. [Ver implementación y límites](SIG-MEJ-03-IMPLEMENTACION.md). SIG-MEJ-03.3, el indicador por lote y las dudas de identidad siguen pendientes.
 
 SIG-MEJ-04.1, SIG-MEJ-04.2 y SIG-MEJ-04.3 están implementados y verificados con 28 pruebas aisladas, typecheck, lint sin errores y build. [Ver cambios, resultados y límites de la verificación](SIG-MEJ-04-IMPLEMENTACION.md). Las dudas de ciclo, botón y duración permanecen abiertas; no se cambiaron esas reglas ni se escribieron datos de prueba en la base compartida. Los estados iniciales de la tabla conservan la planificación anterior; el estado actual está en cada ticket.
@@ -22,7 +24,7 @@ SIG-MEJ-04.1, SIG-MEJ-04.2 y SIG-MEJ-04.3 están implementados y verificados con
 
 ## Revisión de requisitos y dudas
 
-[Leer la revisión y el registro de dudas](REVISION.md). Cada uno de los 16 tickets fue contrastado con RF, historias y diseño: ahora distingue obligación explícita, cobertura existente, supuesto técnico y criterio condicionado. Las dudas DU-01–DU-12 están abiertas; ninguna se completó inventando una regla de negocio. Los tamaños de prueba, P1/P2 y horas son propuestas técnicas/de planificación.
+[Leer la revisión y el registro de dudas](REVISION.md). Cada uno de los 16 tickets fue contrastado con RF, historias y diseño: distingue obligación explícita, cobertura existente, supuesto técnico y criterio condicionado. DU-01 tiene alcance definido y evidencia local; DU-12 registra decisiones, con jerarquía general pendiente. Las demás dudas conservan su estado hasta registrar la definición aplicable. P1/P2 y horas son propuestas de planificación.
 
 La revisión ajusta el primer plan: no se da por aprobado conservar seis campos de búsqueda ni una equivalencia ñ/n; se distingue el entero positivo en UI de cantidades con signo en el modelo; se registran el indicador de stock por lote, la atribución del responsable y las diferencias del ciclo/botón de vacunación. Las definiciones pendientes afectan solo los cambios que dependan de ellas.
 
@@ -41,7 +43,7 @@ No agrupar todo como un único bug: hay diagnóstico, acuerdos con el cliente, t
 
 ## Hallazgos que cambian la planificación
 
-- **Área médica:** la captura image4.png muestra la franja negra inferior. Las alturas flex del portal y el fondo oscuro global son hipótesis; SIG-BUG-01.1 debe confirmar la causa en ejecución.
+- **Área médica:** se reprodujo la exposición del fondo del body al quedar el portal más corto que la ventana, y el desbordamiento de filtros a 360 px. SIG-BUG-01.1 documenta la causa y SIG-BUG-01.2 corrige ambos problemas; ver evidencia de implementación.
 - **Tildes:** el filtro solo pasa a minúsculas. La descripción de la fuente pide encontrar «Infección» mediante «infeccion»; su CA1 usa tilde en ambos lados. Los tickets registran infeccion → Infección como interpretación del caso sin tilde por confirmar; no eligen una política de ñ/n.
 - **Profesional:** nombre/apellido ya llegan en `record.doctor` y ya participan del filtro. SIG-MEJ-02 no empieza de cero: define alcance, agrega ayuda visible y verifica los casos faltantes. «Martin» sin tilde corresponde a normalización, no a agregar el campo.
 - **Campos del historial:** actualmente se busca por fecha, profesional, especialidad, diagnóstico, tratamiento e indicaciones. El diseño propone tres campos y el código incluye seis: falta definir el alcance, sin presumir conservación ni eliminación. La ayuda visible se gestiona solo en SIG-MEJ-02 para no duplicar el diseño mencionado bajo SIG-BUG-02.
