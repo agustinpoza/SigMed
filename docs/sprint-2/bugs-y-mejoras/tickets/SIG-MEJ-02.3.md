@@ -8,12 +8,21 @@
 | Tipo de tarea | Verificación de aislamiento de datos |
 | Prioridad propuesta | P1 |
 | Estado inicial | Pendiente de integración de búsqueda |
+| Estado actual | Alcance del bloque implementado/verificado; integración con sesión real pendiente de US-7.2/7.4 |
 | Esfuerzo orientativo | 2 h |
 | Predecesoras del plan de integración | [SIG-MEJ-02.2](SIG-MEJ-02.2.md) |
 
+## Implementación y marco de integración
+
+Fecha: 14/10/2026. Base: `dd3a6a4`. Se ejecutan 8 pruebas con PostgreSQL y la página/componente reales, simulando solo identidad. Se inspeccionan los datos enviados al cliente y las búsquedas de A/B, ausencia de actor, roles actuales y cambios de paciente.
+
+Se corrigió el estado retenido al cambiar de paciente: la tabla usa `key={actor.id}` para limpiar consulta, filtros, orden, página y detalle. [Ver evidencia](../SIG-MEJ-02.3-03.3-IMPLEMENTACION.md).
+
+El usuario indicó que las US de acceso corresponden a otro integrante. [Marco de integración para ese responsable](../../INTEGRACION-US-7.2-7.4.md), con tres TODO separados y sin mock de identidad en su archivo. No se implementa autenticación ni US-7.5.
+
 ## Disponibilidad para arrancar
 
-**Clasificación:** Regresión implementable sin consulta externa.
+**Clasificación:** Regresión entregada; integración externa con sesión real pendiente.
 
 **Alcance que puede avanzar:** Preparar/ejecutar pruebas de pacientes A/B y sesión inválida sobre el historial existente, verificando los datos enviados además de lo visible.
 
@@ -39,7 +48,7 @@
 
 HistorialPage comprueba rol PACIENTE y filtra por appointment.patientId = actor.id antes de enviar los registros al cliente. Son controles existentes cuya efectividad debe verificarse.
 
-La evidencia de código corresponde a una revisión estática. Las verificaciones indicadas abajo están planificadas, no ejecutadas.
+La situación inicial describe el control existente. La verificación ejecutada y su límite de identidad simulada están registrados arriba.
 
 ## Objetivo
 
@@ -53,14 +62,15 @@ Demostrar que buscar por profesional o contenido clínico solo opera sobre el hi
 
 ## Criterios de aceptación
 
-- [ ] **[Explícito en RF-18 y US-5.2 CA2]** El paciente A nunca recibe ni encuentra registros exclusivos del paciente B.
-- [ ] **[Regresión de aislamiento]** Al cambiar de paciente no permanece visible el historial anterior.
-- [ ] **[RF-18/RNF-04; permisos administrativos pendientes DU-06]** Sin sesión válida no se entrega historial. El acceso por ADMINISTRADOR se evalúa con la matriz que defina US-7.5; no se inventa autorización ni prohibición general para ese rol.
-- [ ] **[Entregable técnico]** Se registra evidencia y se informa cualquier fallo al responsable de permisos con pasos de reproducción.
+- [x] **[RF-18/US-5.2; perfiles de prueba]** A/B reciben y buscan únicamente sus registros; se inspeccionan también las props del cliente y la consulta real en PostgreSQL.
+- [x] **[Regresión]** Cambiar de paciente elimina datos y estado del historial anterior, incluida la página 2.
+- [x] **[Contrato actual]** Actor nulo no entrega historial; se preservan los guards actuales sin definir la matriz administrativa de US-7.5.
+- [ ] **[Integración externa RNF-04/US-7.2/7.4]** Repetir con sesión real inválida/vencida y cambio de cuenta. Permisos administrativos dependen de DU-06/US-7.5.
+- [x] **[Entregable técnico]** Evidencia, casos reproducibles y contratos para el responsable externo registrados; no se envían mensajes a terceros.
 
 ## Validación prevista
 
-Prueba de integración con dos identidades y fixtures aislados, revisando también los datos del render y no solo el texto visible. El actor de desarrollo sirve para el estado actual; repetir al integrar autenticación real.
+`npm.cmd run test:integration`: PostgreSQL propio temporal con fixtures, página resuelta y componente real. No usa credenciales externas, seed o `.env`; repetir por HTTP al integrar autenticación real.
 
 ## Archivos a revisar
 
@@ -100,7 +110,7 @@ Las etiquetas de los criterios separan obligación explícita, interpretación p
 
 No inventar una prohibición general para ADMINISTRADOR: RF-26/US-7.5 permiten funciones adicionales pero no detallan qué historial consultar ni cómo seleccionarlo.
 
-**Dudas abiertas relacionadas:** [DU-04](../REVISION.md#du-04), [DU-05](../REVISION.md#du-05), [DU-06](../REVISION.md#du-06), [DU-12](../REVISION.md#du-12). No hay respuestas registradas; no se adopta una opción como regla por defecto.
+**Dudas relacionadas:** DU-04/DU-05 resueltas por DEC-002/003. [DU-06](../REVISION.md#du-06) permanece con US-7.5; [DU-12](../REVISION.md#du-12), con su jerarquía general pendiente. La integración de sesión real queda en el marco externo, sin inventar permisos.
 
 ### Tratamiento de la duda y alcance seguro
 

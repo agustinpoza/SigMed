@@ -8,13 +8,15 @@ Esta clasificación precisa la [revisión de dudas](REVISION.md): una duda relac
 
 ## Avance posterior a esta clasificación
 
-SIG-MEJ-02.1/02.2 están completados: matriz y ayuda visible/accesible bajo [DEC-003](../../decisiones.md#dec-003--campos-y-ayuda-de-búsqueda-del-historial). [Ver evidencia](SIG-MEJ-02-IMPLEMENTACION.md). SIG-MEJ-02.3 sigue como regresión del servidor e integración pendiente con sesión real.
+SIG-MEJ-02.3 y SIG-MEJ-03.3 tienen su alcance del bloque implementado/verificado con 18 pruebas en PostgreSQL local propio y 105 pruebas previas aprobadas. [Ver evidencia](SIG-MEJ-02.3-03.3-IMPLEMENTACION.md). La sesión real pertenece a otro integrante, conforme a la división indicada por el usuario; [contratos y tres TODO de integración](../INTEGRACION-US-7.2-7.4.md) quedan documentados sin implementar sus US.
+
+SIG-MEJ-02.1/02.2 están completados: matriz y ayuda visible/accesible bajo [DEC-003](../../decisiones.md#dec-003--campos-y-ayuda-de-búsqueda-del-historial). [Ver evidencia](SIG-MEJ-02-IMPLEMENTACION.md). SIG-MEJ-02.3 ya entrega la regresión del servidor; su integración con sesión real queda para el responsable de las US de acceso.
 
 SIG-BUG-02.1/02.2/02.3 están completados para [DEC-002](../../decisiones.md#dec-002--normalización-de-la-búsqueda-del-historial). DU-03/DU-04 ya no bloquean la normalización: se reprodujo el fallo y pasan 39 regresiones del componente, con 105 pruebas totales aprobadas. [Ver evidencia y límites](SIG-BUG-02-IMPLEMENTACION.md). SIG-MEJ-02 conserva matriz/ayuda y aislamiento; no duplicar el matcher común.
 
 SIG-BUG-01.1 tiene diagnóstico completado y SIG-BUG-01.2 está implementado y verificado visualmente con fixtures aislados en los anchos acordados. [Ver causa, capturas y límites](SIG-BUG-01-IMPLEMENTACION.md). [DEC-001](../../decisiones.md#dec-001--alcance-de-la-corrección-visual-sig-bug-01) registra el criterio aplicado; repetir la regresión si US-7.4/2.8 modifica el shell o el contenido médico.
 
-SIG-MEJ-03.1/03.2 ya están implementados con el alcance delimitado; [ver evidencia](SIG-MEJ-03-IMPLEMENTACION.md). SIG-MEJ-03.3 continúa como trabajo parcial y cierre de integración pendiente.
+SIG-MEJ-03.1/03.2 ya están implementados con el alcance delimitado; [ver evidencia original](SIG-MEJ-03-IMPLEMENTACION.md). SIG-MEJ-03.3 ya verifica stock real y conserva pendiente la integración externa de sesión.
 
 SIG-MEJ-04.1/04.2/04.3 ya están implementados con el alcance aquí delimitado. [Ver evidencia y verificación](SIG-MEJ-04-IMPLEMENTACION.md). La clasificación siguiente conserva el criterio de inicio; no implica que esas tres tareas todavía carezcan de implementación.
 
@@ -71,7 +73,7 @@ SIG-BUG-02.1/02.2/02.3 ya están completados con las expectativas definidas en D
 ## Qué queda pendiente de definición
 
 - **SIG-MEJ-01.1/01.2:** rótulo definitivo y textos del botón.
-- **Parte de SIG-MEJ-03.3:** responsable real cuando no hay actor; no asumir válido el fallback.
+- **Integración externa de SIG-MEJ-02.3/03.3:** sesiones reales y responsable autenticado en US-7.2/7.4; no asumir válido el fallback.
 
 Preparar una propuesta de definición no necesita permiso; lo pendiente es la respuesta para establecer la regla y cerrar la definición. No hay un pedido nuevo de aprobación en esta clasificación.
 

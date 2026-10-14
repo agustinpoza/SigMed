@@ -1,0 +1,125 @@
+{
+  "date": "2026-10-14",
+  "base": "dd3a6a4",
+  "database": "PostgreSQL 18.4 local temporal, 7 migraciones reales",
+  "adapter": "Prisma 7.10.0 / PrismaNeon real, transporte WS→TCP local",
+  "identity": "Proveedor simulado: perfiles ficticios. No certifica sesión real ni fallback.",
+  "commands": {
+    "unit": "npm.cmd test",
+    "integration": "npm.cmd run test:integration"
+  },
+  "before": {
+    "selected": 3,
+    "failed": 3,
+    "sqlDeadlock": "40P01",
+    "cases": [
+      {
+        "test": "reinicia estado y datos del historial al cambiar de paciente, incluso desde página 2",
+        "status": "failed"
+      },
+      {
+        "test": "rechaza descuento mayor al stock como error de formulario, con saldo y movimientos intactos",
+        "status": "failed"
+      },
+      {
+        "test": "dos descuentos concurrentes válidos se registran sin deadlock y llegan a cero",
+        "status": "failed"
+      }
+    ]
+  },
+  "after": {
+    "integrationPassed": 18,
+    "integrationFailed": 0,
+    "externalAuthTodo": 3,
+    "unitPassed": 105,
+    "unitFailed": 0,
+    "totalPassed": 123,
+    "cases": [
+      {
+        "test": "Repetir aislamiento por HTTP con sesión real y cookie/sesión inválida o vencida",
+        "status": "todo"
+      },
+      {
+        "test": "Sin sesión real de stock, rechazar escritura sin atribuirla al fallback de desarrollo",
+        "status": "todo"
+      },
+      {
+        "test": "Con sesión real, comprobar responsable persistido y rechazo de suplantación desde la petición",
+        "status": "todo"
+      },
+      {
+        "test": "solo envía al cliente el historial de A aunque comparta diagnóstico/profesional",
+        "status": "passed"
+      },
+      {
+        "test": "solo envía al cliente el historial de B aunque comparta diagnóstico/profesional",
+        "status": "passed"
+      },
+      {
+        "test": "reinicia estado y datos del historial al cambiar de paciente, incluso desde página 2",
+        "status": "passed"
+      },
+      {
+        "test": "no conserva consulta, filtro ni indicaciones del paciente anterior",
+        "status": "passed"
+      },
+      {
+        "test": "sin identidad no entrega registros y retira el historial ya visible",
+        "status": "passed"
+      },
+      {
+        "test": "preserva el guard actual para MEDICO; no define la futura matriz de US-7.5",
+        "status": "passed"
+      },
+      {
+        "test": "preserva el guard actual para ENFERMERA; no define la futura matriz de US-7.5",
+        "status": "passed"
+      },
+      {
+        "test": "preserva el guard actual para ADMINISTRADOR; no define la futura matriz de US-7.5",
+        "status": "passed"
+      },
+      {
+        "test": "rechaza descuento mayor al stock como error de formulario, con saldo y movimientos intactos",
+        "status": "passed"
+      },
+      {
+        "test": "la acción conserva los valores al fallar y no invalida la caché",
+        "status": "passed"
+      },
+      {
+        "test": "descontar exactamente lo disponible llega a cero y registra actor, lote, fecha, motivo y signo",
+        "status": "passed"
+      },
+      {
+        "test": "el formulario muestra el rechazo real, preserva los valores y permite un reintento válido",
+        "status": "passed"
+      },
+      {
+        "test": "dos descuentos concurrentes que superan el saldo dejan un éxito y un rechazo comprensible",
+        "status": "passed"
+      },
+      {
+        "test": "dos descuentos concurrentes válidos se registran sin deadlock y llegan a cero",
+        "status": "passed"
+      },
+      {
+        "test": "un fallo después de crear un lote revierte ese lote y no convierte errores ajenos en falta de stock",
+        "status": "passed"
+      },
+      {
+        "test": "los movimientos persisten como append-only y el saldo permanece consistente",
+        "status": "passed"
+      },
+      {
+        "test": "un descuento rechazado no altera alertas y una reposición conserva la resolución vigente",
+        "status": "passed"
+      },
+      {
+        "test": "un rol no autorizado no registra movimientos desde la acción",
+        "status": "passed"
+      }
+    ]
+  },
+  "cleanup": "Cluster propio detenido y eliminado. No se lee .env, no se usa seed ni base compartida."
+}

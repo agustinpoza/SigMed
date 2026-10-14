@@ -8,12 +8,21 @@
 | Tipo de tarea | Integración de stock y regresión |
 | Prioridad propuesta | P1 |
 | Estado inicial | Pendiente de integración del ajuste |
+| Estado actual | Stock/transacciones verificados con PostgreSQL real; auditoría autenticada pendiente de US-7.2/7.4 |
 | Esfuerzo orientativo | 3 h |
 | Predecesoras del plan de integración | [SIG-MEJ-03.2](SIG-MEJ-03.2.md) |
 
+## Implementación y marco de integración
+
+Fecha: 14/10/2026. Base: `dd3a6a4`. Se ejecutan 10 pruebas de dominio, acción/formulario y PostgreSQL reales: saldo insuficiente/exacto, trazabilidad con perfiles ficticios, dos conexiones concurrentes, rollback, append-only, alertas y rol no autorizado.
+
+Se traduce el rechazo confirmado de stock negativo a error de cantidad, preservando el formulario. Se bloquea el lote antes del INSERT para evitar el deadlock reproducido entre dos descuentos válidos; no se cambian triggers o reglas del saldo. [Ver evidencia](../SIG-MEJ-02.3-03.3-IMPLEMENTACION.md).
+
+Por la división de trabajo indicada por el usuario, no se implementa sesión real ni se modifica el fallback. [Marco para el responsable de US-7.2/7.4](../../INTEGRACION-US-7.2-7.4.md) y TODO separados dejan pendiente el responsable autenticado; no se valida la auditoría por un actor elegido automáticamente.
+
 ## Disponibilidad para arrancar
 
-**Clasificación:** Arranque parcial sin consulta externa.
+**Clasificación:** Alcance de stock entregado; integración externa de identidad real pendiente.
 
 **Alcance que puede avanzar:** Pruebas de rechazo de stock negativo, descuento exacto, concurrencia, rollback y trazabilidad con actor identificado; traducir el error de stock esperado al formulario si hace falta.
 
@@ -39,7 +48,7 @@
 
 El movimiento ya guarda lotId, reason, actorId y quantity. La migración de reforma incluye trigger con bloqueo de lote y rechazo de stock negativo. La acción solo traduce StockRuleError, por lo que debe comprobarse cómo llega el rechazo del trigger.
 
-La evidencia de código corresponde a una revisión estática. Las verificaciones indicadas abajo están planificadas, no ejecutadas.
+La situación inicial describía el riesgo del trigger. La reproducción con SQL real y la verificación posterior están documentadas arriba.
 
 ## Objetivo
 
@@ -54,14 +63,15 @@ Conservar auditoría y stock consistente al usar las nuevas operaciones, mostran
 
 ## Criterios de aceptación
 
-- [ ] **[Explícito en SIG-MEJ-03 CA2]** Descontar más de lo disponible se rechaza con mensaje claro y stock intacto.
-- [ ] **[Derivado del stock por lote ≥ 0; concurrencia técnica]** Descontar exactamente lo disponible llega a cero; concurrencia no produce stock negativo.
-- [ ] **[Explícito en RF-11/US-3.2 CA2; identidad pendiente DU-08]** Cada operación exitosa deja trazabilidad completa y stock igual a la suma de movimientos.
-- [ ] **[Preservación; no redefine RF-13]** No se alteran alertas y restricciones por esta mejora. Los umbrales, canales o reglas de RF-13 no se redefinen como parte del ticket.
+- [x] **[SIG-MEJ-03 CA2]** Descontar más de lo disponible se rechaza con mensaje claro, valores conservados y stock/movimientos intactos.
+- [x] **[Stock ≥ 0; dos conexiones reales]** Descuento exacto llega a cero; operaciones concurrentes válidas se registran y las que superan el saldo dejan un rechazo comprensible.
+- [x] **[Trazabilidad de datos con actor de prueba]** Movimiento conserva lote, motivo, usuario del guard, fecha y signo; el saldo coincide con la suma de movimientos y se mantiene append-only.
+- [ ] **[Integración externa RF-11/RNF-04; DU-08]** Verificar responsable autenticado y escritura sin sesión real sin validar el fallback. Corresponde a integrar US-7.2/7.4.
+- [x] **[Preservación RF-13]** Rechazo no altera alertas y reposición conserva su resolución; no se redefinen umbrales, canales o reglas.
 
 ## Validación prevista
 
-Pruebas en base de desarrollo/pruebas, con fixtures propios y rollback cuando sea viable. Revisar db:verify antes de ejecutarlo: contiene operaciones persistentes. Registrar comando, resultados y saldos; lint/typecheck tras ajustes.
+`npm.cmd run test:integration`: cluster PostgreSQL local propio con siete migraciones y fixtures, detenido y eliminado al terminar. No usa `.env`, seed ni `db:verify` contra datos compartidos. Pruebas de rollback y concurrencia ejecutadas; integración de sesión real pendiente del responsable externo.
 
 ## Archivos a revisar
 
@@ -103,7 +113,7 @@ Las etiquetas de los criterios separan obligación explícita, interpretación p
 
 requireEnfermeraOAdministrador usa un primer perfil permitido como fallback si no hay actor. Eso no prueba responsable real ni sesión válida. Además la fuente dice stock derivado y el código usa caché, desvío D-03 documentado.
 
-**Dudas abiertas relacionadas:** [DU-07](../REVISION.md#du-07), [DU-08](../REVISION.md#du-08), [DU-12](../REVISION.md#du-12). No hay respuestas registradas; no se adopta una opción como regla por defecto.
+**Dudas relacionadas:** [DU-07](../REVISION.md#du-07), indicador pendiente fuera de esta verificación; [DU-08](../REVISION.md#du-08), integración de identidad real documentada para US-7.2/7.4; [DU-12](../REVISION.md#du-12), jerarquía general pendiente. No se validó el fallback como responsable autenticado.
 
 ### Tratamiento de la duda y alcance seguro
 

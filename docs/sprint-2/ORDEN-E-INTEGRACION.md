@@ -12,6 +12,8 @@ La [revisión e incorporación del commit bea3fd1](REVISION-COMMIT-bea3fd1.md) i
 
 ## Tipos de dependencia
 
+Actualización del 14/10/2026: SIG-MEJ-02.3/03.3 entregan sus pruebas y correcciones sobre el flujo existente con PostgreSQL real. Por indicación del usuario, sesión real y permisos siguen en las US de otro integrante; [marco de integración](INTEGRACION-US-7.2-7.4.md) y [evidencia del bloque](bugs-y-mejoras/SIG-MEJ-02.3-03.3-IMPLEMENTACION.md) delimitan lo entregado y tres TODO externos. No se exige esperar esas US para verificar aislamiento/datos y stock, ni se cierran seguridad y auditoría autenticadas con un actor ficticio.
+
 Actualización del 14/10/2026: SIG-MEJ-02.1/02.2 tienen matriz y ayuda entregadas bajo [DEC-003](../decisiones.md#dec-003--campos-y-ayuda-de-búsqueda-del-historial), reutilizando DEC-002 sin nueva normalización. [Ver evidencia](bugs-y-mejoras/SIG-MEJ-02-IMPLEMENTACION.md). Las dependencias de definición/normalización están cumplidas; SIG-MEJ-02.3 conserva verificación del servidor e integración con identidad real. Rótulos de SIG-MEJ-01 y permisos de US-7.5 no se incorporan a esta entrega.
 
 Actualización del 14/10/2026: SIG-BUG-02.1/02.2/02.3 tienen diagnóstico, corrección y regresiones completados. [DEC-002](../decisiones.md#dec-002--normalización-de-la-búsqueda-del-historial) define DU-03/DU-04 y el matcher común; [ver evidencia](bugs-y-mejoras/SIG-BUG-02-IMPLEMENTACION.md). SIG-MEJ-02.1/02.2 conserva matriz/ayuda y reutiliza esta política. SIG-MEJ-02.3 debe verificar el servidor y la integración con identidad real.

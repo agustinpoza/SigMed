@@ -138,6 +138,8 @@ Las entradas conservan las preguntas de la revisión original y registran su res
 
 **Tratamiento:** SIG-MEJ-02.3 verifica aislamiento de pacientes, que sí es explícito. Consultar definición de US-7.5 sin presumir acceso a todos los historiales ni prohibición absoluta; no implementar permisos nuevos aquí.
 
+**Avance del 14/10/2026:** aislamiento A/B y datos enviados al cliente verificados con SQL real y proveedor de identidad simulado. El guard actual se preserva como regresión, no como matriz definitiva de administrador. [Marco de integración externa](../INTEGRACION-US-7.2-7.4.md); DU-06 permanece abierta para US-7.5.
+
 **Resolución:** pendiente. Al resolver, registrar decisión, fuente/evidencia, responsable y fecha; hasta entonces no adoptar una opción como regla de negocio.
 
 ## DU-07
@@ -165,6 +167,8 @@ Las entradas conservan las preguntas de la revisión original y registran su res
 **Duda:** ¿El fallback está previsto solo como mecanismo de prueba? ¿Qué definición de sesión/identidad acordada por US-7.2/7.4 debe usarse para un movimiento real?
 
 **Tratamiento:** SIG-MEJ-03.3 debe registrar esta divergencia y verificar atribución real. No validar la auditoría por la sola presencia de actorId; coordinar autenticación con sus responsables. No se declara vulneración en un despliegue sin probar el flujo.
+
+**Avance del 14/10/2026:** movimiento, lote, motivo, fecha, signo y usuario del guard verificados con perfiles ficticios y PostgreSQL real. El usuario indicó que la sesión corresponde a otro integrante; [contratos y tres TODO](../INTEGRACION-US-7.2-7.4.md) quedan para esa integración. No se modifica el fallback ni se lo valida como auditoría; la identidad real sigue pendiente.
 
 **Resolución:** pendiente. Al resolver, registrar decisión, fuente/evidencia, responsable y fecha; hasta entonces no adoptar una opción como regla de negocio.
 

@@ -74,7 +74,7 @@ export default async function HistorialPage() {
           Mi historial clínico
         </h1>
       </header>
-      <ClinicalHistoryTable records={entries} />
+      <ClinicalHistoryTable key={actor.id} records={entries} />
     </section>
   );
 }

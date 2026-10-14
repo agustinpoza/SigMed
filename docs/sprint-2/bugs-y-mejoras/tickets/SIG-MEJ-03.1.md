@@ -20,7 +20,7 @@ Se agregaron las opciones Sumar dosis y Descontar dosis para AJUSTE, sin presele
 
 [Ver implementación y resultados de SIG-MEJ-03.1/03.2](../SIG-MEJ-03-IMPLEMENTACION.md). Pasaron 38 pruebas nuevas de stock y 28 regresiones de vacunación (66 en total), typecheck y build. Lint sin errores, con un aviso preexistente de vacunación. Las casillas reflejan cobertura automatizada de la entrada, acción y contrato de llamada; no se escribieron movimientos reales para verificarlas.
 
-SIG-MEJ-03.3 y las dudas DU-07/DU-08 permanecen pendientes: no se agregó indicador de stock por lote ni se cambió identidad, fallback, auditoría, triggers o reglas de concurrencia.
+Actualización del 14/10/2026: SIG-MEJ-03.3 ya verifica stock, rollback y concurrencia en PostgreSQL real; [ver evidencia](../SIG-MEJ-02.3-03.3-IMPLEMENTACION.md). DU-07 conserva el indicador pendiente y DU-08 la integración externa de identidad; no se valida el fallback como auditoría real.
 
 ## Disponibilidad para arrancar
 
