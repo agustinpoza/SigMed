@@ -2,7 +2,7 @@
 
 Fecha: 13/10/2026. Rama: `sprint-2/bugs-y-mejoras`.
 
-Se revisaron los **16 tickets** contra los requerimientos, historias, diseño documental y código existente. La revisión inicial del 13/10/2026 fue documental y estática, sin seleccionar reglas de negocio ni presumir aprobación del cliente. Las implementaciones posteriores se registran en los tickets. Actualización del 14/10/2026: DU-01 tiene criterio y diagnóstico documentados; DU-03/DU-04 tienen política y regresiones de SIG-BUG-02; DU-12 cuenta con registro de decisiones, pero su jerarquía general sigue pendiente.
+Se revisaron los **16 tickets** contra los requerimientos, historias, diseño documental y código existente. La revisión inicial del 13/10/2026 fue documental y estática, sin seleccionar reglas de negocio ni presumir aprobación del cliente. Las implementaciones posteriores se registran en los tickets. Actualización del 14/10/2026: DU-01 tiene criterio y diagnóstico; DU-03/DU-04, política y regresiones; DU-05, matriz y ayuda de SIG-MEJ-02.1/02.2. DU-12 cuenta con registro de decisiones, pero su jerarquía general sigue pendiente.
 
 ## Fuentes y criterio de lectura
 
@@ -54,7 +54,7 @@ Cada ticket contiene fuentes concretas, explícitos, supuestos del plan, datos f
 
 ## Registro de dudas
 
-Las entradas conservan las preguntas de la revisión original y registran su resolución cuando existe. DU-01 está definida para SIG-BUG-01 mediante DEC-001; DU-03/DU-04 para SIG-BUG-02 mediante DEC-002. DU-12 avanza en el registro de decisiones. Las demás conservan los pendientes indicados en su entrada. Una duda solo afecta a la parte del ticket que depende de su definición.
+Las entradas conservan las preguntas de la revisión original y registran su resolución cuando existe. DU-01 está definida mediante DEC-001; DU-03/DU-04, mediante DEC-002; DU-05, mediante DEC-003 para SIG-MEJ-02.1/02.2. DU-12 avanza en el registro de decisiones. Las demás conservan los pendientes indicados en su entrada. Una duda solo afecta a la parte del ticket que depende de su definición.
 
 ## DU-01
 
@@ -124,7 +124,7 @@ Las entradas conservan las preguntas de la revisión original y registran su res
 
 **Tratamiento:** SIG-MEJ-02.1 registra matriz de campos/ejemplos; SIG-MEJ-02.2 entrega la ayuda. En SIG-BUG-02 se conservan y normalizan los seis campos actuales y la fecha mostrada, conforme al criterio propuesto por el usuario y DEC-002, sin dar por entregada esa matriz/ayuda. No hay campos nuevos ni otra tarea de ayuda duplicada.
 
-**Resolución parcial (14/10/2026):** DEC-002 registra la conservación de los seis campos y de la fecha visible para esta corrección. La matriz y el texto de ayuda de SIG-MEJ-02 siguen pendientes de entrega; esta implementación no los completa ni declara aprobada una ayuda inexistente.
+**Resolución (14/10/2026):** criterio DU-05 del usuario y solicitud de implementar SIG-MEJ-02.1/02.2, registrados en [DEC-003](../../decisiones.md#dec-003--campos-y-ayuda-de-búsqueda-del-historial). Se buscan profesional, especialidad, diagnóstico, tratamiento, indicaciones y fecha mostrada `dd/mm/aaaa`; la ayuda enumera los seis. [Matriz](tickets/SIG-MEJ-02.1.md#matriz-de-campos-y-ejemplos) y [evidencia](SIG-MEJ-02-IMPLEMENTACION.md) entregadas. Responsable del alcance: usuario; ejecución/copy: Codex. No se presume aprobación externa ni se cierra aislamiento de SIG-MEJ-02.3.
 
 ## DU-06
 

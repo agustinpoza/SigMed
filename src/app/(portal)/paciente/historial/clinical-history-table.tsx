@@ -23,6 +23,7 @@ const dateFormatter = new Intl.DateTimeFormat("es-AR", {
 });
 
 const pageSize = 5;
+const searchHelp = "Buscar por profesional (nombre o apellido), especialidad, diagnóstico, tratamiento, indicaciones o fecha (dd/mm/aaaa).";
 
 export default function ClinicalHistoryTable({
   records,
@@ -118,24 +119,30 @@ export default function ClinicalHistoryTable({
           ))}
         </fieldset>
 
-        <form onSubmit={submitSearch} className="flex w-full gap-2 lg:max-w-sm">
+        <form onSubmit={submitSearch} className="flex w-full flex-col gap-2 lg:max-w-sm">
           <label htmlFor="history-search" className="sr-only">
             Buscar por fecha, profesional o contenido clínico
           </label>
-          <input
-            id="history-search"
-            type="search"
-            value={searchInput}
-            onChange={(event) => setSearchInput(event.target.value)}
-            placeholder="Buscar..."
-            className="h-9 min-w-0 flex-1 rounded-md border border-zinc-300 bg-white px-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-teal-700 focus:ring-2 focus:ring-teal-700/20"
-          />
-          <button
-            type="submit"
-            className="h-9 shrink-0 rounded-md bg-zinc-800 px-3 text-sm font-medium text-white transition hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700"
-          >
-            Buscar
-          </button>
+          <div className="flex gap-2">
+            <input
+              id="history-search"
+              type="search"
+              aria-describedby="history-search-help"
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+              placeholder="Buscar..."
+              className="h-9 min-w-0 flex-1 rounded-md border border-zinc-300 bg-white px-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-teal-700 focus:ring-2 focus:ring-teal-700/20"
+            />
+            <button
+              type="submit"
+              className="h-9 shrink-0 rounded-md bg-zinc-800 px-3 text-sm font-medium text-white transition hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700"
+            >
+              Buscar
+            </button>
+          </div>
+          <p id="history-search-help" className="text-xs leading-5 text-zinc-600">
+            {searchHelp}
+          </p>
         </form>
       </div>
 

@@ -1,0 +1,238 @@
+{
+  "date": "2026-10-14",
+  "base": "5e1ef9e",
+  "browser": {
+    "protocolVersion": "1.3",
+    "product": "Chrome/155.0.8059.79",
+    "revision": "@a49e2e3d4addfd84e765b52afe230bedb81096db",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+    "jsVersion": "15.5.35.23"
+  },
+  "zoom": "100%",
+  "systemPreference": "light",
+  "scope": "Componente React real montado e interactivo con CSS real y dos registros ficticios; sin Next server, sesión ni base de datos.",
+  "results": [
+    {
+      "width": 360,
+      "height": 800,
+      "help": {
+        "id": "history-search-help",
+        "text": "Buscar por profesional (nombre o apellido), especialidad, diagnóstico, tratamiento, indicaciones o fecha (dd/mm/aaaa).",
+        "visible": true,
+        "width": 302,
+        "left": 29,
+        "right": 331,
+        "bottom": 334,
+        "inputBottom": 266,
+        "documentWidth": 360
+      },
+      "accessibleDescription": "Buscar por profesional (nombre o apellido), especialidad, diagnóstico, tratamiento, indicaciones o fecha (dd/mm/aaaa).",
+      "tabToSearchButton": true,
+      "enterSubmits": true,
+      "queries": [
+        {
+          "query": "Martin",
+          "diagnoses": [
+            "Infección respiratoria alta"
+          ]
+        },
+        {
+          "query": "Gomez",
+          "diagnoses": [
+            "Infección respiratoria alta"
+          ]
+        },
+        {
+          "query": "Martin Gomez",
+          "diagnoses": [
+            "Infección respiratoria alta"
+          ]
+        },
+        {
+          "query": "Gomez, Martin",
+          "diagnoses": [
+            "Infección respiratoria alta"
+          ]
+        },
+        {
+          "query": "clinica",
+          "diagnoses": [
+            "Infección respiratoria alta"
+          ]
+        },
+        {
+          "query": "infeccion",
+          "diagnoses": [
+            "Infección respiratoria alta"
+          ]
+        },
+        {
+          "query": "reposo",
+          "diagnoses": [
+            "Infección respiratoria alta"
+          ]
+        },
+        {
+          "query": "control",
+          "diagnoses": [
+            "Infección respiratoria alta"
+          ]
+        },
+        {
+          "query": "14/10/2026",
+          "diagnoses": [
+            "Infección respiratoria alta"
+          ]
+        }
+      ]
+    },
+    {
+      "width": 768,
+      "height": 800,
+      "help": {
+        "id": "history-search-help",
+        "text": "Buscar por profesional (nombre o apellido), especialidad, diagnóstico, tratamiento, indicaciones o fecha (dd/mm/aaaa).",
+        "visible": true,
+        "width": 694,
+        "left": 37,
+        "right": 731,
+        "bottom": 266,
+        "inputBottom": 238,
+        "documentWidth": 768
+      },
+      "accessibleDescription": "Buscar por profesional (nombre o apellido), especialidad, diagnóstico, tratamiento, indicaciones o fecha (dd/mm/aaaa).",
+      "tabToSearchButton": true,
+      "enterSubmits": true,
+      "queries": [
+        {
+          "query": "Martin",
+          "diagnoses": [
+            "Infección respiratoria alta"
+          ]
+        },
+        {
+          "query": "Gomez",
+          "diagnoses": [
+            "Infección respiratoria alta"
+          ]
+        },
+        {
+          "query": "Martin Gomez",
+          "diagnoses": [
+            "Infección respiratoria alta"
+          ]
+        },
+        {
+          "query": "Gomez, Martin",
+          "diagnoses": [
+            "Infección respiratoria alta"
+          ]
+        },
+        {
+          "query": "clinica",
+          "diagnoses": [
+            "Infección respiratoria alta"
+          ]
+        },
+        {
+          "query": "infeccion",
+          "diagnoses": [
+            "Infección respiratoria alta"
+          ]
+        },
+        {
+          "query": "reposo",
+          "diagnoses": [
+            "Infección respiratoria alta"
+          ]
+        },
+        {
+          "query": "control",
+          "diagnoses": [
+            "Infección respiratoria alta"
+          ]
+        },
+        {
+          "query": "14/10/2026",
+          "diagnoses": [
+            "Infección respiratoria alta"
+          ]
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "help": {
+        "id": "history-search-help",
+        "text": "Buscar por profesional (nombre o apellido), especialidad, diagnóstico, tratamiento, indicaciones o fecha (dd/mm/aaaa).",
+        "visible": true,
+        "width": 384,
+        "left": 731,
+        "right": 1115,
+        "bottom": 254,
+        "inputBottom": 206,
+        "documentWidth": 1280
+      },
+      "accessibleDescription": "Buscar por profesional (nombre o apellido), especialidad, diagnóstico, tratamiento, indicaciones o fecha (dd/mm/aaaa).",
+      "tabToSearchButton": true,
+      "enterSubmits": true,
+      "queries": [
+        {
+          "query": "Martin",
+          "diagnoses": [
+            "Infección respiratoria alta"
+          ]
+        },
+        {
+          "query": "Gomez",
+          "diagnoses": [
+            "Infección respiratoria alta"
+          ]
+        },
+        {
+          "query": "Martin Gomez",
+          "diagnoses": [
+            "Infección respiratoria alta"
+          ]
+        },
+        {
+          "query": "Gomez, Martin",
+          "diagnoses": [
+            "Infección respiratoria alta"
+          ]
+        },
+        {
+          "query": "clinica",
+          "diagnoses": [
+            "Infección respiratoria alta"
+          ]
+        },
+        {
+          "query": "infeccion",
+          "diagnoses": [
+            "Infección respiratoria alta"
+          ]
+        },
+        {
+          "query": "reposo",
+          "diagnoses": [
+            "Infección respiratoria alta"
+          ]
+        },
+        {
+          "query": "control",
+          "diagnoses": [
+            "Infección respiratoria alta"
+          ]
+        },
+        {
+          "query": "14/10/2026",
+          "diagnoses": [
+            "Infección respiratoria alta"
+          ]
+        }
+      ]
+    }
+  ]
+}

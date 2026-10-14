@@ -8,6 +8,8 @@ Fecha de elaboración: 13/10/2026. Responsable del bloque: usuario.
 
 ## Avance de implementación
 
+SIG-MEJ-02.1/02.2 están completados para [DEC-003](../../decisiones.md#dec-003--campos-y-ayuda-de-búsqueda-del-historial): matriz de los seis campos y ayuda visible/accesible, reutilizando el matcher de SIG-BUG-02. Pasaron 39 regresiones y la verificación de 27 búsquedas con teclado en Chrome a 360/768/1280 px. [Ver matriz, capturas y límites](SIG-MEJ-02-IMPLEMENTACION.md). SIG-MEJ-02.3 conserva la verificación de aislamiento del servidor pendiente.
+
 SIG-BUG-02.1/02.2/02.3 están completados para [DEC-002](../../decisiones.md#dec-002--normalización-de-la-búsqueda-del-historial): fallo reproducido, normalización de tildes/mayúsculas/ñ y términos en cualquier orden, con 39 regresiones del componente. La suite final falla en 21 casos contra el componente original y pasa completa corregida; 105 pruebas totales aprobadas. [Ver diagnóstico, resultados y límites](SIG-BUG-02-IMPLEMENTACION.md). La matriz/ayuda y el aislamiento de SIG-MEJ-02 conservan sus entregables.
 
 SIG-BUG-01.1 tiene diagnóstico completado y SIG-BUG-01.2 está implementado: el portal cubre la ventana, los filtros se adaptan y el scroll de la tabla queda contenido. [Ver diagnóstico, capturas y verificación](SIG-BUG-01-IMPLEMENTACION.md). El alcance de DU-01 queda registrado en [DEC-001](../../decisiones.md#dec-001--alcance-de-la-corrección-visual-sig-bug-01); no se cambian funciones de las US médicas.
@@ -26,7 +28,7 @@ SIG-MEJ-04.1, SIG-MEJ-04.2 y SIG-MEJ-04.3 están implementados y verificados con
 
 ## Revisión de requisitos y dudas
 
-[Leer la revisión y el registro de dudas](REVISION.md). Cada uno de los 16 tickets fue contrastado con RF, historias y diseño: distingue obligación explícita, cobertura existente, supuesto técnico y criterio condicionado. DU-01, DU-03 y DU-04 tienen alcance definido y evidencia local; DU-12 registra decisiones, con jerarquía general pendiente. Las demás conservan los pendientes indicados en su entrada. P1/P2 y horas son propuestas de planificación.
+[Leer la revisión y el registro de dudas](REVISION.md). Cada uno de los 16 tickets fue contrastado con RF, historias y diseño: distingue obligación explícita, cobertura existente, supuesto técnico y criterio condicionado. DU-01, DU-03, DU-04 y DU-05 tienen alcance definido y evidencia local; DU-12 registra decisiones, con jerarquía general pendiente. Las demás conservan los pendientes indicados en su entrada. P1/P2 y horas son propuestas de planificación.
 
 La revisión ajusta el primer plan: no se da por aprobado conservar seis campos de búsqueda ni una equivalencia ñ/n; se distingue el entero positivo en UI de cantidades con signo en el modelo; se registran el indicador de stock por lote, la atribución del responsable y las diferencias del ciclo/botón de vacunación. Las definiciones pendientes afectan solo los cambios que dependan de ellas.
 
@@ -48,7 +50,7 @@ No agrupar todo como un único bug: hay diagnóstico, acuerdos con el cliente, t
 - **Área médica:** se reprodujo la exposición del fondo del body al quedar el portal más corto que la ventana, y el desbordamiento de filtros a 360 px. SIG-BUG-01.1 documenta la causa y SIG-BUG-01.2 corrige ambos problemas; ver evidencia de implementación.
 - **Tildes:** el fallo original quedó reproducido y corregido conforme a DEC-002. La búsqueda aplica la misma normalización a consulta y campos; el informe conserva la ambigüedad de la fuente y registra el criterio explícito del usuario.
 - **Profesional:** nombre/apellido ya llegan en `record.doctor` y ya participan del filtro. SIG-MEJ-02 no empieza de cero: define alcance, agrega ayuda visible y verifica los casos faltantes. «Martin» sin tilde corresponde a normalización, no a agregar el campo.
-- **Campos del historial:** SIG-BUG-02 conserva los seis campos actuales según DEC-002. Matriz de campos/ejemplos y ayuda visible se entregan en SIG-MEJ-02, sin duplicar el filtro ni dar esa mejora por completada.
+- **Campos del historial:** SIG-BUG-02 conserva los seis campos actuales según DEC-002. SIG-MEJ-02.1/02.2 entrega matriz y ayuda de esos seis campos bajo DEC-003, sin duplicar el filtro; aislamiento de SIG-MEJ-02.3 continúa pendiente.
 - **Stock:** ya hay tipos INGRESO/AJUSTE, motivo obligatorio para ajuste, movimiento con responsable y trigger que evita stock negativo. SIG-MEJ-03 adapta la entrada y verifica integración/error de dominio; no reemplaza el módulo de inventario ni exige migración de esquema inicialmente.
 - **Vacunación:** `loadSlots` ya actualiza horarios, limpia selección y descarta respuestas antiguas. SIG-MEJ-04.3 es verificación y ajuste de errores/estado obsoletos. La validación actual de horario obligatorio se ejecuta sin distinguir día sin cupos.
 

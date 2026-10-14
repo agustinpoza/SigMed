@@ -8,6 +8,8 @@ Esta clasificación precisa la [revisión de dudas](REVISION.md): una duda relac
 
 ## Avance posterior a esta clasificación
 
+SIG-MEJ-02.1/02.2 están completados: matriz y ayuda visible/accesible bajo [DEC-003](../../decisiones.md#dec-003--campos-y-ayuda-de-búsqueda-del-historial). [Ver evidencia](SIG-MEJ-02-IMPLEMENTACION.md). SIG-MEJ-02.3 sigue como regresión del servidor e integración pendiente con sesión real.
+
 SIG-BUG-02.1/02.2/02.3 están completados para [DEC-002](../../decisiones.md#dec-002--normalización-de-la-búsqueda-del-historial). DU-03/DU-04 ya no bloquean la normalización: se reprodujo el fallo y pasan 39 regresiones del componente, con 105 pruebas totales aprobadas. [Ver evidencia y límites](SIG-BUG-02-IMPLEMENTACION.md). SIG-MEJ-02 conserva matriz/ayuda y aislamiento; no duplicar el matcher común.
 
 SIG-BUG-01.1 tiene diagnóstico completado y SIG-BUG-01.2 está implementado y verificado visualmente con fixtures aislados en los anchos acordados. [Ver causa, capturas y límites](SIG-BUG-01-IMPLEMENTACION.md). [DEC-001](../../decisiones.md#dec-001--alcance-de-la-corrección-visual-sig-bug-01) registra el criterio aplicado; repetir la regresión si US-7.4/2.8 modifica el shell o el contenido médico.
@@ -52,8 +54,6 @@ SIG-MEJ-04.1/04.2/04.3 ya están implementados con el alcance aquí delimitado. 
 | --- | --- | --- |
 | [SIG-MEJ-01.1](tickets/SIG-MEJ-01.1.md) | Preparar alternativas de rótulo y registrar por qué representan el contenido. | Hace falta el acuerdo de texto de DU-02 para cerrar; la preparación puede empezar sin pedir permiso. No aplicar una alternativa como definitiva. |
 | [SIG-MEJ-01.2](tickets/SIG-MEJ-01.2.md) | El cambio de texto queda preparado, sin seleccionar todavía rótulo ni texto del botón. | SIG-MEJ-01.1 / DU-02: acuerdo de textos expresamente pendiente en la fuente. Implementar después del acuerdo. |
-| [SIG-MEJ-02.1](tickets/SIG-MEJ-02.1.md) | Inventariar los seis campos del código y los tres del diseño; preparar matriz de ejemplos y dudas. | Resolver DU-04/DU-05 sobre campos y forma de nombres para cerrar. No se necesita permiso para preparar la matriz. No tomar la presencia de código como aprobación de seis campos. |
-| [SIG-MEJ-02.2](tickets/SIG-MEJ-02.2.md) | No aplicar ayuda definitiva ni ampliar la búsqueda a partir de supuestos. | SIG-MEJ-02.1 y las equivalencias relevantes de SIG-BUG-02.2: campos, ayuda y comportamiento por profesional. La ayuda que enumera tres campos no resuelve por sí sola el alcance actual de seis. |
 
 ## Coordinación con las US nuevas
 
@@ -71,7 +71,6 @@ SIG-BUG-02.1/02.2/02.3 ya están completados con las expectativas definidas en D
 ## Qué queda pendiente de definición
 
 - **SIG-MEJ-01.1/01.2:** rótulo definitivo y textos del botón.
-- **SIG-MEJ-02.1/02.2:** lista de campos, ayuda y forma de buscar nombres; el código existente no reemplaza esa definición.
 - **Parte de SIG-MEJ-03.3:** responsable real cuando no hay actor; no asumir válido el fallback.
 
 Preparar una propuesta de definición no necesita permiso; lo pendiente es la respuesta para establecer la regla y cerrar la definición. No hay un pedido nuevo de aprobación en esta clasificación.

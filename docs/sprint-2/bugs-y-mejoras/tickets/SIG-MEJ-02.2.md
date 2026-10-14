@@ -8,18 +8,27 @@
 | Tipo de tarea | Mejora de búsqueda y ayuda |
 | Prioridad propuesta | P2 |
 | Estado inicial | Pendiente de definición; soporte básico existente |
+| Estado actual | Implementado y verificado; ayuda visible y accesible, matcher existente reutilizado |
 | Esfuerzo orientativo | 2 h |
 | Predecesoras del plan de integración | [SIG-MEJ-02.1](SIG-MEJ-02.1.md), [SIG-BUG-02.2](SIG-BUG-02.2.md) |
 
+## Implementación y verificación
+
+Fecha: 14/10/2026. Base: `5e1ef9e`. Se aplica la [matriz de SIG-MEJ-02.1](SIG-MEJ-02.1.md#matriz-de-campos-y-ejemplos) y [DEC-003](../../../decisiones.md#dec-003--campos-y-ayuda-de-búsqueda-del-historial).
+
+La ayuda enumera profesional, especialidad, diagnóstico, tratamiento, indicaciones y fecha `dd/mm/aaaa`. Se guarda en una constante y se muestra bajo el input, asociado por `aria-describedby`; input y botón conservan su fila y envío con Enter. Nombre/apellido y ambos órdenes reutilizan el matcher de SIG-BUG-02, sin otro filtro ni datos nuevos.
+
+Pasaron las 39 regresiones existentes del historial. Chrome verificó ayuda visible, descripción accesible y 27 búsquedas con teclado a 360/768/1280 px. [Ver capturas, comandos y límites](../SIG-MEJ-02-IMPLEMENTACION.md).
+
 ## Disponibilidad para arrancar
 
-**Clasificación:** Implementación pendiente de definición funcional.
+**Clasificación:** Implementación completada con la definición de SIG-MEJ-02.1/DEC-003.
 
-**Alcance que puede avanzar:** No aplicar ayuda definitiva ni ampliar la búsqueda a partir de supuestos.
+**Alcance implementado:** Ayuda visible/accesible de los seis campos actuales; reutilización de búsqueda por profesional normalizada.
 
 **Dependencia o definición relevante:** SIG-MEJ-02.1 y las equivalencias relevantes de SIG-BUG-02.2: campos, ayuda y comportamiento por profesional.
 
-**Límite de esta clasificación:** La ayuda que enumera tres campos no resuelve por sí sola el alcance actual de seis.
+**Límite de esta clasificación:** No se amplían campos ni consultas; no se implementan permisos o aislamiento del servidor en este ticket.
 
 [Ver la clasificación de todos los tickets](../ARRANQUE.md). Esta sección no resuelve las dudas registradas ni modifica reglas de negocio; delimita el trabajo que puede empezar con lo ya definido.
 
@@ -39,7 +48,7 @@
 
 record.doctor ya se incluye en el filtro y se construye como Apellido, Nombre. Hay un label sr-only, pero no ayuda visible bajo el buscador.
 
-La evidencia de código corresponde a una revisión estática. Las verificaciones indicadas abajo están planificadas, no ejecutadas.
+La situación anterior describe el componente previo. La implementación y sus verificaciones están registradas arriba.
 
 ## Objetivo
 
@@ -53,10 +62,10 @@ Hacer comprensible la búsqueda y completar solo las diferencias respecto del al
 
 ## Criterios de aceptación
 
-- [ ] **[Condicionado a DU-05]** La ayuda describe los campos aprobados y es accesible.
-- [ ] **[Condicionado a DU-04/DU-05]** Las consultas por profesional que se definan en SIG-MEJ-02.1 encuentran su atención; Martín/Martin y orden del nombre no se asumen equivalentes sin resolver DU-04.
-- [ ] **[Condicionado a DU-04]** El formato de nombre completo cumple lo decidido y no se vuelve a implementar la búsqueda básica ya existente.
-- [ ] **[Explícito en RF-18]** No se modifican los datos mostrados ni se incorporan registros de otro paciente.
+- [x] **[DEC-003]** La ayuda visible describe los seis campos y queda asociada al input; Chrome expone el mismo texto como descripción accesible.
+- [x] **[DEC-002/003]** Las consultas por nombre, apellido y ambos órdenes definidas en la matriz encuentran la atención correspondiente.
+- [x] **[Reutilización]** El nombre mostrado conserva Apellido, Nombre y la búsqueda usa el matcher existente de SIG-BUG-02.
+- [x] **[RF-18; preservación estática]** No se modifica la consulta/filtro por paciente ni los registros de entrada. Las pruebas de aislamiento real del servidor permanecen en SIG-MEJ-02.3.
 
 ## Validación prevista
 
@@ -97,9 +106,9 @@ Las etiquetas de los criterios separan obligación explícita, interpretación p
 
 ### Datos faltantes o contradictorios
 
-Martín con tilde debería coincidir por inspección, pero la fuente dice que no encontró resultados: faltan datos y versión del caso para reproducirlo. Martin sin tilde es otro caso.
+SIG-BUG-02 reprodujo la diferencia Martín/Martin y entregó su corrección. Esta entrega verifica las consultas de la matriz con fixtures. Las condiciones históricas del despliegue original siguen desconocidas; no se presentan como reproducción de ese despliegue.
 
-**Dudas abiertas relacionadas:** [DU-04](../REVISION.md#du-04), [DU-05](../REVISION.md#du-05), [DU-06](../REVISION.md#du-06), [DU-12](../REVISION.md#du-12). No hay respuestas registradas; no se adopta una opción como regla por defecto.
+**Dudas relacionadas:** [DU-04](../REVISION.md#du-04) y [DU-05](../REVISION.md#du-05), definidas mediante DEC-002/003. [DU-06](../REVISION.md#du-06) conserva permisos administrativos en US-7.5; [DU-12](../REVISION.md#du-12), la jerarquía general. No se presumen nuevas autorizaciones.
 
 ### Tratamiento de la duda y alcance seguro
 
