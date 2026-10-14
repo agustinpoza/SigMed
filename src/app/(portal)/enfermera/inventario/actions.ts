@@ -12,6 +12,7 @@ import {
 import { StockRuleError, registerStockMovement } from "@/lib/stock";
 import { MovementType } from "@/generated/prisma/enums";
 import { requireEnfermeraOAdministrador } from "@/lib/actor-guard";
+import { MAX_STOCK_INPUT_QUANTITY } from "@/lib/stock-input";
 
 export type MovementFormState = {
   errors?: FieldErrors;
@@ -54,6 +55,7 @@ export async function createStockMovement(
   }
 
   const rawType = rawValue(formData, "movementType");
+  const operation = rawValue(formData, "operation");
   const movementType = ALLOWED_TYPES.find((type) => type === rawType);
 
   if (!movementType) {
@@ -62,27 +64,23 @@ export async function createStockMovement(
 
   let quantity: number | null = null;
 
-  if (movementType === MovementType.INGRESO) {
+  if (movementType) {
     quantity = requiredInt(
       formData.get("quantity"),
       "quantity",
       errors,
       "La cantidad",
-      { min: 1 },
+      { min: 1, max: MAX_STOCK_INPUT_QUANTITY },
     );
-  } else if (movementType === MovementType.AJUSTE) {
-    quantity = requiredInt(
-      formData.get("quantity"),
-      "quantity",
-      errors,
-      "La cantidad",
-    );
+  }
 
-    if (quantity === 0) {
-      errors.quantity = "La cantidad no puede ser 0.";
+  if (movementType === MovementType.AJUSTE) {
+    if (operation !== "SUMAR" && operation !== "DESCONTAR") {
+      errors.operation = "Seleccioná Sumar dosis o Descontar dosis.";
     }
-
     requiredText(formData.get("reason"), "reason", errors, "El motivo");
+  } else if (movementType === MovementType.INGRESO && operation) {
+    errors.operation = "La operación de ajuste no corresponde a un ingreso.";
   }
 
   const expiresAtRaw = rawValue(formData, "expiresAt");
@@ -99,6 +97,7 @@ export async function createStockMovement(
   const values = {
     vaccineId,
     movementType: rawType,
+    operation,
     lotNumber,
     expiresAt: expiresAtRaw,
     quantity: rawValue(formData, "quantity"),
@@ -116,11 +115,15 @@ export async function createStockMovement(
   }
 
   try {
+    // La UI siempre envía una magnitud positiva; el dominio mantiene cantidades con signo.
+    const signedQuantity = movementType === MovementType.AJUSTE && operation === "DESCONTAR"
+      ? -quantity
+      : quantity;
     await registerStockMovement({
       vaccineId,
       lotNumber,
       expiresAt,
-      quantity,
+      quantity: signedQuantity,
       movementType,
       reason: reason || null,
       actorId: guard.actor.id,
@@ -139,6 +142,8 @@ export async function createStockMovement(
     message:
       movementType === MovementType.INGRESO
         ? `Se registró un ingreso de ${quantity} unidades.`
-        : `Se registró un ajuste de ${quantity} unidades.`,
+        : operation === "DESCONTAR"
+          ? `Se descontaron ${quantity} dosis del lote.`
+          : `Se sumaron ${quantity} dosis al lote.`,
   };
 }

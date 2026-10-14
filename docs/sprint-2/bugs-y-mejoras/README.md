@@ -8,6 +8,8 @@ Fecha de elaboración: 13/10/2026. Responsable del bloque: usuario.
 
 ## Avance de implementación
 
+SIG-MEJ-03.1 y SIG-MEJ-03.2 están implementados: selector Sumar/Descontar, entrada positiva, signo calculado en servidor y preservación de valores. Pasaron 38 pruebas nuevas de stock y las 28 de vacunación (66 en total), typecheck, lint sin errores y build. [Ver implementación y límites](SIG-MEJ-03-IMPLEMENTACION.md). SIG-MEJ-03.3, el indicador por lote y las dudas de identidad siguen pendientes.
+
 SIG-MEJ-04.1, SIG-MEJ-04.2 y SIG-MEJ-04.3 están implementados y verificados con 28 pruebas aisladas, typecheck, lint sin errores y build. [Ver cambios, resultados y límites de la verificación](SIG-MEJ-04-IMPLEMENTACION.md). Las dudas de ciclo, botón y duración permanecen abiertas; no se cambiaron esas reglas ni se escribieron datos de prueba en la base compartida. Los estados iniciales de la tabla conservan la planificación anterior; el estado actual está en cada ticket.
 
 ## Aislamiento y orden con las US nuevas

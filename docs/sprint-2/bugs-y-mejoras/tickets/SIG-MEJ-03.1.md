@@ -8,8 +8,19 @@
 | Tipo de tarea | Mejora de formulario |
 | Prioridad propuesta | P2 |
 | Estado inicial | Planificada; propuesta funcional del documento |
+| Estado actual | Implementado y verificado con pruebas aisladas; cierre integrado de stock corresponde a SIG-MEJ-03.3 |
 | Esfuerzo orientativo | 2 h |
 | Predecesoras del plan de integración | Ninguna |
+
+## Implementación y verificación
+
+Implementado el 14/10/2026 en sprint-2/bugs-y-mejoras, sobre b765674.
+
+Se agregaron las opciones Sumar dosis y Descontar dosis para AJUSTE, sin preseleccionar una operación. La cantidad usa min=1/step=1 y ayuda de entero positivo. Los campos controlados conservan vacuna, lote, motivo, cantidad y operación si el servidor devuelve un error; cambiar tipo elimina la operación incompatible y Cancelar limpia datos y feedback.
+
+[Ver implementación y resultados de SIG-MEJ-03.1/03.2](../SIG-MEJ-03-IMPLEMENTACION.md). Pasaron 38 pruebas nuevas de stock y 28 regresiones de vacunación (66 en total), typecheck y build. Lint sin errores, con un aviso preexistente de vacunación. Las casillas reflejan cobertura automatizada de la entrada, acción y contrato de llamada; no se escribieron movimientos reales para verificarlas.
+
+SIG-MEJ-03.3 y las dudas DU-07/DU-08 permanecen pendientes: no se agregó indicador de stock por lote ni se cambió identidad, fallback, auditoría, triggers o reglas de concurrencia.
 
 ## Disponibilidad para arrancar
 
@@ -39,7 +50,7 @@
 
 El formulario diferencia INGRESO/AJUSTE; para AJUSTE explica el uso de negativos y muestra placeholder -5.
 
-La evidencia de código corresponde a una revisión estática. Las verificaciones indicadas abajo están planificadas, no ejecutadas.
+La evidencia inicial corresponde a la revisión estática previa. La implementación posterior y su verificación están registradas arriba; la integración real de stock continúa en SIG-MEJ-03.3.
 
 ## Objetivo
 
@@ -54,10 +65,10 @@ Permitir elegir la dirección del ajuste sin que la persona deba conocer el sign
 
 ## Criterios de aceptación
 
-- [ ] **[Explícito en SIG-MEJ-03]** Para ajustes se elige expresamente Sumar o Descontar y se ingresa una cantidad positiva.
-- [ ] **[Modelo existente; preservación técnica]** INGRESO mantiene su flujo y no admite una operación de descuento.
-- [ ] **[Preservación técnica]** Cambiar tipo de movimiento no deja una operación incompatible oculta ni pierde información tras errores.
-- [ ] **[Propuesta técnica]** Los controles y mensajes son accesibles y consistentes con el formulario actual.
+- [x] **[Explícito en SIG-MEJ-03]** Para ajustes se elige expresamente Sumar o Descontar y se ingresa una cantidad positiva.
+- [x] **[Modelo existente; preservación técnica]** INGRESO mantiene su flujo y no admite una operación de descuento.
+- [x] **[Preservación técnica]** Cambiar tipo de movimiento no deja una operación incompatible oculta ni pierde información tras errores.
+- [x] **[Propuesta técnica]** Los controles y mensajes son accesibles y consistentes con el formulario actual.
 
 ## Validación prevista
 

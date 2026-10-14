@@ -8,6 +8,8 @@ Esta clasificación precisa la [revisión de dudas](REVISION.md): una duda relac
 
 ## Avance posterior a esta clasificación
 
+SIG-MEJ-03.1/03.2 ya están implementados con el alcance delimitado; [ver evidencia](SIG-MEJ-03-IMPLEMENTACION.md). SIG-MEJ-03.3 continúa como trabajo parcial y cierre de integración pendiente.
+
 SIG-MEJ-04.1/04.2/04.3 ya están implementados con el alcance aquí delimitado. [Ver evidencia y verificación](SIG-MEJ-04-IMPLEMENTACION.md). La clasificación siguiente conserva el criterio de inicio; no implica que esas tres tareas todavía carezcan de implementación.
 
 ## Implementación sin consulta externa

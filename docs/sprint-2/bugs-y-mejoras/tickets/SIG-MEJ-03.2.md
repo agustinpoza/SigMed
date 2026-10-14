@@ -8,8 +8,19 @@
 | Tipo de tarea | Integración y validación de formulario |
 | Prioridad propuesta | P2 |
 | Estado inicial | Pendiente de contrato de formulario |
+| Estado actual | Implementado y verificado con pruebas aisladas; cierre integrado de stock corresponde a SIG-MEJ-03.3 |
 | Esfuerzo orientativo | 3 h |
 | Predecesoras del plan de integración | [SIG-MEJ-03.1](SIG-MEJ-03.1.md) |
+
+## Implementación y verificación
+
+Implementado el 14/10/2026 en sprint-2/bugs-y-mejoras, sobre b765674.
+
+createStockMovement valida cantidad entera positiva y operación, calcula +cantidad/-cantidad una sola vez y mantiene los valores de entrada positivos al devolver errores. INGRESO conserva su comportamiento; el motivo sigue siendo obligatorio para AJUSTE. El contrato firmado de registerStockMovement y el guard existente no se modificaron.
+
+[Ver implementación y resultados de SIG-MEJ-03.1/03.2](../SIG-MEJ-03-IMPLEMENTACION.md). Pasaron 38 pruebas nuevas de stock y 28 regresiones de vacunación (66 en total), typecheck y build. Lint sin errores, con un aviso preexistente de vacunación. Las casillas reflejan cobertura automatizada de la entrada, acción y contrato de llamada; no se escribieron movimientos reales para verificarlas.
+
+SIG-MEJ-03.3 y las dudas DU-07/DU-08 permanecen pendientes: no se agregó indicador de stock por lote ni se cambió identidad, fallback, auditoría, triggers o reglas de concurrencia.
 
 ## Disponibilidad para arrancar
 
@@ -39,7 +50,7 @@
 
 createStockMovement acepta ajustes con enteros de cualquier signo excepto cero. registerStockMovement y los movimientos persistidos trabajan con cantidades con signo; el motivo ya es obligatorio para AJUSTE.
 
-La evidencia de código corresponde a una revisión estática. Las verificaciones indicadas abajo están planificadas, no ejecutadas.
+La evidencia inicial corresponde a la revisión estática previa. La implementación posterior y su verificación están registradas arriba; la integración real de stock continúa en SIG-MEJ-03.3.
 
 ## Objetivo
 
@@ -54,10 +65,10 @@ Aceptar operación explícita y cantidad positiva en el formulario, convirtiénd
 
 ## Criterios de aceptación
 
-- [ ] **[Explícito en SIG-MEJ-03 y modelo de stock]** Sumar 5 persiste +5; Descontar 5 persiste -5; INGRESO sigue siendo positivo.
-- [ ] **[Explícito para nueva entrada de UI; límite técnico]** En la nueva entrada del formulario, 0, negativos, decimales, campos ausentes y operaciones inválidas se rechazan antes de escribir; no se prohíben cantidades negativas en ajustes persistidos.
-- [ ] **[Propuesta técnica para aplicar signo una vez]** No se acepta un signo enviado por el cliente como autoridad ni se descuenta dos veces.
-- [ ] **[Preservación técnica y regla de motivo del modelo]** Los errores preservan los valores de UI y las reglas de lote/motivo existentes.
+- [x] **[Explícito en SIG-MEJ-03 y modelo de stock]** Sumar 5 persiste +5; Descontar 5 persiste -5; INGRESO sigue siendo positivo.
+- [x] **[Explícito para nueva entrada de UI; límite técnico]** En la nueva entrada del formulario, 0, negativos, decimales, campos ausentes y operaciones inválidas se rechazan antes de escribir; no se prohíben cantidades negativas en ajustes persistidos.
+- [x] **[Propuesta técnica para aplicar signo una vez]** No se acepta un signo enviado por el cliente como autoridad ni se descuenta dos veces.
+- [x] **[Preservación técnica y regla de motivo del modelo]** Los errores preservan los valores de UI y las reglas de lote/motivo existentes.
 
 ## Validación prevista
 
