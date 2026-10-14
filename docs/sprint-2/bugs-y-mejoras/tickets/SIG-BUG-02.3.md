@@ -8,18 +8,27 @@
 | Tipo de tarea | Pruebas de regresión |
 | Prioridad propuesta | P1 |
 | Estado inicial | Pendiente de corrección |
+| Estado actual | Completado; 39 regresiones del historial y 105 pruebas totales aprobadas |
 | Esfuerzo orientativo | 2 h |
 | Predecesoras del plan de integración | [SIG-BUG-02.2](SIG-BUG-02.2.md) |
 
+## Regresiones implementadas
+
+Fecha: 14/10/2026. Base: `9837f80`. [DEC-002](../../../decisiones.md#dec-002--normalización-de-la-búsqueda-del-historial) define los resultados esperados; se reutiliza Vitest/Testing Library/jsdom, ya disponibles.
+
+La suite interactúa con el componente real, escribe consultas y comprueba filas, mensajes, filtros, orden, detalle y paginación. Contra la copia aislada del componente original fallan 21/39 casos; corregido pasan 39/39. Las 66 pruebas previas también pasan: 105 en total.
+
+Comando: `npm.cmd run test:history`; suite completa: `npm.cmd test`. [Ver comparación antes/después y límites](../SIG-BUG-02-IMPLEMENTACION.md). No se simula el algoritmo ni se usan credenciales o datos clínicos reales.
+
 ## Disponibilidad para arrancar
 
-**Clasificación:** Arranque parcial sin consulta externa.
+**Clasificación:** Regresiones completadas para el contrato de DEC-002.
 
 **Alcance que puede avanzar:** Preparar fixtures y cubrir la insensibilidad a mayúsculas explícita, además de preservación técnica de filtros/paginación existentes.
 
-**Dependencia o definición relevante:** Los resultados esperados de tildes, ñ/n y campos nuevos siguen pendientes de SIG-BUG-02.1/02.2 y DU-04/DU-05.
+**Dependencia o definición relevante:** SIG-BUG-02.1/02.2 completados y DU-03/DU-04 definidas. Las pruebas preservan campos existentes; no incluyen ampliaciones ni ayuda de SIG-MEJ-02.
 
-**Límite de esta clasificación:** No cerrar la regresión del bug completo ni inventar resultados para las pruebas pendientes.
+**Límite de esta clasificación:** La suite del componente no certifica aislamiento del servidor ni autenticación; esas verificaciones corresponden a SIG-MEJ-02.3 y US-7.2/7.4.
 
 [Ver la clasificación de todos los tickets](../ARRANQUE.md). Esta sección no resuelve las dudas registradas ni modifica reglas de negocio; delimita el trabajo que puede empezar con lo ya definido.
 
@@ -37,9 +46,9 @@
 
 [Documento de análisis — sección 02](../../../../DocumentacionSigMed/Sistema%20SigMed/Sprint%201/US,Bugs%20y%20Mejoras%20Sprint%202.docx.md).
 
-El repositorio tiene scripts de verificación de base de datos y vacunación; no hay un runner de pruebas de UI declarado en package.json.
+La revisión inicial no tenía runner de UI. Desde SIG-MEJ-04/03 existe Vitest con Testing Library y jsdom; esta entrega lo reutiliza y agrega `test:history`, sin dependencias nuevas.
 
-La evidencia de código corresponde a una revisión estática. Las verificaciones indicadas abajo están planificadas, no ejecutadas.
+Las pruebas ya se ejecutaron contra el componente original y corregido; los resultados quedan en la evidencia enlazada arriba.
 
 ## Objetivo
 
@@ -53,10 +62,10 @@ Detectar futuras regresiones en la búsqueda sin duplicar literalmente su implem
 
 ## Criterios de aceptación
 
-- [ ] **[Criterio técnico de pruebas]** Las pruebas se basan en resultados esperados, no en repetir el algoritmo.
-- [ ] **[Condicionado a DU-03]** Al menos un caso de fallo confirmado en SIG-BUG-02.1 falla antes y pasa después; no usar una expectativa no definida para demostrar el bug.
-- [ ] **[Propuesta técnica]** La suite corre con un comando documentado y sin credenciales ni datos clínicos reales.
-- [ ] **[Solo casos definidos; DU-04 pendiente]** Se comprueban exclusión de resultados no coincidentes y el comportamiento definido de ñ.
+- [x] **[Pruebas del componente]** Se comprueban filas y comportamiento de UI sin repetir ni simular el algoritmo.
+- [x] **[DU-03; reproducción]** 21 casos fallan contra el componente original y pasan corregidos, incluido infeccion → Infección.
+- [x] **[Entregable técnico]** `npm.cmd run test:history` ejecuta la suite sin credenciales ni datos clínicos reales.
+- [x] **[DU-04; DEC-002]** Se verifican exclusión de resultados no coincidentes, ñ/n y términos de una misma atención.
 
 ## Validación prevista
 
@@ -65,6 +74,7 @@ Ejecutar la suite implementada y registrar salida/comando. Usar una prueba del c
 ## Archivos a revisar
 
 - [src/app/(portal)/paciente/historial/clinical-history-table.tsx](../../../../src/app/%28portal%29/paciente/historial/clinical-history-table.tsx)
+- [src/app/(portal)/paciente/historial/clinical-history-table.test.tsx](../../../../src/app/%28portal%29/paciente/historial/clinical-history-table.test.tsx)
 - [package.json](../../../../package.json)
 
 ## Límite de alcance
@@ -97,9 +107,9 @@ Las etiquetas de los criterios separan obligación explícita, interpretación p
 
 ### Datos faltantes o contradictorios
 
-No hay una suite de UI ya acordada; la herramienta es una elección técnica, no requisito de negocio. No fijar resultados de ñ ni campos dudosos en tests.
+Se reutiliza el runner existente. Los resultados de ñ/n y Unicode proceden de DEC-002; los campos actuales se verifican como preservación, sin dar por entregada la matriz/ayuda de SIG-MEJ-02.
 
-**Dudas abiertas relacionadas:** [DU-03](../REVISION.md#du-03), [DU-04](../REVISION.md#du-04), [DU-05](../REVISION.md#du-05), [DU-12](../REVISION.md#du-12). No hay respuestas registradas; no se adopta una opción como regla por defecto.
+**Dudas relacionadas:** [DU-03](../REVISION.md#du-03) y [DU-04](../REVISION.md#du-04), definidas mediante DEC-002. [DU-05](../REVISION.md#du-05) conserva la matriz/ayuda pendiente y [DU-12](../REVISION.md#du-12) la jerarquía general; no condicionan estas regresiones del alcance existente.
 
 ### Tratamiento de la duda y alcance seguro
 

@@ -8,18 +8,27 @@
 | Tipo de tarea | Verificación de bug funcional |
 | Prioridad propuesta | P1 |
 | Estado inicial | Lista para iniciar; bug pendiente de reproducción |
+| Estado actual | Diagnóstico completado; fallo reproducido en el componente real con fixtures |
 | Esfuerzo orientativo | 1 h |
 | Predecesoras del plan de integración | Ninguna |
 
+## Diagnóstico y definición completados
+
+Fecha: 14/10/2026. Base: `9837f80`. [DEC-002](../../../decisiones.md#dec-002--normalización-de-la-búsqueda-del-historial) registra los criterios DU-03/DU-04 propuestos por el usuario y aplicados por esta solicitud.
+
+La suite final de 39 casos ejecutada contra una copia aislada del componente original da 18 aprobados y 21 fallidos. `infeccion` no encuentra `Infección respiratoria alta`; `alta` y `ALTA` sí la encuentran. `Martín` funciona en el campo profesional existente, mientras que `Martin` falla por el acento. Unicode compuesto/descompuesto y nombres en distinto orden también divergen.
+
+La corrección usa NFD, eliminación de diacríticos, minúsculas y términos separados por espacios/comas, todos dentro de una misma atención; ñ/n y diéresis tienen equivalencia explícita en DEC-002. [Ver datos, resultados y límites](../SIG-BUG-02-IMPLEMENTACION.md).
+
 ## Disponibilidad para arrancar
 
-**Clasificación:** Diagnóstico sin consulta externa.
+**Clasificación:** Diagnóstico completado; habilita SIG-BUG-02.2.
 
 **Alcance que puede avanzar:** Probar cadenas con/sin tilde y mayúsculas con datos controlados; documentar resultado actual y la inconsistencia del ejemplo.
 
-**Dependencia o definición relevante:** Ninguna confirmación para reproducir. La investigación no decide equivalencias de ñ/n ni nuevos campos.
+**Dependencia o definición relevante:** DU-03/DU-04 se registran en DEC-002. No se agregan campos; la matriz y ayuda siguen en SIG-MEJ-02.
 
-**Límite de esta clasificación:** La corrección funcional de SIG-BUG-02.2 conserva sus definiciones pendientes.
+**Límite de esta clasificación:** La reproducción es local con fixtures; no identifica la consulta histórica del despliegue ni certifica autenticación.
 
 [Ver la clasificación de todos los tickets](../ARRANQUE.md). Esta sección no resuelve las dudas registradas ni modifica reglas de negocio; delimita el trabajo que puede empezar con lo ya definido.
 
@@ -39,7 +48,7 @@
 
 La búsqueda convierte texto y consulta a minúsculas, pero no normaliza acentos. Por inspección, infeccion no coincide con Infección. El documento llama al caso posible bug y su CA1 repite infección con tilde; la descripción aclara el caso sin tilde.
 
-La evidencia de código corresponde a una revisión estática. Las verificaciones indicadas abajo están planificadas, no ejecutadas.
+La descripción anterior conserva la situación inicial. La reproducción ejecutada está registrada arriba y en la evidencia de implementación.
 
 ## Objetivo
 
@@ -48,14 +57,14 @@ Confirmar la diferencia entre búsqueda con/sin tilde y definir una regresión r
 ## Trabajo y entregable
 
 - Preparar registros ficticios con diagnóstico Infección respiratoria alta y profesional Martín Gómez.
-- Comparar infección/infeccion/INFECCION y alta/ALTA, junto con filtros y paginación.
-- Registrar qué equivalencias se requieren para acentos y campos afectados. Marcar ñ/n y diéresis como duda; no elegir su política en lugar del responsable funcional.
+- Comparar infección/infeccion/INFECCIÓN/INFECCION y alta/ALTA, junto con filtros y paginación.
+- Registrar las equivalencias y la búsqueda por términos definidas en DEC-002, conservando los campos existentes.
 
 ## Criterios de aceptación
 
-- [ ] **[Investigación DU-03]** Se registra resultado esperado/actual del caso sin tilde y de los controles que ya funcionan.
-- [ ] **[Separación de alcance]** Se distingue el fallo por acentos de la existencia del campo profesional, que corresponde a SIG-MEJ-02.
-- [ ] **[Definición pendiente DU-04]** Queda definida la política sobre ñ/n y Unicode compuesto/descompuesto para la corrección.
+- [x] **[DU-03; reproducción local]** Se registra resultado esperado/actual del caso sin tilde y de los controles que ya funcionan.
+- [x] **[Separación de alcance]** Se distingue el fallo por acentos de la existencia del campo profesional; no se implementa la ayuda de SIG-MEJ-02.
+- [x] **[DU-04; DEC-002]** Queda definida la política sobre ñ/n, diéresis, Unicode compuesto/descompuesto y términos en cualquier orden.
 
 ## Validación prevista
 
@@ -97,11 +106,11 @@ Las etiquetas de los criterios separan obligación explícita, interpretación p
 
 El término sin tilde se representó en el plan como infeccion, por interpretación. Es necesario registrar la consulta exacta, datos y resultado real.
 
-**Dudas abiertas relacionadas:** [DU-03](../REVISION.md#du-03), [DU-04](../REVISION.md#du-04), [DU-05](../REVISION.md#du-05), [DU-12](../REVISION.md#du-12). No hay respuestas registradas; no se adopta una opción como regla por defecto.
+**Dudas relacionadas:** [DU-03](../REVISION.md#du-03) y [DU-04](../REVISION.md#du-04), definidas para este bug mediante DEC-002. [DU-05](../REVISION.md#du-05) conserva la matriz/ayuda de SIG-MEJ-02 pendiente de entrega; [DU-12](../REVISION.md#du-12) mantiene pendiente la jerarquía general. Ninguna implica ampliar campos o permisos aquí.
 
 ### Tratamiento de la duda y alcance seguro
 
-Reproducir las variantes como investigación; dejar la expectativa no explicitada como duda.
+Se documenta la reproducción contra el componente original y la definición explícita de DEC-002; no se adopta una regla a partir del código existente.
 
 Los criterios condicionados se cierran solo cuando se documenta la definición que falta. Pueden continuar diagnóstico y revisión del comportamiento explícito; las expectativas dudosas no se implementan ni se convierten en pruebas que fijen una regla inventada.
 

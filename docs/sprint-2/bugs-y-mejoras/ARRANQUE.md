@@ -8,6 +8,8 @@ Esta clasificación precisa la [revisión de dudas](REVISION.md): una duda relac
 
 ## Avance posterior a esta clasificación
 
+SIG-BUG-02.1/02.2/02.3 están completados para [DEC-002](../../decisiones.md#dec-002--normalización-de-la-búsqueda-del-historial). DU-03/DU-04 ya no bloquean la normalización: se reprodujo el fallo y pasan 39 regresiones del componente, con 105 pruebas totales aprobadas. [Ver evidencia y límites](SIG-BUG-02-IMPLEMENTACION.md). SIG-MEJ-02 conserva matriz/ayuda y aislamiento; no duplicar el matcher común.
+
 SIG-BUG-01.1 tiene diagnóstico completado y SIG-BUG-01.2 está implementado y verificado visualmente con fixtures aislados en los anchos acordados. [Ver causa, capturas y límites](SIG-BUG-01-IMPLEMENTACION.md). [DEC-001](../../decisiones.md#dec-001--alcance-de-la-corrección-visual-sig-bug-01) registra el criterio aplicado; repetir la regresión si US-7.4/2.8 modifica el shell o el contenido médico.
 
 SIG-MEJ-03.1/03.2 ya están implementados con el alcance delimitado; [ver evidencia](SIG-MEJ-03-IMPLEMENTACION.md). SIG-MEJ-03.3 continúa como trabajo parcial y cierre de integración pendiente.
@@ -36,20 +38,18 @@ SIG-MEJ-04.1/04.2/04.3 ya están implementados con el alcance aquí delimitado. 
 | Ticket | Trabajo que puede avanzar | Límite o dependencia |
 | --- | --- | --- |
 | [SIG-BUG-01.1](tickets/SIG-BUG-01.1.md) | Reproducir la franja negra y localizar la causa. Elegir tamaños de prueba e inspeccionar CSS son decisiones técnicas. | Ninguna confirmación para investigar. No definir un nuevo tema visual ni soporte de dispositivos como regla. Su resultado habilita SIG-BUG-01.2. |
-| [SIG-BUG-02.1](tickets/SIG-BUG-02.1.md) | Probar cadenas con/sin tilde y mayúsculas con datos controlados; documentar resultado actual y la inconsistencia del ejemplo. | Ninguna confirmación para reproducir. La investigación no decide equivalencias de ñ/n ni nuevos campos. La corrección funcional de SIG-BUG-02.2 conserva sus definiciones pendientes. |
+| [SIG-BUG-02.1](tickets/SIG-BUG-02.1.md) | Diagnóstico completado con fixtures del componente original. | DU-03/DU-04 están definidas en DEC-002; la reproducción local no identifica la consulta histórica del despliegue. |
 
 ## Trabajo parcial sin consulta externa
 
 | Ticket | Trabajo que puede avanzar | Límite o dependencia |
 | --- | --- | --- |
-| [SIG-BUG-02.3](tickets/SIG-BUG-02.3.md) | Preparar fixtures y cubrir la insensibilidad a mayúsculas explícita, además de preservación técnica de filtros/paginación existentes. | Los resultados esperados de tildes, ñ/n y campos nuevos siguen pendientes de SIG-BUG-02.1/02.2 y DU-04/DU-05. No cerrar la regresión del bug completo ni inventar resultados para las pruebas pendientes. |
 | [SIG-MEJ-03.3](tickets/SIG-MEJ-03.3.md) | Pruebas de rechazo de stock negativo, descuento exacto, concurrencia, rollback y trazabilidad con actor identificado; traducir el error de stock esperado al formulario si hace falta. | La atribución cuando no hay actor (DU-08) no está resuelta. No validar el fallback como responsable real. SIG-MEJ-03.2 es dependencia para probar la nueva entrada integrada. No cerrar la verificación completa de trazabilidad hasta resolver el caso sin actor; stock e integridad sí pueden avanzar. |
 
 ## Definición pendiente antes de implementar
 
 | Ticket | Trabajo que puede avanzar | Límite o dependencia |
 | --- | --- | --- |
-| [SIG-BUG-02.2](tickets/SIG-BUG-02.2.md) | Se puede revisar técnicamente el filtro, pero no dar por definitiva una política general de normalización. | Resolver DU-03/DU-04 para el caso esperado y sus equivalencias; coordinar DU-05 si el cambio alcanza otros campos. No elegir un algoritmo que fije una regla lingüística no definida solo para poder terminar el ticket. |
 | [SIG-MEJ-01.1](tickets/SIG-MEJ-01.1.md) | Preparar alternativas de rótulo y registrar por qué representan el contenido. | Hace falta el acuerdo de texto de DU-02 para cerrar; la preparación puede empezar sin pedir permiso. No aplicar una alternativa como definitiva. |
 | [SIG-MEJ-01.2](tickets/SIG-MEJ-01.2.md) | El cambio de texto queda preparado, sin seleccionar todavía rótulo ni texto del botón. | SIG-MEJ-01.1 / DU-02: acuerdo de textos expresamente pendiente en la fuente. Implementar después del acuerdo. |
 | [SIG-MEJ-02.1](tickets/SIG-MEJ-02.1.md) | Inventariar los seis campos del código y los tres del diseño; preparar matriz de ejemplos y dudas. | Resolver DU-04/DU-05 sobre campos y forma de nombres para cerrar. No se necesita permiso para preparar la matriz. No tomar la presencia de código como aprobación de seis campos. |
@@ -66,15 +66,13 @@ SIG-MEJ-04.1/04.2/04.3 ya están implementados con el alcance aquí delimitado. 
 3. **SIG-BUG-01.1 → SIG-BUG-01.2:** reproducir y corregir la franja negra; la investigación previa es técnica y no requiere aprobación del cliente.
 4. **SIG-MEJ-02.3:** iniciar la regresión base del aislamiento por paciente ahora y repetirla después de los futuros cambios del buscador.
 
-SIG-BUG-02.1 también puede investigarse ahora. SIG-BUG-02.3 puede preparar regresiones de comportamiento explícito, pero no fijar expectativas de equivalencias pendientes.
+SIG-BUG-02.1/02.2/02.3 ya están completados con las expectativas definidas en DEC-002; repetir la suite al integrar cambios de campos/ayuda de SIG-MEJ-02.
 
 ## Qué queda pendiente de definición
 
 - **SIG-MEJ-01.1/01.2:** rótulo definitivo y textos del botón.
 - **SIG-MEJ-02.1/02.2:** lista de campos, ayuda y forma de buscar nombres; el código existente no reemplaza esa definición.
-- **SIG-BUG-02.2:** caso esperado y alcance de la normalización. No elegir política de ñ/n ni equivalencias adicionales por defecto.
 - **Parte de SIG-MEJ-03.3:** responsable real cuando no hay actor; no asumir válido el fallback.
-- **Parte de SIG-BUG-02.3:** resultados esperados de los casos no definidos.
 
 Preparar una propuesta de definición no necesita permiso; lo pendiente es la respuesta para establecer la regla y cerrar la definición. No hay un pedido nuevo de aprobación en esta clasificación.
 

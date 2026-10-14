@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useMemo, useState, type FormEvent } from "react";
+import { createHistorySearchMatcher } from "@/lib/clinical-history-search";
 
 export type ClinicalHistoryEntry = {
   id: string;
@@ -36,24 +37,20 @@ export default function ClinicalHistoryTable({
   const [expandedRecord, setExpandedRecord] = useState<string | null>(null);
 
   const filteredRecords = useMemo(() => {
+    const matchesSearch = createHistorySearchMatcher(searchTerm);
     const matches = records.filter((record) => {
       const matchesFilter =
         filter === "all" ||
         (filter === "treatment" && Boolean(record.treatment)) ||
         (filter === "indications" && Boolean(record.indications));
-      const searchableText = [
+      return matchesFilter && matchesSearch([
         record.doctor,
         record.specialty,
         record.diagnosis,
         record.treatment,
         record.indications,
         dateFormatter.format(new Date(record.date)),
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLocaleLowerCase("es-AR");
-
-      return matchesFilter && searchableText.includes(searchTerm);
+      ]);
     });
 
     return matches.sort((a, b) => {
@@ -69,7 +66,7 @@ export default function ClinicalHistoryTable({
 
   function submitSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setSearchTerm(searchInput.trim().toLocaleLowerCase("es-AR"));
+    setSearchTerm(searchInput.trim());
     setPage(1);
   }
 

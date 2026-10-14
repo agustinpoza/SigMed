@@ -12,6 +12,8 @@ La [revisión e incorporación del commit bea3fd1](REVISION-COMMIT-bea3fd1.md) i
 
 ## Tipos de dependencia
 
+Actualización del 14/10/2026: SIG-BUG-02.1/02.2/02.3 tienen diagnóstico, corrección y regresiones completados. [DEC-002](../decisiones.md#dec-002--normalización-de-la-búsqueda-del-historial) define DU-03/DU-04 y el matcher común; [ver evidencia](bugs-y-mejoras/SIG-BUG-02-IMPLEMENTACION.md). SIG-MEJ-02.1/02.2 conserva matriz/ayuda y reutiliza esta política. SIG-MEJ-02.3 debe verificar el servidor y la integración con identidad real.
+
 Actualización del 14/10/2026: SIG-BUG-01.1 tiene diagnóstico completado y SIG-BUG-01.2 está implementado y verificado visualmente con datos ficticios. [Ver evidencia](bugs-y-mejoras/SIG-BUG-01-IMPLEMENTACION.md). El criterio DU-01 está registrado en [DEC-001](../decisiones.md#dec-001--alcance-de-la-corrección-visual-sig-bug-01). La dependencia de diagnóstico se cumplió; compartir el shell conserva la necesidad de repetir la regresión tras cambios de US-7.4/2.8, sin esperar esas US para corregir la presentación.
 
 | Tipo | Significado |

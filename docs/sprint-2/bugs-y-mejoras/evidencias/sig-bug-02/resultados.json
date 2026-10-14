@@ -1,0 +1,223 @@
+{
+  "date": "2026-10-14",
+  "base": "9837f80",
+  "decision": "DEC-002",
+  "runner": "Vitest 4.0.18 + Testing Library + jsdom",
+  "scope": "Componente real con fixtures ficticios; sin credenciales, base de datos ni certificación de aislamiento/autenticación.",
+  "commands": {
+    "before": "npm.cmd test -- \"src/app/(portal)/paciente/historial\" --config node_modules/.cache/sig-bug-02-before.config.mjs --reporter=json --outputFile=node_modules/.cache/sig-bug-02-before.json",
+    "history": "npm.cmd run test:history",
+    "full": "npm.cmd test"
+  },
+  "before": {
+    "tests": 39,
+    "passed": 18,
+    "failed": 21,
+    "note": "La suite final se ejecuta con una copia del componente original del commit base, mediante un alias temporal de Vitest; no se reemplaza el código de trabajo."
+  },
+  "after": {
+    "historyTests": 39,
+    "historyPassed": 39,
+    "historyFailed": 0,
+    "totalTests": 105,
+    "totalPassed": 105,
+    "totalFailed": 0
+  },
+  "cases": [
+    {
+      "test": "encuentra las mismas atenciones con infeccion, incluidos datos Unicode descompuestos",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "test": "encuentra las mismas atenciones con infección, incluidos datos Unicode descompuestos",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "test": "encuentra las mismas atenciones con INFECCIÓN, incluidos datos Unicode descompuestos",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "test": "encuentra las mismas atenciones con INFECCION, incluidos datos Unicode descompuestos",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "test": "encuentra las mismas atenciones con infección, incluidos datos Unicode descompuestos",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "test": "conserva el control que ya funciona: alta",
+      "before": "passed",
+      "after": "passed"
+    },
+    {
+      "test": "conserva el control que ya funciona: ALTA",
+      "before": "passed",
+      "after": "passed"
+    },
+    {
+      "test": "encuentra al profesional existente con Martin",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "test": "encuentra al profesional existente con Martín",
+      "before": "passed",
+      "after": "passed"
+    },
+    {
+      "test": "encuentra al profesional existente con MARTÍN",
+      "before": "passed",
+      "after": "passed"
+    },
+    {
+      "test": "encuentra al profesional existente con Martin Gomez",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "test": "encuentra al profesional existente con Gómez, Martín",
+      "before": "passed",
+      "after": "passed"
+    },
+    {
+      "test": "encuentra al profesional existente con Gomez Martin",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "test": "encuentra al profesional existente con Martin, Gomez",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "test": "aplica la equivalencia definida de ñ/n en nino",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "test": "aplica la equivalencia definida de ñ/n en NIÑO",
+      "before": "passed",
+      "after": "passed"
+    },
+    {
+      "test": "aplica la equivalencia definida de ñ/n en munoz",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "test": "aplica la equivalencia definida de ñ/n en MUÑOZ",
+      "before": "passed",
+      "after": "passed"
+    },
+    {
+      "test": "encuentra texto con diéresis mediante unguento",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "test": "encuentra texto con diéresis mediante UNGÜENTO",
+      "before": "passed",
+      "after": "passed"
+    },
+    {
+      "test": "conserva los campos y el formato de fecha existentes: gomez",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "test": "conserva los campos y el formato de fecha existentes: clinica",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "test": "conserva los campos y el formato de fecha existentes: respiratoria",
+      "before": "passed",
+      "after": "passed"
+    },
+    {
+      "test": "conserva los campos y el formato de fecha existentes: reposo",
+      "before": "passed",
+      "after": "passed"
+    },
+    {
+      "test": "conserva los campos y el formato de fecha existentes: 72",
+      "before": "passed",
+      "after": "passed"
+    },
+    {
+      "test": "conserva los campos y el formato de fecha existentes: 14/10/2026",
+      "before": "passed",
+      "after": "passed"
+    },
+    {
+      "test": "admite términos en distintos campos de una misma atención, en cualquier orden",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "test": "ignora espacios repetidos y tabulaciones entre términos",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "test": "exige todos los términos dentro de la misma atención: infeccion inexistente",
+      "before": "passed",
+      "after": "passed"
+    },
+    {
+      "test": "exige todos los términos dentro de la misma atención: respiratoria dermatitis",
+      "before": "passed",
+      "after": "passed"
+    },
+    {
+      "test": "conserva coincidencias parciales sin exigir palabras completas",
+      "before": "passed",
+      "after": "passed"
+    },
+    {
+      "test": "una consulta vacía o solo con separadores recupera el filtro activo",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "test": "combina búsqueda con filtros de tratamiento e indicaciones",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "test": "conserva orden y paginación sobre resultados normalizados",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "test": "una búsqueda nueva vuelve a página 1 aunque solo quede un resultado",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "test": "cambiar filtro también vuelve a página 1",
+      "before": "passed",
+      "after": "passed"
+    },
+    {
+      "test": "conserva textos originales, registros de entrada y detalle de indicaciones",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "test": "maneja campos opcionales nulos sin buscar la palabra null",
+      "before": "passed",
+      "after": "passed"
+    },
+    {
+      "test": "conserva el mensaje de historial vacío",
+      "before": "passed",
+      "after": "passed"
+    }
+  ]
+}

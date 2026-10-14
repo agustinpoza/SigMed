@@ -2,7 +2,7 @@
 
 Fecha: 13/10/2026. Rama: `sprint-2/bugs-y-mejoras`.
 
-Se revisaron los **16 tickets** contra los requerimientos, historias, diseño documental y código existente. La revisión inicial del 13/10/2026 fue documental y estática, sin seleccionar reglas de negocio ni presumir aprobación del cliente. Las implementaciones posteriores se registran en los tickets. Actualización del 14/10/2026: DU-01 tiene criterio y diagnóstico documentados; DU-12 cuenta con registro de decisiones, pero su jerarquía general sigue pendiente.
+Se revisaron los **16 tickets** contra los requerimientos, historias, diseño documental y código existente. La revisión inicial del 13/10/2026 fue documental y estática, sin seleccionar reglas de negocio ni presumir aprobación del cliente. Las implementaciones posteriores se registran en los tickets. Actualización del 14/10/2026: DU-01 tiene criterio y diagnóstico documentados; DU-03/DU-04 tienen política y regresiones de SIG-BUG-02; DU-12 cuenta con registro de decisiones, pero su jerarquía general sigue pendiente.
 
 ## Fuentes y criterio de lectura
 
@@ -54,7 +54,7 @@ Cada ticket contiene fuentes concretas, explícitos, supuestos del plan, datos f
 
 ## Registro de dudas
 
-Las entradas conservan las preguntas de la revisión original y registran su resolución cuando existe. DU-01 está definida para SIG-BUG-01 mediante DEC-001 y diagnóstico local; DU-12 solo avanza en el registro de decisiones. Las demás continúan pendientes de actualización formal. Una duda solo afecta a la parte del ticket que depende de su definición.
+Las entradas conservan las preguntas de la revisión original y registran su resolución cuando existe. DU-01 está definida para SIG-BUG-01 mediante DEC-001; DU-03/DU-04 para SIG-BUG-02 mediante DEC-002. DU-12 avanza en el registro de decisiones. Las demás conservan los pendientes indicados en su entrada. Una duda solo afecta a la parte del ticket que depende de su definición.
 
 ## DU-01
 
@@ -94,9 +94,9 @@ Las entradas conservan las preguntas de la revisión original y registran su res
 
 **Duda:** ¿La consulta fallida fue infeccion u otra cadena? ¿Cuál es el dato del diagnóstico y resultado esperado exacto?
 
-**Tratamiento:** Reproducir y documentar en SIG-BUG-02.1. La equivalencia infeccion → Infección es interpretación del primer plan hasta confirmarla; las mayúsculas/minúsculas sí están explícitas en CA2.
+**Tratamiento:** SIG-BUG-02.1 registra el fallo del componente original y los controles alta/ALTA que funcionan. No se presume conocer la consulta histórica del despliegue.
 
-**Resolución:** pendiente. Al resolver, registrar decisión, fuente/evidencia, responsable y fecha; hasta entonces no adoptar una opción como regla de negocio.
+**Resolución (14/10/2026):** criterio DU-03 del usuario y solicitud de implementar/resolver SIG-BUG-02. [DEC-002](../../decisiones.md#dec-002--normalización-de-la-búsqueda-del-historial) define que infeccion/infección/INFECCIÓN devuelven los mismos registros. Se reprodujo el fallo con fixtures y se verificó la corrección; [ver evidencia](SIG-BUG-02-IMPLEMENTACION.md). Responsable del alcance: usuario; ejecución: Codex.
 
 ## DU-04
 
@@ -108,9 +108,9 @@ Las entradas conservan las preguntas de la revisión original y registran su res
 
 **Duda:** ¿Qué equivalencias se requieren además del caso confirmado de tildes? ¿Debe funcionar el nombre completo en ambos órdenes o basta coincidencia por nombre/apellido?
 
-**Tratamiento:** Registrar la definición en SIG-BUG-02.1/SIG-MEJ-02.1. No eliminar todos los signos Unicode por defecto ni imponer equivalencia ñ/n. Los tests solo fijan expectativas definidas.
+**Tratamiento:** Registrar la política común de SIG-BUG-02 y reutilizarla en SIG-MEJ-02; no duplicar normalizaciones ni cambiar textos originales.
 
-**Resolución:** pendiente. Al resolver, registrar decisión, fuente/evidencia, responsable y fecha; hasta entonces no adoptar una opción como regla de negocio.
+**Resolución (14/10/2026):** criterio DU-04 del usuario aplicado por esta solicitud y registrado en [DEC-002](../../decisiones.md#dec-002--normalización-de-la-búsqueda-del-historial): NFD, eliminación de diacríticos y minúsculas, con ñ≡n y ü≡u. Espacios/comas separan términos; todos coinciden en los campos de una misma atención, en cualquier orden. Los casos de nombre completo, Unicode y exclusión están verificados en la suite del componente. Responsable del alcance: usuario; ejecución: Codex.
 
 ## DU-05
 
@@ -122,9 +122,9 @@ Las entradas conservan las preguntas de la revisión original y registran su res
 
 **Duda:** ¿Cuál es la lista definitiva de campos? ¿La ayuda enumera todos o solo los principales? Si fecha queda incluida, ¿qué formato se admite?
 
-**Tratamiento:** SIG-MEJ-02.1 registra matriz de campos/ejemplos; SIG-MEJ-02.2 implementa únicamente el alcance definido. La ayuda pertenece a SIG-MEJ-02 aunque aparezca bajo el diseño del bug; no se crea otra tarea duplicada.
+**Tratamiento:** SIG-MEJ-02.1 registra matriz de campos/ejemplos; SIG-MEJ-02.2 entrega la ayuda. En SIG-BUG-02 se conservan y normalizan los seis campos actuales y la fecha mostrada, conforme al criterio propuesto por el usuario y DEC-002, sin dar por entregada esa matriz/ayuda. No hay campos nuevos ni otra tarea de ayuda duplicada.
 
-**Resolución:** pendiente. Al resolver, registrar decisión, fuente/evidencia, responsable y fecha; hasta entonces no adoptar una opción como regla de negocio.
+**Resolución parcial (14/10/2026):** DEC-002 registra la conservación de los seis campos y de la fecha visible para esta corrección. La matriz y el texto de ayuda de SIG-MEJ-02 siguen pendientes de entrega; esta implementación no los completa ni declara aprobada una ayuda inexistente.
 
 ## DU-06
 

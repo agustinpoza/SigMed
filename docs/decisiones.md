@@ -14,3 +14,17 @@ Cada entrada identifica alcance, fuente, responsable y fecha. Este registro no e
 - **Evidencia y límites:** [diagnóstico, corrección y resultados](sprint-2/bugs-y-mejoras/SIG-BUG-01-IMPLEMENTACION.md). Se verifica presentación con componentes reales y datos ficticios; no certifica autenticación, operaciones clínicas o un despliegue.
 
 El criterio de DU-01 queda definido para estos tickets. La versión, zoom y preferencia de sistema de la captura original siguen sin conocerse; la reproducción local no atribuye esas condiciones al despliegue original.
+
+## DEC-002 — Normalización de la búsqueda del historial
+
+- **Fecha:** 14/10/2026.
+- **Estado:** adoptado y verificado para SIG-BUG-02.1/02.2/02.3.
+- **Fuente:** criterios DU-03/DU-04 propuestos por el usuario en esta conversación, revisión posterior de sus límites y solicitud de implementar/resolver SIG-BUG-02; [documento de sprint 2, SIG-BUG-02](../DocumentacionSigMed/Sistema%20SigMed/Sprint%201/US,Bugs%20y%20Mejoras%20Sprint%202.docx.md). RF-18 y US-5.2 aportan el contexto de historial propio, no la política lingüística.
+- **Responsable del alcance:** usuario, Bugs y Mejoras. **Responsable de ejecución y evidencia:** Codex.
+- **Criterio de equivalencia:** `infeccion`, `infección` e `INFECCIÓN` devuelven los mismos registros. Se aplica NFD, eliminación de diacríticos y minúsculas a consulta y contenido; esto incluye ñ≡n, ü≡u y Unicode compuesto/descompuesto.
+- **Términos:** espacios y comas separan términos para admitir nombres en ambos órdenes. Todos deben coincidir, como subcadenas, en los campos de una misma atención, en cualquier orden. No se reúnen coincidencias de atenciones distintas.
+- **Preservación:** quedan los seis campos existentes —profesional, especialidad, diagnóstico, tratamiento, indicaciones y fecha mostrada `dd/mm/aaaa`—, los filtros, orden, paginación y textos originales. Consulta sin términos recupera el filtro activo; campos nulos no agregan texto buscable.
+- **Límite frente a SIG-MEJ-02:** este bug no agrega campos, ayuda visible, permisos ni consultas nuevas. La matriz y entrega de ayuda quedan en SIG-MEJ-02.1/02.2; aislamiento de datos del servidor en SIG-MEJ-02.3. La política común se reutiliza, sin otra normalización incompatible.
+- **Evidencia:** [reproducción, corrección y resultados](sprint-2/bugs-y-mejoras/SIG-BUG-02-IMPLEMENTACION.md): 21/39 regresiones fallan contra el componente de `9837f80`; 39/39 pasan corregidas. Se usan el componente real y fixtures ficticios, sin credenciales ni base de datos.
+
+DU-03 y DU-04 quedan definidas para la corrección. No se afirma conocer la consulta histórica exacta del despliegue original: los resultados proceden de reproducción local.

@@ -8,16 +8,25 @@
 | Tipo de tarea | Corrección de búsqueda |
 | Prioridad propuesta | P1 |
 | Estado inicial | Pendiente de reproducción y política de normalización |
+| Estado actual | Implementado y verificado con 39 regresiones del componente |
 | Esfuerzo orientativo | 2 h |
 | Predecesoras del plan de integración | [SIG-BUG-02.1](SIG-BUG-02.1.md) |
 
+## Implementación y verificación
+
+Fecha: 14/10/2026. Base: `9837f80`. Se aplica el [diagnóstico de SIG-BUG-02.1](SIG-BUG-02.1.md) y la definición [DEC-002](../../../decisiones.md#dec-002--normalización-de-la-búsqueda-del-historial).
+
+`createHistorySearchMatcher` normaliza consulta y campos existentes con NFD, elimina diacríticos y pasa a minúsculas. Espacios/comas separan términos; todos deben coincidir en una misma atención. Se conserva el texto original, el envío del formulario, filtros, orden y reinicio de paginación. No hay consultas o campos nuevos.
+
+Pasaron 39 regresiones del componente. [Ver cambios, evidencia y límites](../SIG-BUG-02-IMPLEMENTACION.md).
+
 ## Disponibilidad para arrancar
 
-**Clasificación:** Implementación pendiente de definición funcional.
+**Clasificación:** Implementación completada con la definición registrada en DEC-002.
 
-**Alcance que puede avanzar:** Se puede revisar técnicamente el filtro, pero no dar por definitiva una política general de normalización.
+**Alcance implementado:** Normalización compartida y coincidencia de términos en los campos existentes del historial.
 
-**Dependencia o definición relevante:** Resolver DU-03/DU-04 para el caso esperado y sus equivalencias; coordinar DU-05 si el cambio alcanza otros campos.
+**Dependencia o definición relevante:** Diagnóstico completado y DU-03/DU-04 definidas. Se conserva el alcance de campos; matriz y ayuda se coordinan con SIG-MEJ-02.
 
 **Límite de esta clasificación:** No elegir un algoritmo que fije una regla lingüística no definida solo para poder terminar el ticket.
 
@@ -39,7 +48,7 @@
 
 searchableText y searchTerm utilizan toLocaleLowerCase(es-AR) por separado. Ambos lados necesitan la misma normalización.
 
-La evidencia de código corresponde a una revisión estática. Las verificaciones indicadas abajo están planificadas, no ejecutadas.
+La situación anterior describe el filtro original. La implementación y las pruebas ejecutadas están registradas arriba.
 
 ## Objetivo
 
@@ -53,10 +62,10 @@ Encontrar una atención sin exigir escribir las tildes, manteniendo los textos o
 
 ## Criterios de aceptación
 
-- [ ] **[Interpretación por confirmar DU-03]** Se registra la consulta exacta y la expectativa confirmada en SIG-BUG-02.1 antes de exigir infeccion → Infección. La insensibilidad a mayúsculas sí es explícita.
-- [ ] **[Condicionado a DU-04/DU-05]** Martín/Martin tienen el comportamiento acordado sobre el campo profesional ya presente.
-- [ ] **[Preservación técnica; política pendiente DU-04]** No se alteran los datos almacenados ni los textos mostrados; ñ y Unicode siguen la política del diagnóstico.
-- [ ] **[Preservación del comportamiento actual]** Una búsqueda vacía vuelve a los resultados admitidos por el filtro.
+- [x] **[DU-03; DEC-002]** infeccion/infección/INFECCIÓN encuentran las mismas atenciones; la consulta y fixture se registran en SIG-BUG-02.1.
+- [x] **[DU-04; campo existente]** Martín/Martin y ambos órdenes del nombre encuentran la misma atención.
+- [x] **[Preservación; DEC-002]** No se alteran los textos mostrados ni los registros de entrada; ñ y Unicode siguen la política documentada.
+- [x] **[Preservación]** Una búsqueda vacía vuelve a los resultados admitidos por el filtro activo.
 
 ## Validación prevista
 
@@ -65,6 +74,7 @@ Verificar los ejemplos de SIG-BUG-02.1 y coordinar su automatización con SIG-BU
 ## Archivos a revisar
 
 - [src/app/(portal)/paciente/historial/clinical-history-table.tsx](../../../../src/app/%28portal%29/paciente/historial/clinical-history-table.tsx)
+- [src/lib/clinical-history-search.ts](../../../../src/lib/clinical-history-search.ts)
 
 ## Límite de alcance
 
@@ -96,13 +106,13 @@ Las etiquetas de los criterios separan obligación explícita, interpretación p
 
 ### Datos faltantes o contradictorios
 
-No hay política explícita de ñ/n ni de todos los campos; no extender equivalencias a nombre/profesional sin definición de SIG-MEJ-02.1.
+La política aplicable está en DEC-002. Se normalizan los seis campos ya existentes sin agregar ni quitar campos; la matriz y ayuda de SIG-MEJ-02 no se dan por entregadas.
 
-**Dudas abiertas relacionadas:** [DU-03](../REVISION.md#du-03), [DU-04](../REVISION.md#du-04), [DU-05](../REVISION.md#du-05), [DU-12](../REVISION.md#du-12). No hay respuestas registradas; no se adopta una opción como regla por defecto.
+**Dudas relacionadas:** [DU-03](../REVISION.md#du-03) y [DU-04](../REVISION.md#du-04), definidas mediante DEC-002. [DU-05](../REVISION.md#du-05) conserva la matriz/ayuda pendiente; [DU-12](../REVISION.md#du-12), la jerarquía general. Se mantiene aislamiento y alcance de campos.
 
 ### Tratamiento de la duda y alcance seguro
 
-Implementación futura limitada a casos documentados/confirmados; comportamiento restante continúa como duda.
+La implementación se limita al contrato documentado en DEC-002 y a la preservación de los campos y filtros existentes.
 
 Los criterios condicionados se cierran solo cuando se documenta la definición que falta. Pueden continuar diagnóstico y revisión del comportamiento explícito; las expectativas dudosas no se implementan ni se convierten en pruebas que fijen una regla inventada.
 

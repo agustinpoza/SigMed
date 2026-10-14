@@ -20,6 +20,7 @@
     "test:vaccination": "tsx scripts/verify-vaccination.ts",
     "test:vaccination-form": "vitest run \"src/app/(portal)/enfermera/turnos-vacunacion\"",
     "test:stock-form": "vitest run \"src/app/(portal)/enfermera/inventario\"",
+    "test:history": "vitest run \"src/app/(portal)/paciente/historial\"",
     "test": "vitest run"
   },
   "dependencies": {
