@@ -1,11 +1,23 @@
 import { prisma, isUniqueViolation } from "@/lib/db";
 import type { FieldErrors } from "@/lib/forms";
 import { MovementType } from "@/generated/prisma/enums";
+import { Prisma } from "@/generated/prisma/client";
 
 export class StockRuleError extends Error {
   constructor(readonly fields: FieldErrors) {
     super("regla de stock");
   }
+}
+
+function isInsufficientStockError(error: unknown): boolean {
+  if (!(error instanceof Prisma.PrismaClientKnownRequestError)) return false;
+  const adapter = error.meta?.driverAdapterError as {
+    cause?: { originalCode?: unknown; originalMessage?: unknown };
+  } | undefined;
+  const cause = adapter?.cause;
+  // Solo el rechazo confirmado de fn_stock_movimiento_post; no ocultar otros errores SQL.
+  return cause?.originalCode === "P0001" && typeof cause.originalMessage === "string" &&
+    /^El movimiento dejaría el lote [0-9a-f-]+ en stock negativo \(resultante -\d+\)$/u.test(cause.originalMessage);
 }
 
 export type NewVaccineInput = {
@@ -204,6 +216,10 @@ export async function registerStockMovement(input: StockMovementInput) {
       lotId = created.id;
     }
 
+    // Bloquear antes del INSERT evita que dos FK tomen KEY SHARE y luego ambos
+    // intenten promover el bloqueo a FOR UPDATE dentro del trigger (deadlock).
+    await tx.$queryRaw`SELECT "id_lote" FROM "lote" WHERE "id_lote" = ${lotId}::uuid FOR UPDATE`;
+
     await tx.stockMovement.create({
       data: {
         lotId,
@@ -213,5 +229,10 @@ export async function registerStockMovement(input: StockMovementInput) {
         actorId: input.actorId,
       },
     });
+  }).catch((error: unknown) => {
+    if (isInsufficientStockError(error)) {
+      throw new StockRuleError({ quantity: "No hay suficientes dosis disponibles en este lote." });
+    }
+    throw error;
   });
 }
