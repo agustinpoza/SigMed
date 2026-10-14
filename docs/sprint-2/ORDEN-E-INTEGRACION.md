@@ -12,6 +12,8 @@ La [revisión e incorporación del commit bea3fd1](REVISION-COMMIT-bea3fd1.md) i
 
 ## Tipos de dependencia
 
+Actualización del 14/10/2026: [DEC-004](../decisiones.md#dec-004--rótulo-provisorio-de-indicaciones-del-historial) autoriza aplicar «Indicaciones» provisoriamente en SIG-MEJ-01.2 desde una constante, manteniendo pendiente la aprobación definitiva de SIG-MEJ-01.1 / DU-02. El cambio de texto no requiere nuevas US ni añade contenido clínico.
+
 Actualización del 14/10/2026: SIG-MEJ-02.3/03.3 entregan sus pruebas y correcciones sobre el flujo existente con PostgreSQL real. Por indicación del usuario, sesión real y permisos siguen en las US de otro integrante; [marco de integración](INTEGRACION-US-7.2-7.4.md) y [evidencia del bloque](bugs-y-mejoras/SIG-MEJ-02.3-03.3-IMPLEMENTACION.md) delimitan lo entregado y tres TODO externos. No se exige esperar esas US para verificar aislamiento/datos y stock, ni se cierran seguridad y auditoría autenticadas con un actor ficticio.
 
 Actualización del 14/10/2026: SIG-MEJ-02.1/02.2 tienen matriz y ayuda entregadas bajo [DEC-003](../decisiones.md#dec-003--campos-y-ayuda-de-búsqueda-del-historial), reutilizando DEC-002 sin nueva normalización. [Ver evidencia](bugs-y-mejoras/SIG-MEJ-02-IMPLEMENTACION.md). Las dependencias de definición/normalización están cumplidas; SIG-MEJ-02.3 conserva verificación del servidor e integración con identidad real. Rótulos de SIG-MEJ-01 y permisos de US-7.5 no se incorporan a esta entrega.
@@ -125,7 +127,7 @@ Son etapas de integración, no semanas fijas ni reasignación de responsables.
 | Cadena | Precedencia para integración | Qué no bloquea el inicio |
 | --- | --- | --- |
 | Visual | SIG-BUG-01.1 → SIG-BUG-01.2 | 7.4/2.8 requieren coordinación y repetición de prueba, no esperar para corregir CSS |
-| Texto | Acuerdo SIG-MEJ-01.1 → SIG-MEJ-01.2 | Búsqueda y rótulo comparten archivo, pero son funcionalmente independientes |
+| Texto | DEC-004 → avance provisorio SIG-MEJ-01.2; acuerdo SIG-MEJ-01.1 → conformidad definitiva | Búsqueda y rótulo comparten archivo, pero son funcionalmente independientes |
 | Búsqueda | SIG-BUG-02.1 → definiciones aplicables → SIG-BUG-02.2 → SIG-BUG-02.3 | Se pueden preparar fixtures/tests de lo explícito antes |
 | Campos/ayuda | SIG-MEJ-02.1 → SIG-MEJ-02.2; normalización compartida cuando se requiera | US-5.1 no bloquea ajustar historial con datos existentes |
 | Aislamiento | SIG-MEJ-02.3 base ahora; repetir tras buscador y 7.2/7.4 | No inventar matriz administrativa para poder probar pacientes A/B |
@@ -143,8 +145,8 @@ Para una sola persona se conserva el orden práctico de [ARRANQUE.md](bugs-y-mej
 | [SIG-BUG-02.1](bugs-y-mejoras/tickets/SIG-BUG-02.1.md) | Ninguna para reproducir variantes. | SIG-MEJ-02.1, US-5.1 y US-5.2 existente | Distinguir acentos de campos buscables. Investigar con datos ficticios existentes sin esperar la nueva carga clínica. |
 | [SIG-BUG-02.2](bugs-y-mejoras/tickets/SIG-BUG-02.2.md) | SIG-BUG-02.1 y definiciones aplicables DU-03/DU-04. | SIG-MEJ-02.1/02.2 y US-5.1 | Una sola normalización; campos/ayuda pertenecen a SIG-MEJ-02. Coordinar el archivo, no absorber búsqueda de turnos de US-2.1. |
 | [SIG-BUG-02.3](bugs-y-mejoras/tickets/SIG-BUG-02.3.md) | SIG-BUG-02.2 para probar la corrección integrada; pruebas explícitas pueden prepararse antes. | SIG-MEJ-02.2/02.3 y US-5.1 | Reutilizar la suite de resultados; aislamiento de datos del servidor pertenece a SIG-MEJ-02.3. No fijar expectativas aún dudosas. |
-| [SIG-MEJ-01.1](bugs-y-mejoras/tickets/SIG-MEJ-01.1.md) | Ninguna para preparar alternativas; acuerdo DU-02 para cerrar. | SIG-MEJ-01.2 y US-5.1/5.2 | Definir texto del detalle existente; no prometer o agregar datos clínicos. |
-| [SIG-MEJ-01.2](bugs-y-mejoras/tickets/SIG-MEJ-01.2.md) | Acuerdo de SIG-MEJ-01.1. | SIG-BUG-02.2, SIG-MEJ-02.2 y US-5.1 | Comparte clinical-history-table.tsx con búsqueda, pero no depende funcionalmente de ella. Coordinar merges y verificar expansión con datos integrados. |
+| [SIG-MEJ-01.1](bugs-y-mejoras/tickets/SIG-MEJ-01.1.md) | Alternativa provisoria registrada en DEC-004; acuerdo DU-02 para cerrar. | SIG-MEJ-01.2 y US-5.1/5.2 | Registrar el texto temporal sin darlo por aprobado; no prometer o agregar datos clínicos. |
+| [SIG-MEJ-01.2](bugs-y-mejoras/tickets/SIG-MEJ-01.2.md) | DEC-004 para avance provisorio; acuerdo de SIG-MEJ-01.1 para conformidad definitiva. | SIG-BUG-02.2, SIG-MEJ-02.2 y US-5.1 | Comparte clinical-history-table.tsx con búsqueda, pero no depende funcionalmente de ella. Coordinar merges y verificar expansión con datos integrados. |
 | [SIG-MEJ-02.1](bugs-y-mejoras/tickets/SIG-MEJ-02.1.md) | Ninguna para preparar matriz; DU-04/DU-05 para cerrar. | SIG-BUG-02.1, SIG-MEJ-02.2 y US-5.2 | Definir campos/ayuda una sola vez; el buscador de turnos de US-2.1 es otro caso. |
 | [SIG-MEJ-02.2](bugs-y-mejoras/tickets/SIG-MEJ-02.2.md) | SIG-MEJ-02.1; SIG-BUG-02.2 para integrar equivalencias acordadas. | SIG-MEJ-01.2, SIG-BUG-02.3 y US-5.1 | Ayuda/campos aquí, equivalencias en el bug. Rótulos comparten archivo pero no bloquean la función. Verificar con contrato de datos del historial. |
 | [SIG-MEJ-02.3](bugs-y-mejoras/tickets/SIG-MEJ-02.3.md) | Ninguna para regresión base; repetir tras SIG-MEJ-02.2. | US-7.2/7.4/7.5 y US-5.1 | Arrancar pruebas A/B sobre lo existente. Para cerrar permisos reales repetir con sesión de US-7.2/7.4; acceso administrativo requiere DU-06 y US-7.5, sin inventar su matriz. |

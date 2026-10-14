@@ -80,9 +80,9 @@ Las entradas conservan las preguntas de la revisión original y registran su res
 
 **Duda:** ¿Qué rótulo llevará la columna y qué textos abrirán/cerrarán el detalle? ¿Quién valida la decisión y cuándo?
 
-**Tratamiento:** Resolver en SIG-MEJ-01.1 antes del cambio de SIG-MEJ-01.2. No elegir un nombre por cuenta del plan ni agregar contenido clínico para que el nombre parezca correcto.
+**Tratamiento:** [DEC-004](../../decisiones.md#dec-004--rótulo-provisorio-de-indicaciones-del-historial) permite usar «Indicaciones» provisoriamente en una constante de textos, por instrucción expresa del usuario del 14/10/2026. La columna y el título del detalle usan ese rótulo; los botones conservan Detalle/Cerrar. El contenido sigue siendo `record.indications`. La aprobación definitiva permanece en SIG-MEJ-01.1; no agregar contenido clínico para justificar otro nombre.
 
-**Resolución:** pendiente. Al resolver, registrar decisión, fuente/evidencia, responsable y fecha; hasta entonces no adoptar una opción como regla de negocio.
+**Resolución definitiva:** pendiente. El avance provisorio está autorizado y registrado, pero no constituye aprobación del cliente. Al obtenerla, registrar los tres textos definitivos, responsable y fecha.
 
 ## DU-03
 

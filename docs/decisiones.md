@@ -43,3 +43,14 @@ DU-03 y DU-04 quedan definidas para la corrección. No se afirma conocer la cons
 - **Límite:** no modifica consultas, datos clínicos, selección del paciente o permisos. SIG-MEJ-02.3 conserva las pruebas de aislamiento del servidor y su integración con sesión real; DU-06 sigue con US-7.5.
 
 DU-05 queda definida para estos entregables. La contradicción tres campos del diseño/seis del código se resuelve por el criterio explícito del usuario, no por asumir que el código era la autoridad funcional.
+
+## DEC-004 — Rótulo provisorio de indicaciones del historial
+
+- **Fecha:** 14/10/2026.
+- **Estado:** provisorio para DU-02 / SIG-MEJ-01.1 y SIG-MEJ-01.2; aprobación definitiva del cliente pendiente.
+- **Fuente:** instrucción del usuario en esta conversación: «DU-02 puede avanzar con “Indicaciones” en una constante de textos, marcada como provisoria en docs/decisiones.md, sin darla por aprobada». La [fuente de SIG-MEJ-01](../DocumentacionSigMed/Sistema%20SigMed/Sprint%201/US,Bugs%20y%20Mejoras%20Sprint%202.docx.md) mantiene pendiente la aprobación del texto definitivo.
+- **Responsable del avance provisorio:** usuario, Bugs y Mejoras. **Responsable de ejecución:** Codex. No se presume conformidad del cliente/docente.
+- **Aplicación:** la columna antes titulada «Acciones» y el título del detalle usan «Indicaciones». La constante local `detailTexts` centraliza ese rótulo y los textos existentes de los botones, «Detalle» / «Cerrar», en [clinical-history-table.tsx](../src/app/%28portal%29/paciente/historial/clinical-history-table.tsx).
+- **Motivo:** el detalle actual muestra `record.indications`; el rótulo describe ese contenido. Diagnóstico y tratamiento conservan sus columnas. No se añade un campo Observaciones ni se redefine información clínica para justificar el texto.
+- **Pendiente:** confirmar el rótulo definitivo y ambos textos del botón, quién los aprueba y la fecha. DU-02 permanece abierta; esta decisión permite implementar la alternativa provisoria sin cerrar el acuerdo de SIG-MEJ-01.1 ni la conformidad definitiva de SIG-MEJ-01.2.
+- **Revisión posterior:** al obtener el acuerdo, actualizar la constante y esta entrada, y repetir las regresiones del historial. La aprobación debe registrarse expresamente; no se infiere de que el texto ya esté en la interfaz.

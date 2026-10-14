@@ -8,6 +8,8 @@ Esta clasificación precisa la [revisión de dudas](REVISION.md): una duda relac
 
 ## Avance posterior a esta clasificación
 
+SIG-MEJ-01 tiene avance provisorio autorizado en [DEC-004](../../decisiones.md#dec-004--rótulo-provisorio-de-indicaciones-del-historial): columna y detalle «Indicaciones», con Detalle/Cerrar conservados y centralizados en `detailTexts`. SIG-MEJ-01.1 mantiene pendiente la aprobación definitiva; SIG-MEJ-01.2 aplica la alternativa temporal sin darla por aprobada.
+
 SIG-MEJ-02.3 y SIG-MEJ-03.3 tienen su alcance del bloque implementado/verificado con 18 pruebas en PostgreSQL local propio y 105 pruebas previas aprobadas. [Ver evidencia](SIG-MEJ-02.3-03.3-IMPLEMENTACION.md). La sesión real pertenece a otro integrante, conforme a la división indicada por el usuario; [contratos y tres TODO de integración](../INTEGRACION-US-7.2-7.4.md) quedan documentados sin implementar sus US.
 
 SIG-MEJ-02.1/02.2 están completados: matriz y ayuda visible/accesible bajo [DEC-003](../../decisiones.md#dec-003--campos-y-ayuda-de-búsqueda-del-historial). [Ver evidencia](SIG-MEJ-02-IMPLEMENTACION.md). SIG-MEJ-02.3 ya entrega la regresión del servidor; su integración con sesión real queda para el responsable de las US de acceso.
@@ -50,12 +52,12 @@ SIG-MEJ-04.1/04.2/04.3 ya están implementados con el alcance aquí delimitado. 
 | --- | --- | --- |
 | [SIG-MEJ-03.3](tickets/SIG-MEJ-03.3.md) | Pruebas de rechazo de stock negativo, descuento exacto, concurrencia, rollback y trazabilidad con actor identificado; traducir el error de stock esperado al formulario si hace falta. | La atribución cuando no hay actor (DU-08) no está resuelta. No validar el fallback como responsable real. SIG-MEJ-03.2 es dependencia para probar la nueva entrada integrada. No cerrar la verificación completa de trazabilidad hasta resolver el caso sin actor; stock e integridad sí pueden avanzar. |
 
-## Definición pendiente antes de implementar
+## Textos provisorios con aprobación definitiva pendiente
 
 | Ticket | Trabajo que puede avanzar | Límite o dependencia |
 | --- | --- | --- |
-| [SIG-MEJ-01.1](tickets/SIG-MEJ-01.1.md) | Preparar alternativas de rótulo y registrar por qué representan el contenido. | Hace falta el acuerdo de texto de DU-02 para cerrar; la preparación puede empezar sin pedir permiso. No aplicar una alternativa como definitiva. |
-| [SIG-MEJ-01.2](tickets/SIG-MEJ-01.2.md) | El cambio de texto queda preparado, sin seleccionar todavía rótulo ni texto del botón. | SIG-MEJ-01.1 / DU-02: acuerdo de textos expresamente pendiente en la fuente. Implementar después del acuerdo. |
+| [SIG-MEJ-01.1](tickets/SIG-MEJ-01.1.md) | Alternativa «Indicaciones» registrada como provisoria en DEC-004 por instrucción del usuario. | El acuerdo de texto de DU-02 sigue pendiente para cerrar; no dar la alternativa por aprobada. |
+| [SIG-MEJ-01.2](tickets/SIG-MEJ-01.2.md) | Columna y título «Indicaciones» aplicados desde una constante; botones Detalle/Cerrar conservados. | DEC-004 autoriza la implementación temporal. La conformidad definitiva sigue dependiendo de SIG-MEJ-01.1. |
 
 ## Coordinación con las US nuevas
 
@@ -72,11 +74,11 @@ SIG-BUG-02.1/02.2/02.3 ya están completados con las expectativas definidas en D
 
 ## Qué queda pendiente de definición
 
-- **SIG-MEJ-01.1/01.2:** rótulo definitivo y textos del botón.
+- **SIG-MEJ-01.1/01.2:** rótulo definitivo y textos del botón; alternativa provisoria ya registrada y aplicada mediante DEC-004.
 - **Integración externa de SIG-MEJ-02.3/03.3:** sesiones reales y responsable autenticado en US-7.2/7.4; no asumir válido el fallback.
 
 Preparar una propuesta de definición no necesita permiso; lo pendiente es la respuesta para establecer la regla y cerrar la definición. No hay un pedido nuevo de aprobación en esta clasificación.
 
 ## Alcance de esta entrega
 
-Los 16 tickets incorporan una sección de disponibilidad para arrancar. Se conservaron las dudas y dependencias; se explicó cuáles son de integración final y cuáles afectan el cambio funcional. No se implementaron cambios en la aplicación, no se cerraron tickets y no se decidió una regla de negocio pendiente.
+La clasificación original incorporó una sección de disponibilidad para arrancar en los 16 tickets y distinguió dudas de integración final y dudas del cambio funcional. Los avances posteriores están registrados arriba; DEC-004 permite el texto provisorio sin cerrar la aprobación definitiva ni decidir una regla de negocio pendiente.

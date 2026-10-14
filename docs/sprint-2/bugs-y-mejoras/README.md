@@ -8,6 +8,8 @@ Fecha de elaboración: 13/10/2026. Responsable del bloque: usuario.
 
 ## Avance de implementación
 
+SIG-MEJ-01 tiene avance provisorio por instrucción del usuario: «Indicaciones» en columna y detalle, desde una constante de textos que conserva Detalle/Cerrar. [DEC-004](../../decisiones.md#dec-004--rótulo-provisorio-de-indicaciones-del-historial) registra su carácter temporal. La aprobación definitiva y DU-02 siguen pendientes; los tickets no se declaran cerrados por aplicar esta alternativa.
+
 SIG-MEJ-02.3/03.3 tienen el alcance del bloque implementado y verificado con PostgreSQL local real: aislamiento/payload y reinicio por paciente; rechazo de stock claro, bloqueo previo al INSERT, concurrencia, rollback, trazabilidad con perfiles ficticios, inmutabilidad y alertas. Pasaron 18 pruebas nuevas de integración y las 105 previas; 3 TODO de sesión real quedan para el responsable de las US de acceso. [Ver evidencia](SIG-MEJ-02.3-03.3-IMPLEMENTACION.md) y [marco para el compañero](../INTEGRACION-US-7.2-7.4.md). No se implementa autenticación ni se valida el fallback como auditoría.
 
 SIG-MEJ-02.1/02.2 están completados para [DEC-003](../../decisiones.md#dec-003--campos-y-ayuda-de-búsqueda-del-historial): matriz de los seis campos y ayuda visible/accesible, reutilizando el matcher de SIG-BUG-02. Pasaron 39 regresiones y la verificación de 27 búsquedas con teclado en Chrome a 360/768/1280 px. [Ver matriz, capturas y límites](SIG-MEJ-02-IMPLEMENTACION.md). SIG-MEJ-02.3 ya verifica el aislamiento del servidor; la integración con sesión real sigue pendiente del responsable de las US de acceso.

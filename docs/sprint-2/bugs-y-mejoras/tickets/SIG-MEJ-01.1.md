@@ -8,18 +8,25 @@
 | Tipo de tarea | Definición de texto |
 | Prioridad propuesta | P2 |
 | Estado inicial | Lista para preparar propuesta; cierre sujeto al cliente |
+| Estado actual | Alternativa provisoria registrada en DEC-004; aprobación definitiva pendiente |
 | Esfuerzo orientativo | 1 h |
 | Predecesoras del plan de integración | Ninguna |
 
+## Avance provisorio de DU-02
+
+Fecha: 14/10/2026. Por instrucción expresa del usuario, [DEC-004](../../../decisiones.md#dec-004--rótulo-provisorio-de-indicaciones-del-historial) registra «Indicaciones» como rótulo provisorio de columna y detalle. Los botones conservan «Detalle» / «Cerrar» en la misma constante `detailTexts`. La expansión sigue mostrando únicamente `record.indications`.
+
+Esta autorización permite aplicar la alternativa mientras se obtiene la definición final; no es aprobación del cliente. Permanecen pendientes los tres textos definitivos y su constancia de conformidad. No se agregan Observaciones ni datos de US-5.1.
+
 ## Disponibilidad para arrancar
 
-**Clasificación:** Tarea de definición, no de implementación.
+**Clasificación:** Alternativa provisoria documentada; acuerdo definitivo pendiente.
 
-**Alcance que puede avanzar:** Preparar alternativas de rótulo y registrar por qué representan el contenido.
+**Alcance que puede avanzar:** Registrar y aplicar la alternativa autorizada en DEC-004, contrastando el rótulo con las indicaciones existentes.
 
 **Dependencia o definición relevante:** Hace falta el acuerdo de texto de DU-02 para cerrar; la preparación puede empezar sin pedir permiso.
 
-**Límite de esta clasificación:** No aplicar una alternativa como definitiva.
+**Límite de esta clasificación:** La alternativa aplicada sigue siendo provisoria; no cerrar la aprobación definitiva.
 
 [Ver la clasificación de todos los tickets](../ARRANQUE.md). Esta sección no resuelve las dudas registradas ni modifica reglas de negocio; delimita el trabajo que puede empezar con lo ya definido.
 
@@ -37,9 +44,9 @@
 
 [Documento de análisis — sección 02](../../../../DocumentacionSigMed/Sistema%20SigMed/Sprint%201/US,Bugs%20y%20Mejoras%20Sprint%202.docx.md).
 
-La columna se llama Acciones; el botón alterna Detalle/Cerrar y la expansión contiene Indicaciones. El documento indica que el texto definitivo está pendiente de aprobación.
+La revisión inicial encontró la columna Acciones, botones Detalle/Cerrar y una expansión con Indicaciones. DEC-004 cambia provisoriamente la columna a Indicaciones y centraliza sus textos; el documento mantiene pendiente la aprobación definitiva.
 
-La evidencia de código corresponde a una revisión estática. Las verificaciones indicadas abajo están planificadas, no ejecutadas.
+La situación inicial corresponde a una revisión estática. El avance provisorio y las verificaciones ejecutadas se registran en esta entrega; la aprobación del cliente sigue pendiente.
 
 ## Objetivo
 
@@ -55,11 +62,14 @@ Obtener una denominación que describa las indicaciones, evitando confundirlas c
 
 - [ ] **[Definición pendiente DU-02]** Se documentan los tres textos definitivos y su conformidad con lo que despliega la fila.
 - [ ] **[Explícito en SIG-MEJ-01]** La aprobación del cliente queda registrada; una propuesta técnica por sí sola no cierra la tarea.
-- [ ] **[Propuesta de claridad]** El rótulo no promete información clínica que el detalle actual no muestra.
+- [x] **[Avance provisorio DEC-004]** «Indicaciones» y los botones existentes quedan documentados y centralizados; se distingue la autorización provisoria de la aprobación definitiva.
+- [x] **[Propuesta de claridad]** El rótulo provisorio describe `record.indications`, sin prometer otros datos clínicos.
 
 ## Validación prevista
 
-Revisar la propuesta con la tabla y una atención con y sin indicaciones. La aprobación se registra aquí cuando exista; no se presume ni se envían mensajes al cliente como parte de este plan.
+El rótulo provisorio corresponde al campo mostrado en la expansión. Las 39 regresiones existentes del historial pasan, incluyendo abrir/cerrar y el caso sin indicaciones. Typecheck aprobado; lint sin errores, con la advertencia preexistente de `aria-expanded` en vacunación. [Detalle de verificación técnica](SIG-MEJ-01.2.md#validación-realizada-y-pendiente).
+
+La aprobación definitiva se registra cuando exista; no se presume ni se envían mensajes al cliente como parte de este plan.
 
 ## Archivos a revisar
 
@@ -95,13 +105,13 @@ Las etiquetas de los criterios separan obligación explícita, interpretación p
 
 ### Datos faltantes o contradictorios
 
-Faltan rótulo de columna, textos del botón y constancia de quién valida. «Diagnóstico» ya tiene otra columna en el código; es posible confusión, no prohibición documentada.
+Faltan el rótulo y los textos definitivos, y constancia de quién los valida. DEC-004 registra solo la alternativa provisoria autorizada. «Diagnóstico» ya tiene otra columna en el código; es posible confusión, no prohibición documentada.
 
-**Dudas abiertas relacionadas:** [DU-02](../REVISION.md#du-02), [DU-12](../REVISION.md#du-12). No hay respuestas registradas; no se adopta una opción como regla por defecto.
+**Dudas abiertas relacionadas:** [DU-02](../REVISION.md#du-02) mantiene la aprobación definitiva pendiente, con avance provisorio en DEC-004; [DU-12](../REVISION.md#du-12) conserva la jerarquía general pendiente.
 
 ### Tratamiento de la duda y alcance seguro
 
-Preparar alternativas; no decidir la denominación en lugar del cliente.
+Aplicar la alternativa provisoria autorizada por el usuario y registrar expresamente su carácter temporal. La denominación definitiva sigue sujeta al acuerdo del cliente.
 
 Los criterios condicionados se cierran solo cuando se documenta la definición que falta. Pueden continuar diagnóstico y revisión del comportamiento explícito; las expectativas dudosas no se implementan ni se convierten en pruebas que fijen una regla inventada.
 
