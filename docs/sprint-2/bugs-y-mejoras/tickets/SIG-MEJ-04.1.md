@@ -20,7 +20,7 @@ El formulario muestra el mensaje informativo por fecha sin horarios, lo asocia a
 
 **Evidencia:** [implementación y resultados de SIG-MEJ-04](../SIG-MEJ-04-IMPLEMENTACION.md). Pasaron 28 pruebas de formulario y acciones con base de datos simulada, typecheck y build. Lint pasó con un aviso preexistente en el buscador de pacientes. Las casillas de aceptación reflejan cobertura automatizada del alcance definido; no certifican un despliegue, sesión real o escritura contra la base compartida.
 
-Las dudas DU-09/DU-10/DU-11 siguen abiertas: no se cambiaron ciclo de aprobación, duración ni política del botón sin horarios. Se conservó la posibilidad existente de intentar confirmar sin cupos y se corrigió su respuesta; durante una consulta pendiente se impide enviar por coherencia técnica.
+Complemento del 14/10/2026: [DEC-006](../../../decisiones.md#dec-006--confirmación-deshabilitada-sin-horarios-de-vacunación) aplica DU-10 con respaldo de image13: Confirmar deshabilitado sin horarios y asociado al aviso visible. Una consulta fallida mantiene su error distinto y el botón bloqueado; al recuperar horarios se habilita. Pruebas actualizadas y Chrome a 360/768/1280 px verificado; [cierre provisorio](../CIERRE-PROVISORIO.md). Ciclo DU-09 y duración DU-11 siguen abiertos fuera de este cambio.
 
 ## Disponibilidad para arrancar
 
@@ -30,7 +30,7 @@ Las dudas DU-09/DU-10/DU-11 siguen abiertas: no se cambiaron ciclo de aprobació
 
 **Dependencia o definición relevante:** No hace falta decidir duración (DU-11), ciclo (DU-09) ni interacción del botón (DU-10) para implementar el mensaje.
 
-**Límite de esta clasificación:** Mantener sin cambios la interacción del botón mientras siga dudosa; usar un mensaje claro de la fuente sin inventar causas de falta de disponibilidad.
+**Límite de esta clasificación:** Aplicar el bloqueo de DEC-006, usando el mensaje existente sin inventar causas de falta de disponibilidad ni cambiar ciclo/duración.
 
 [Ver la clasificación de todos los tickets](../ARRANQUE.md). Esta sección no resuelve las dudas registradas ni modifica reglas de negocio; delimita el trabajo que puede empezar con lo ya definido.
 
@@ -109,7 +109,7 @@ Las etiquetas de los criterios separan obligación explícita, interpretación p
 
 El diseño deshabilita Confirmar turno, pero la descripción considera el intento de confirmar sin cupos. Falta decisión de interacción y distinguir falta de franja/día completo/fallo de consulta.
 
-**Dudas abiertas relacionadas:** [DU-09](../REVISION.md#du-09), [DU-10](../REVISION.md#du-10), [DU-11](../REVISION.md#du-11), [DU-12](../REVISION.md#du-12). No hay respuestas registradas; no se adopta una opción como regla por defecto.
+**Dudas relacionadas:** [DU-10](../REVISION.md#du-10) aplicada/verificada bajo DEC-006. [DU-09](../REVISION.md#du-09), [DU-11](../REVISION.md#du-11) y [DU-12](../REVISION.md#du-12) mantienen sus pendientes; no se resuelven por esta decisión de interfaz.
 
 ### Tratamiento de la duda y alcance seguro
 

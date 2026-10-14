@@ -8,6 +8,8 @@ Esta clasificación precisa la [revisión de dudas](REVISION.md): una duda relac
 
 ## Avance posterior a esta clasificación
 
+[Cierre provisorio del bloque](CIERRE-PROVISORIO.md): DU-07/DU-10 aplicadas mediante DEC-005/006, indicador por clave vacuna/lote y botón deshabilitado con aviso. Pasan 141 pruebas y la verificación de teclado en Chrome, incluida MEJ-01.2. Los pendientes restantes son aprobación definitiva DU-02 e integración/definiciones externas, según el informe de cierre.
+
 SIG-MEJ-01 tiene avance provisorio autorizado en [DEC-004](../../decisiones.md#dec-004--rótulo-provisorio-de-indicaciones-del-historial): columna y detalle «Indicaciones», con Detalle/Cerrar conservados y centralizados en `detailTexts`. SIG-MEJ-01.1 mantiene pendiente la aprobación definitiva; SIG-MEJ-01.2 aplica la alternativa temporal sin darla por aprobada.
 
 SIG-MEJ-02.3 y SIG-MEJ-03.3 tienen su alcance del bloque implementado/verificado con 18 pruebas en PostgreSQL local propio y 105 pruebas previas aprobadas. [Ver evidencia](SIG-MEJ-02.3-03.3-IMPLEMENTACION.md). La sesión real pertenece a otro integrante, conforme a la división indicada por el usuario; [contratos y tres TODO de integración](../INTEGRACION-US-7.2-7.4.md) quedan documentados sin implementar sus US.
@@ -27,9 +29,9 @@ SIG-MEJ-04.1/04.2/04.3 ya están implementados con el alcance aquí delimitado. 
 | Ticket | Trabajo que puede avanzar | Límite o dependencia |
 | --- | --- | --- |
 | [SIG-BUG-01.2](tickets/SIG-BUG-01.2.md) | Corregir la franja negra, alturas/fondos y recortes según la causa reproducida, preservando la pantalla existente. | Completar SIG-BUG-01.1 es una dependencia técnica, no una aprobación del cliente. DU-01 no impide corregir una causa demostrada. No extender la tarea a rediseñar la interfaz o cambiar funciones médicas. |
-| [SIG-MEJ-03.1](tickets/SIG-MEJ-03.1.md) | Agregar Sumar dosis/Descontar dosis para AJUSTE y pedir cantidad positiva, conservando INGRESO y el resto del formulario. | No hace falta resolver DU-07 para este selector. El indicador adicional de stock por lote, su actualización y un comportamiento de preselección no se adoptan como requisitos nuevos. Coordinar el campo de operación con SIG-MEJ-03.2 es trabajo técnico. No agregar el indicador pendiente para cerrar este alcance textual. |
+| [SIG-MEJ-03.1](tickets/SIG-MEJ-03.1.md) | Selector/entrada positiva entregados; indicador DU-07 implementado con quantityAvailable y clave vacuna/lote bajo DEC-005. | Coordinación de operación con SIG-MEJ-03.2 cumplida. Consulta fallida no informa cero; sin clave completa no se muestra indicador. Integración externa de identidad pendiente. |
 | [SIG-MEJ-03.2](tickets/SIG-MEJ-03.2.md) | Validar entero positivo en la entrada y convertir Sumar a +cantidad y Descontar a -cantidad en el servidor, conservando motivo y movimientos existentes. | SIG-MEJ-03.1 es dependencia de integración. El signo y la positividad están explícitos; no se necesita fijar un máximo comercial nuevo. Mantener cantidades firmadas en el dominio y no cambiar el guard de identidad ni el modelo de stock para resolver otra duda. |
-| [SIG-MEJ-04.1](tickets/SIG-MEJ-04.1.md) | Mostrar información de fecha sin horarios y retirar el mensaje al recuperar disponibilidad; distinguir carga o fallo de consulta para no informar falta de cupos falsamente. | No hace falta decidir duración (DU-11), ciclo (DU-09) ni interacción del botón (DU-10) para implementar el mensaje. Mantener sin cambios la interacción del botón mientras siga dudosa; usar un mensaje claro de la fuente sin inventar causas de falta de disponibilidad. |
+| [SIG-MEJ-04.1](tickets/SIG-MEJ-04.1.md) | Mensaje entregado, con botón deshabilitado y aviso asociado bajo DEC-006 / DU-10. | Duración DU-11 y ciclo DU-09 siguen fuera del cambio. No se inventan causas de falta de disponibilidad. |
 | [SIG-MEJ-04.2](tickets/SIG-MEJ-04.2.md) | En el servidor distinguir fecha sin cupos de horario no seleccionado cuando sí hay opciones; devolver el mensaje correspondiente e impedir creación inválida. | SIG-MEJ-04.1 es dependencia de integración. La validación del servidor aplica tanto con botón activo como deshabilitado; no requiere decidir DU-10 ni cambiar el ciclo de DU-09. No agregar aprobación automática, estados nuevos, prioridades de todos los errores ni modificar el momento de reserva. La coherencia del ciclo existente queda pendiente fuera de esta corrección de mensajes. |
 | [SIG-MEJ-04.3](tickets/SIG-MEJ-04.3.md) | Verificar/corregir actualización por fecha, selección y errores obsoletos, recuperación y respuestas tardías, sobre loadSlots existente. | SIG-MEJ-04.1/04.2 son dependencias técnicas. Mostrar horarios de la última fecha está definido; no depende de decidir duración, feriados o capacidad. No recalcular agenda ni adoptar 30 minutos como regla; trabajar con la disponibilidad que entrega el servicio existente. |
 
@@ -65,7 +67,7 @@ SIG-MEJ-04.1/04.2/04.3 ya están implementados con el alcance aquí delimitado. 
 
 ## Orden recomendado para implementar
 
-1. **SIG-MEJ-04.1 → SIG-MEJ-04.2 → SIG-MEJ-04.3:** mensaje sin horarios, validación correcta y recuperación al cambiar de fecha. Dejar sin cambios ciclo, duración e interacción dudosa del botón.
+1. **SIG-MEJ-04.1 → SIG-MEJ-04.2 → SIG-MEJ-04.3:** mensaje, validación, recuperación y bloqueo DU-10 ya entregados; dejar ciclo/duración pendientes con sus responsables.
 2. **SIG-MEJ-03.1 → SIG-MEJ-03.2:** selector de operación y cantidad positiva, con signo interno. Después avanzar solo la parte definida de SIG-MEJ-03.3.
 3. **SIG-BUG-01.1 → SIG-BUG-01.2:** reproducir y corregir la franja negra; la investigación previa es técnica y no requiere aprobación del cliente.
 4. **SIG-MEJ-02.3:** iniciar la regresión base del aislamiento por paciente ahora y repetirla después de los futuros cambios del buscador.

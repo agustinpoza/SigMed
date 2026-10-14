@@ -18,6 +18,8 @@ Fecha: 14/10/2026. Base: `dd3a6a4`. Se ejecutan 10 pruebas de dominio, acción/f
 
 Se traduce el rechazo confirmado de stock negativo a error de cantidad, preservando el formulario. Se bloquea el lote antes del INSERT para evitar el deadlock reproducido entre dos descuentos válidos; no se cambian triggers o reglas del saldo. [Ver evidencia](../SIG-MEJ-02.3-03.3-IMPLEMENTACION.md).
 
+Complemento DU-07 / DEC-005: tres pruebas adicionales de lectura real verifican la clave vacuna/lote, actualización tras movimiento, cero, lote inexistente y guard. La suite integrada pasa sus 21 casos; [cierre provisorio del bloque](../CIERRE-PROVISORIO.md). La lectura no escribe movimientos ni sustituye la validación transaccional.
+
 Por la división de trabajo indicada por el usuario, no se implementa sesión real ni se modifica el fallback. [Marco para el responsable de US-7.2/7.4](../../INTEGRACION-US-7.2-7.4.md) y TODO separados dejan pendiente el responsable autenticado; no se valida la auditoría por un actor elegido automáticamente.
 
 ## Disponibilidad para arrancar
@@ -113,7 +115,7 @@ Las etiquetas de los criterios separan obligación explícita, interpretación p
 
 requireEnfermeraOAdministrador usa un primer perfil permitido como fallback si no hay actor. Eso no prueba responsable real ni sesión válida. Además la fuente dice stock derivado y el código usa caché, desvío D-03 documentado.
 
-**Dudas relacionadas:** [DU-07](../REVISION.md#du-07), indicador pendiente fuera de esta verificación; [DU-08](../REVISION.md#du-08), integración de identidad real documentada para US-7.2/7.4; [DU-12](../REVISION.md#du-12), jerarquía general pendiente. No se validó el fallback como responsable autenticado.
+**Dudas relacionadas:** [DU-07](../REVISION.md#du-07), indicador definido/verificado bajo DEC-005; [DU-08](../REVISION.md#du-08), integración de identidad real documentada para US-7.2/7.4; [DU-12](../REVISION.md#du-12), jerarquía general pendiente. No se validó el fallback como responsable autenticado.
 
 ### Tratamiento de la duda y alcance seguro
 

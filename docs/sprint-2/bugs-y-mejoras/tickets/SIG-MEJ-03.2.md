@@ -8,7 +8,7 @@
 | Tipo de tarea | Integración y validación de formulario |
 | Prioridad propuesta | P2 |
 | Estado inicial | Pendiente de contrato de formulario |
-| Estado actual | Implementado y verificado con pruebas aisladas; cierre integrado de stock corresponde a SIG-MEJ-03.3 |
+| Estado actual | Entrada/signo implementados e integrados con stock real; identidad autenticada externa |
 | Esfuerzo orientativo | 3 h |
 | Predecesoras del plan de integración | [SIG-MEJ-03.1](SIG-MEJ-03.1.md) |
 
@@ -20,7 +20,7 @@ createStockMovement valida cantidad entera positiva y operación, calcula +canti
 
 [Ver implementación y resultados de SIG-MEJ-03.1/03.2](../SIG-MEJ-03-IMPLEMENTACION.md). Pasaron 38 pruebas nuevas de stock y 28 regresiones de vacunación (66 en total), typecheck y build. Lint sin errores, con un aviso preexistente de vacunación. Las casillas reflejan cobertura automatizada de la entrada, acción y contrato de llamada; no se escribieron movimientos reales para verificarlas.
 
-Actualización del 14/10/2026: SIG-MEJ-03.3 ya verifica stock, rollback y concurrencia en PostgreSQL real; [ver evidencia](../SIG-MEJ-02.3-03.3-IMPLEMENTACION.md). DU-07 conserva el indicador pendiente y DU-08 la integración externa de identidad; no se valida el fallback como auditoría real.
+Actualización del 14/10/2026: SIG-MEJ-03.3 verifica stock, rollback y concurrencia en PostgreSQL real. DU-07 se aplica mediante DEC-005 en el indicador del formulario, sin alterar la conversión de signo; [cierre provisorio y evidencia](../CIERRE-PROVISORIO.md). DU-08 mantiene la integración externa de identidad; no se valida el fallback como auditoría real.
 
 ## Disponibilidad para arrancar
 
@@ -113,7 +113,7 @@ Las etiquetas de los criterios separan obligación explícita, interpretación p
 
 No se definió un tope comercial ni nuevo movimiento de egreso. El máximo del tipo de almacenamiento solo limita técnicamente; mantener cantidades firmadas de consumidores existentes es propuesta técnica.
 
-**Dudas abiertas relacionadas:** [DU-07](../REVISION.md#du-07), [DU-08](../REVISION.md#du-08), [DU-12](../REVISION.md#du-12). No hay respuestas registradas; no se adopta una opción como regla por defecto.
+**Dudas relacionadas:** [DU-07](../REVISION.md#du-07) aplicada en DEC-005; [DU-08](../REVISION.md#du-08) mantiene integración externa de identidad y [DU-12](../REVISION.md#du-12) la jerarquía general pendiente.
 
 ### Tratamiento de la duda y alcance seguro
 

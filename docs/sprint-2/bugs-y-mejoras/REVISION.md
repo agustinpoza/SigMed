@@ -154,7 +154,7 @@ Las entradas conservan las preguntas de la revisión original y registran su res
 
 **Tratamiento:** SIG-MEJ-03.1 registra alcance del indicador y comportamiento de selección. Los valores 37/9 de la imagen son ejemplos. El límite ≥ 0 y el delta por movimiento ya están definidos; no reabrirlos ni asumir nuevos máximos comerciales.
 
-**Resolución:** pendiente. Al resolver, registrar decisión, fuente/evidencia, responsable y fecha; hasta entonces no adoptar una opción como regla de negocio.
+**Resolución para el bloque (14/10/2026):** [DEC-005](../../decisiones.md#dec-005--disponibilidad-por-vacuna-y-número-de-lote) aplica el criterio expreso del usuario: `quantityAvailable`, clave vacuna + número de lote y error distinto de cero. Indicador oculto sin clave completa, carga/error/no encontrado/cero diferenciados, respuestas tardías descartadas y nueva consulta al conservar o volver a seleccionar el lote tras guardar. Sumar/Descontar sigue sin preselección. [Evidencia](CIERRE-PROVISORIO.md). Responsable del criterio: usuario; ejecución: Codex. No se crea otro saldo ni se cierra DU-08 con esta decisión.
 
 ## DU-08
 
@@ -198,7 +198,7 @@ Las entradas conservan las preguntas de la revisión original y registran su res
 
 **Tratamiento:** Registrar la decisión UX para SIG-MEJ-04.1/04.2. En cualquier variante el servidor impide una operación inválida; no decidir prioridad de todos los mensajes por cuenta propia. Falta de consulta no demuestra falta de cupos.
 
-**Resolución:** pendiente. Al resolver, registrar decisión, fuente/evidencia, responsable y fecha; hasta entonces no adoptar una opción como regla de negocio.
+**Resolución para el bloque (14/10/2026):** [DEC-006](../../decisiones.md#dec-006--confirmación-deshabilitada-sin-horarios-de-vacunación) registra la indicación del usuario y el respaldo de image13, inspeccionada. Confirmar se deshabilita sin cupos con aviso visible asociado; ante fallo de consulta conserva su error distinto de falta de cupos. La validación del servidor sigue protegiendo peticiones directas/desactualizadas, y con cupos sin selección conserva el error de horario obligatorio. Pruebas actualizadas y [Chrome verificado](CIERRE-PROVISORIO.md). Responsable del criterio: usuario; ejecución: Codex. No se define prioridad general de errores ni se resuelve el ciclo DU-09 o la duración DU-11.
 
 ## DU-11
 

@@ -9,7 +9,7 @@ import { AlertStatus, AppointmentState, MovementType, UserRole, Specialty } from
 import { createVaccineWithInitialLot, registerStockMovement, StockRuleError } from "@/lib/stock";
 import HistorialPage from "@/app/(portal)/paciente/historial/page";
 import ClinicalHistoryTable, { type ClinicalHistoryEntry } from "@/app/(portal)/paciente/historial/clinical-history-table";
-import { createStockMovement } from "@/app/(portal)/enfermera/inventario/actions";
+import { createStockMovement, getLotAvailability } from "@/app/(portal)/enfermera/inventario/actions";
 import { MovementForm } from "@/app/(portal)/enfermera/inventario/movement-form";
 
 // Solo se simulan la identidad y la invalidación de Next. Prisma, SQL, triggers,
@@ -179,6 +179,30 @@ async function compete(lotId: string, operations: () => Promise<unknown>[]) {
   expect(waiting).toBeGreaterThanOrEqual(2); // Demuestra dos conexiones concurrentes, no promesas serializadas.
   return results;
 }
+
+describe("DU-07: lectura de disponibilidad con PostgreSQL real", () => {
+  it("separa lotes con el mismo número en vacunas distintas y lee el saldo actualizado", async () => {
+    const first = await inventory(6);
+    const second = await inventory(23);
+    expect(await getLotAvailability(first.vaccine.id, "  LOTE-PRUEBA  ")).toEqual({ status: "available", quantityAvailable: 6 });
+    expect(await getLotAvailability(second.vaccine.id, "LOTE-PRUEBA")).toEqual({ status: "available", quantityAvailable: 23 });
+    await createStockMovement({}, form(first.vaccine.id, "2"));
+    expect(await getLotAvailability(first.vaccine.id, "LOTE-PRUEBA")).toEqual({ status: "available", quantityAvailable: 4 });
+    expect((await balance(first.lot.id)).quantity).toBe(4);
+  });
+  it("distingue cero persistido de lote inexistente sin crear movimientos al consultar", async () => {
+    const { vaccine, lot } = await inventory(3);
+    await registerStockMovement(movement(vaccine.id, -3));
+    expect(await getLotAvailability(vaccine.id, "LOTE-PRUEBA")).toEqual({ status: "available", quantityAvailable: 0 });
+    expect(await getLotAvailability(vaccine.id, "NO-EXISTE")).toEqual({ status: "not-found" });
+    expect((await balance(lot.id)).movements).toHaveLength(2);
+  });
+  it("la lectura respeta el guard actual sin resolver sesión real o su fallback", async () => {
+    const { vaccine } = await inventory(3);
+    boundary.actor = patientA;
+    expect(await getLotAvailability(vaccine.id, "LOTE-PRUEBA")).toMatchObject({ status: "error", message: expect.stringMatching(/enfermeras/) });
+  });
+});
 
 describe("SIG-MEJ-03.3: stock, transacciones y trazabilidad con PostgreSQL real", () => {
   it("rechaza descuento mayor al stock como error de formulario, con saldo y movimientos intactos", async () => {

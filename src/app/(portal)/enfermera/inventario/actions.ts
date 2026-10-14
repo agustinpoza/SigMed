@@ -13,12 +13,40 @@ import { StockRuleError, registerStockMovement } from "@/lib/stock";
 import { MovementType } from "@/generated/prisma/enums";
 import { requireEnfermeraOAdministrador } from "@/lib/actor-guard";
 import { MAX_STOCK_INPUT_QUANTITY } from "@/lib/stock-input";
+import { prisma } from "@/lib/db";
+import { LOT_AVAILABILITY_ERROR } from "@/lib/stock-messages";
 
 export type MovementFormState = {
   errors?: FieldErrors;
   message?: string;
   values?: Record<string, string>;
 };
+
+export type LotAvailabilityResult =
+  | { status: "available"; quantityAvailable: number }
+  | { status: "not-found" }
+  | { status: "error"; message: string };
+
+export async function getLotAvailability(
+  vaccineId: string,
+  lotNumber: string,
+): Promise<LotAvailabilityResult> {
+  if (typeof vaccineId !== "string" || !isUuid(vaccineId) ||
+      typeof lotNumber !== "string" || !lotNumber.trim()) {
+    return { status: "error", message: "Seleccioná una vacuna válida e ingresá el número de lote." };
+  }
+  try {
+    const guard = await requireEnfermeraOAdministrador();
+    if ("error" in guard) return { status: "error", message: guard.error };
+    const lot = await prisma.vaccineLot.findUnique({
+      where: { vaccineId_lotNumber: { vaccineId, lotNumber: lotNumber.trim() } },
+      select: { quantityAvailable: true },
+    });
+    return lot ? { status: "available", quantityAvailable: lot.quantityAvailable } : { status: "not-found" };
+  } catch {
+    return { status: "error", message: LOT_AVAILABILITY_ERROR };
+  }
+}
 
 const ALLOWED_TYPES: MovementType[] = [
   MovementType.INGRESO,

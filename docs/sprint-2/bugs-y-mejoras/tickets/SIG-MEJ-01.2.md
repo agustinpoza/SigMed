@@ -8,7 +8,7 @@
 | Tipo de tarea | Mejora de texto en interfaz |
 | Prioridad propuesta | P2 |
 | Estado inicial | Pendiente de rótulo acordado |
-| Estado actual | Rótulo provisorio aplicado mediante constante; conformidad definitiva pendiente |
+| Estado actual | Rótulo provisorio aplicado y teclado verificado en Chrome; conformidad definitiva pendiente |
 | Esfuerzo orientativo | 1 h |
 | Predecesoras del plan de integración | [SIG-MEJ-01.1](SIG-MEJ-01.1.md) |
 
@@ -63,7 +63,7 @@ Aplicar la alternativa provisoria autorizada manteniendo el detalle de cada aten
 - [ ] **[Condicionado a DU-02]** Los textos coinciden con el acuerdo del cliente.
 - [x] **[Avance provisorio DEC-004]** Encabezado y título usan «Indicaciones» desde una constante de textos, con aprobación definitiva expresamente pendiente.
 - [x] **[Explícito en SIG-MEJ-01; regresión existente]** Abrir y cerrar muestra y oculta las indicaciones de la atención filtrada, sin modificar los datos de entrada.
-- [ ] **[Preservación técnica]** Una atención sin indicaciones mantiene su mensaje y el botón sigue siendo accesible con teclado.
+- [x] **[Preservación técnica; Chrome]** Una atención sin indicaciones mantiene su mensaje; Tab, Enter y Espacio operan sobre la atención correcta.
 
 ## Validación realizada y pendiente
 
@@ -72,7 +72,7 @@ Aplicar la alternativa provisoria autorizada manteniendo el detalle de cada aten
 - `npm.cmd run lint`: sin errores; advertencia preexistente de `aria-expanded` en vacunación.
 - `git diff --check`: aprobado.
 
-El botón nativo, `type="button"`, `aria-expanded`, `aria-controls` y el estilo de foco no cambian. El caso sin indicaciones está cubierto por la suite; la comprobación manual con teclado permanece pendiente y no se declara ejecutada con Vitest. La conformidad con los textos definitivos sigue pendiente de DU-02.
+El botón nativo, `type="button"`, `aria-expanded`, `aria-controls` y el estilo de foco no cambian. Verificación posterior en Chrome a 360/768/1280 px: Enter abre/cierra, Tab pasa a la siguiente atención y Espacio abre su mensaje sin indicaciones; se comprueban los IDs y el contenido correspondientes. [Evidencia del navegador](../evidencias/du07-du10/navegador.json). Esta prueba utiliza el componente/CSS reales con datos ficticios, no sesión real. La conformidad con los textos definitivos sigue pendiente de DU-02.
 
 ## Archivos a revisar
 

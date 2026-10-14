@@ -46,14 +46,19 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("SIG-MEJ-04.1/04.3: disponibilidad del formulario", () => {
-  it("informa una fecha sin horarios y permite intentar enviar para validar en servidor", async () => {
+  it("informa una fecha sin horarios y bloquea confirmar con el aviso asociado al botón", async () => {
     setup();
     expect(screen.queryByText(noSlots)).toBeNull();
     changeDate(firstDate);
     expect(await screen.findByText(noSlots)).toBeTruthy();
     expect(schedule().disabled).toBe(true);
-    expect(screen.getByRole("button", { name: "Confirmar turno" }).hasAttribute("disabled")).toBe(false);
+    const confirm = screen.getByRole("button", { name: "Confirmar turno" });
+    expect(confirm.hasAttribute("disabled")).toBe(true);
+    expect(confirm.getAttribute("aria-describedby")).toBe("scheduledAt-availability");
     expect(schedule().getAttribute("aria-describedby")).toBe("scheduledAt-availability");
+    submit();
+    fireEvent.submit(schedule().closest("form")!);
+    expect(mocks.create).not.toHaveBeenCalled();
   });
 
   it("recupera horarios al cambiar fecha y limpia la selección al volver a un día sin cupos", async () => {
@@ -65,12 +70,14 @@ describe("SIG-MEJ-04.1/04.3: disponibilidad del formulario", () => {
     await screen.findByRole("option", { name: "11:00" });
     expect(screen.queryByText(noSlots)).toBeNull();
     expect(schedule().disabled).toBe(false);
+    expect(screen.getByRole("button", { name: "Confirmar turno" }).hasAttribute("disabled")).toBe(false);
     fireEvent.change(schedule(), { target: { value: nextSlot.value } });
     expect(schedule().value).toBe(nextSlot.value);
     changeDate(firstDate);
     await screen.findByText(noSlots);
     expect(schedule().value).toBe("");
     expect(screen.queryByRole("option", { name: "11:00" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Confirmar turno" }).hasAttribute("disabled")).toBe(true);
   });
 
   it("no anuncia día completo ni permite confirmar mientras consulta horarios", async () => {
@@ -119,10 +126,16 @@ describe("SIG-MEJ-04.1/04.3: disponibilidad del formulario", () => {
     expect(screen.getByRole("alert").textContent).toBe(loadError);
     expect(schedule().getAttribute("aria-describedby")).toBe("scheduledAt-error");
     expect(screen.queryByText(noSlots)).toBeNull();
+    const confirm = screen.getByRole("button", { name: "Confirmar turno" });
+    expect(confirm.hasAttribute("disabled")).toBe(true);
+    expect(confirm.getAttribute("aria-describedby")).toBe("scheduledAt-error");
+    fireEvent.submit(schedule().closest("form")!);
+    expect(mocks.create).not.toHaveBeenCalled();
     changeDate(secondDate);
     await screen.findByRole("option", { name: "11:00" });
     expect(screen.queryByText(loadError)).toBeNull();
     expect(schedule().getAttribute("aria-invalid")).toBe("false");
+    expect(screen.getByRole("button", { name: "Confirmar turno" }).hasAttribute("disabled")).toBe(false);
   });
 
   it("quita el error de horario obligatorio al seleccionar o cambiar de fecha", async () => {

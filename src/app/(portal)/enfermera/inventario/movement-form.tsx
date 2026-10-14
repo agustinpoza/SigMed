@@ -1,8 +1,9 @@
 "use client";
 
-import { startTransition, useActionState, useState, type FormEvent, type ReactNode } from "react";
-import { createStockMovement, type MovementFormState } from "./actions";
+import { startTransition, useActionState, useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { createStockMovement, getLotAvailability, type LotAvailabilityResult, type MovementFormState } from "./actions";
 import { MAX_STOCK_INPUT_QUANTITY } from "@/lib/stock-input";
+import { LOT_AVAILABILITY_ERROR } from "@/lib/stock-messages";
 
 const initialState: MovementFormState = {};
 const initialValues = {
@@ -65,12 +66,51 @@ function Field({
 const controlClass =
   "w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900";
 
+function LotAvailability({ vaccineId, lotNumber }: { vaccineId: string; lotNumber: string }) {
+  const [result, setResult] = useState<LotAvailabilityResult | null>(null);
+  const [retry, setRetry] = useState(0);
+  useEffect(() => {
+    let active = true;
+    const timer = setTimeout(async () => {
+      try {
+        const current = await getLotAvailability(vaccineId, lotNumber);
+        if (active) setResult(current);
+      } catch {
+        if (active) setResult({ status: "error", message: LOT_AVAILABILITY_ERROR });
+      }
+    }, 300);
+    return () => { active = false; clearTimeout(timer); };
+  }, [vaccineId, lotNumber, retry]);
+
+  return (
+    <div className="rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 sm:col-span-2">
+      <p className="text-sm font-medium text-zinc-700">Stock disponible del lote</p>
+      <p role={result?.status === "error" ? "alert" : "status"} className="mt-1 text-sm text-zinc-900">
+        {!result ? "Consultando disponibilidad..."
+          : result.status === "available" ? `${result.quantityAvailable} dosis`
+            : result.status === "not-found" ? "No se encontró ese lote para la vacuna seleccionada."
+              : result.message}
+      </p>
+      {result?.status === "error" ? (
+        <button type="button" onClick={() => { setResult(null); setRetry((value) => value + 1); }}
+          className="mt-2 rounded-md border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-medium text-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700">
+          Reintentar consulta de stock
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
 export function MovementForm({ vaccines }: { vaccines: VaccineOption[] }) {
   const [values, setValues] = useState(initialValues);
   const [feedbackVisible, setFeedbackVisible] = useState(false);
+  const [availabilityRevision, setAvailabilityRevision] = useState(0);
   const [state, dispatch, pending] = useActionState(
     async (previous: MovementFormState, data: FormData) => {
       const result = await createStockMovement(previous, data);
+      // Releer el saldo si se conservan campos tras un rechazo; el éxito limpia
+      // el formulario y la próxima selección consulta nuevamente el lote.
+      setAvailabilityRevision((value) => value + 1);
       if (!result.errors && !result.values) setValues(initialValues);
       return result;
     },
@@ -276,6 +316,14 @@ export function MovementForm({ vaccines }: { vaccines: VaccineOption[] }) {
             placeholder={isAdjustment ? "Correccion de conteo" : "Recepcion de lote"}
           />
         </Field>
+
+        {values.vaccineId && values.lotNumber.trim() ? (
+          <LotAvailability
+            key={JSON.stringify([values.vaccineId, values.lotNumber.trim(), availabilityRevision])}
+            vaccineId={values.vaccineId}
+            lotNumber={values.lotNumber.trim()}
+          />
+        ) : null}
       </fieldset>
 
       <div className="flex justify-end gap-3 border-t border-zinc-200 pt-4">

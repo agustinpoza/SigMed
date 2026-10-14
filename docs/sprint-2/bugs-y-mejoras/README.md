@@ -4,9 +4,11 @@ Fecha de elaboración: 13/10/2026. Responsable del bloque: usuario.
 
 **Rama de trabajo:** `sprint-2/bugs-y-mejoras`, creada desde `main`. El trabajo actual sigue siendo sprint 1; esta planificación prepara el sprint 2.
 
-**Resultado:** 6 temas padre (2 bugs y 4 mejoras), desglosados en 16 tickets locales, uno por cada tarea de la sección 02 del [documento de análisis](../../../DocumentacionSigMed/Sistema%20SigMed/Sprint%201/US,Bugs%20y%20Mejoras%20Sprint%202.docx.md). Los IDs coinciden con la fuente para conservar trazabilidad. Los temas padre son agrupadores, no tickets adicionales ni esfuerzo sumado dos veces. No se implementaron cambios funcionales ni se publicaron tickets en una plataforma externa.
+**Plan inicial:** 6 temas padre (2 bugs y 4 mejoras), desglosados en 16 tickets locales, uno por cada tarea de la sección 02 del [documento de análisis](../../../DocumentacionSigMed/Sistema%20SigMed/Sprint%201/US,Bugs%20y%20Mejoras%20Sprint%202.docx.md). Los IDs coinciden con la fuente para conservar trazabilidad. Los temas padre son agrupadores, no tickets adicionales ni esfuerzo sumado dos veces. La implementación posterior está registrada abajo; los tickets siguen siendo locales.
 
 ## Avance de implementación
+
+[Cierre provisorio del bloque](CIERRE-PROVISORIO.md), 14/10/2026: indicador de lote DU-07 ([DEC-005](../../decisiones.md#dec-005--disponibilidad-por-vacuna-y-número-de-lote)) y confirmación deshabilitada DU-10 ([DEC-006](../../decisiones.md#dec-006--confirmación-deshabilitada-sin-horarios-de-vacunación)) implementados. **141 pruebas aprobadas** (120 unitarias y 21 de integración), tres TODO externos de sesión real; teclado y estados verificados en Chrome a 360/768/1280 px. Quedan aprobación definitiva DU-02 e integración/reglas externas expresamente separadas, sin implementar las US del compañero.
 
 SIG-MEJ-01 tiene avance provisorio por instrucción del usuario: «Indicaciones» en columna y detalle, desde una constante de textos que conserva Detalle/Cerrar. [DEC-004](../../decisiones.md#dec-004--rótulo-provisorio-de-indicaciones-del-historial) registra su carácter temporal. La aprobación definitiva y DU-02 siguen pendientes; los tickets no se declaran cerrados por aplicar esta alternativa.
 
@@ -18,9 +20,9 @@ SIG-BUG-02.1/02.2/02.3 están completados para [DEC-002](../../decisiones.md#dec
 
 SIG-BUG-01.1 tiene diagnóstico completado y SIG-BUG-01.2 está implementado: el portal cubre la ventana, los filtros se adaptan y el scroll de la tabla queda contenido. [Ver diagnóstico, capturas y verificación](SIG-BUG-01-IMPLEMENTACION.md). El alcance de DU-01 queda registrado en [DEC-001](../../decisiones.md#dec-001--alcance-de-la-corrección-visual-sig-bug-01); no se cambian funciones de las US médicas.
 
-SIG-MEJ-03.1 y SIG-MEJ-03.2 están implementados: selector Sumar/Descontar, entrada positiva, signo calculado en servidor y preservación de valores. [Ver implementación y límites originales](SIG-MEJ-03-IMPLEMENTACION.md). La verificación de stock de SIG-MEJ-03.3 ya está entregada; indicador por lote e integración de identidad real conservan sus pendientes.
+SIG-MEJ-03.1 y SIG-MEJ-03.2 están implementados: selector Sumar/Descontar, entrada positiva, signo calculado en servidor y preservación de valores. [Ver implementación y límites originales](SIG-MEJ-03-IMPLEMENTACION.md). La verificación de stock de SIG-MEJ-03.3 y el indicador por lote DU-07 ya están entregados; la integración de identidad real sigue pendiente.
 
-SIG-MEJ-04.1, SIG-MEJ-04.2 y SIG-MEJ-04.3 están implementados y verificados con 28 pruebas aisladas, typecheck, lint sin errores y build. [Ver cambios, resultados y límites de la verificación](SIG-MEJ-04-IMPLEMENTACION.md). Las dudas de ciclo, botón y duración permanecen abiertas; no se cambiaron esas reglas ni se escribieron datos de prueba en la base compartida. Los estados iniciales de la tabla conservan la planificación anterior; el estado actual está en cada ticket.
+SIG-MEJ-04.1, SIG-MEJ-04.2 y SIG-MEJ-04.3 están implementados; sus 28 pruebas se actualizaron para el bloqueo de DU-10. [Ver implementación inicial](SIG-MEJ-04-IMPLEMENTACION.md) y [cierre provisorio actual](CIERRE-PROVISORIO.md). Ciclo DU-09 y duración DU-11 siguen pendientes. Los estados iniciales de la tabla conservan la planificación anterior; el estado actual está en cada ticket.
 
 ## Aislamiento y orden con las US nuevas
 
@@ -54,7 +56,7 @@ No agrupar todo como un único bug: hay diagnóstico, acuerdos con el cliente, t
 - **Área médica:** se reprodujo la exposición del fondo del body al quedar el portal más corto que la ventana, y el desbordamiento de filtros a 360 px. SIG-BUG-01.1 documenta la causa y SIG-BUG-01.2 corrige ambos problemas; ver evidencia de implementación.
 - **Tildes:** el fallo original quedó reproducido y corregido conforme a DEC-002. La búsqueda aplica la misma normalización a consulta y campos; el informe conserva la ambigüedad de la fuente y registra el criterio explícito del usuario.
 - **Profesional:** nombre/apellido ya llegan en `record.doctor` y ya participan del filtro. SIG-MEJ-02 no empieza de cero: define alcance, agrega ayuda visible y verifica los casos faltantes. «Martin» sin tilde corresponde a normalización, no a agregar el campo.
-- **Campos del historial:** SIG-BUG-02 conserva los seis campos actuales según DEC-002. SIG-MEJ-02.1/02.2 entrega matriz y ayuda de esos seis campos bajo DEC-003, sin duplicar el filtro; aislamiento de SIG-MEJ-02.3 continúa pendiente.
+- **Campos del historial:** SIG-BUG-02 conserva los seis campos actuales según DEC-002. SIG-MEJ-02.1/02.2 entrega matriz y ayuda bajo DEC-003, sin duplicar el filtro; SIG-MEJ-02.3 ya verifica aislamiento con SQL real y conserva la integración externa de sesión pendiente.
 - **Stock:** ya hay tipos INGRESO/AJUSTE, motivo obligatorio para ajuste, movimiento con responsable y trigger que evita stock negativo. SIG-MEJ-03 adapta la entrada y verifica integración/error de dominio; no reemplaza el módulo de inventario ni exige migración de esquema inicialmente.
 - **Vacunación:** `loadSlots` ya actualiza horarios, limpia selección y descarta respuestas antiguas. SIG-MEJ-04.3 es verificación y ajuste de errores/estado obsoletos. La validación actual de horario obligatorio se ejecuta sin distinguir día sin cupos.
 

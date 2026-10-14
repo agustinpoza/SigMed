@@ -54,3 +54,26 @@ DU-05 queda definida para estos entregables. La contradicción tres campos del d
 - **Motivo:** el detalle actual muestra `record.indications`; el rótulo describe ese contenido. Diagnóstico y tratamiento conservan sus columnas. No se añade un campo Observaciones ni se redefine información clínica para justificar el texto.
 - **Pendiente:** confirmar el rótulo definitivo y ambos textos del botón, quién los aprueba y la fecha. DU-02 permanece abierta; esta decisión permite implementar la alternativa provisoria sin cerrar el acuerdo de SIG-MEJ-01.1 ni la conformidad definitiva de SIG-MEJ-01.2.
 - **Revisión posterior:** al obtener el acuerdo, actualizar la constante y esta entrada, y repetir las regresiones del historial. La aprobación debe registrarse expresamente; no se infiere de que el texto ya esté en la interfaz.
+
+## DEC-005 — Disponibilidad por vacuna y número de lote
+
+- **Fecha:** 14/10/2026.
+- **Estado:** aplicado y verificado para DU-07 / SIG-MEJ-03; el cierre general del bloque sigue siendo provisorio por sus pendientes externos.
+- **Fuente:** criterio expreso del usuario: usar `quantityAvailable`, identificar el lote por vacuna + número de lote y no mostrar una consulta fallida como «0 dosis»; [wireframe image6](../DocumentacionSigMed/Sistema%20SigMed/Sprint%201/US,Bugs%20y%20Mejoras%20Sprint%202.docx.assets/image6.png) y clave única de `VaccineLot` en [schema.prisma](../prisma/schema.prisma).
+- **Responsable del criterio:** usuario, Bugs y Mejoras. **Responsable de ejecución y evidencia:** Codex. No se presume aprobación externa del cliente ni de reglas de vacunación.
+- **Contrato:** `getLotAvailability` consulta `vaccineId_lotNumber` con el número recortado como en la acción existente y devuelve únicamente `quantityAvailable`. Usa el guard existente; no modifica su fallback ni define sesión real.
+- **Estados:** sin vacuna o número de lote, el indicador está oculto. Una consulta pendiente muestra carga; un lote encontrado muestra su cantidad, incluso cero. Un lote inexistente se informa como no encontrado; un fallo muestra un error y permite reintentar, sin cantidad ni cero ficticio. No se agrega un segundo saldo físico.
+- **Actualización:** cambiar vacuna o lote descarta la cantidad y respuestas anteriores. Un envío que conserva los campos vuelve a consultar el saldo. El éxito mantiene el reset existente: retira el indicador y volver a identificar el lote consulta su saldo actualizado; no conserva el valor anterior como disponibilidad vigente.
+- **Operación:** los ajustes siguen sin operación preseleccionada y requieren elegir Sumar o Descontar. El indicador es informativo; la validación transaccional del servidor sigue evitando stock negativo.
+- **Evidencia:** [cierre provisorio y verificación](sprint-2/bugs-y-mejoras/CIERRE-PROVISORIO.md), con pruebas de lectura real, error, cero, clave compuesta y respuestas tardías.
+
+## DEC-006 — Confirmación deshabilitada sin horarios de vacunación
+
+- **Fecha:** 14/10/2026.
+- **Estado:** aplicado y verificado para DU-10 / SIG-MEJ-04; integración con sesión real y ciclo de vacunación pendientes fuera de este cambio.
+- **Fuente:** indicación del usuario y [wireframe image13 de SIG-MEJ-04](../DocumentacionSigMed/Sistema%20SigMed/Sprint%201/US,Bugs%20y%20Mejoras%20Sprint%202.docx.assets/image13.png), inspeccionado: muestra aviso visible y botón «Confirmar turno» deshabilitado. Se conserva CA2/CA4 del [documento](../DocumentacionSigMed/Sistema%20SigMed/Sprint%201/US,Bugs%20y%20Mejoras%20Sprint%202.docx.md).
+- **Responsable del criterio:** usuario, Bugs y Mejoras. **Responsable de ejecución y evidencia:** Codex. El respaldo documental se registra para esta decisión de interfaz, no como aprobación del ciclo de RF-31.
+- **Interacción:** al consultar una fecha sin cupos, «Confirmar turno» queda deshabilitado y asociado al aviso visible. Carga y envío mantienen su bloqueo. Una consulta fallida también bloquea, con su error diferenciado; al recuperar horarios se habilita nuevamente.
+- **Servidor:** los envíos directos o desactualizados siguen validándose independientemente de la interfaz. Con horarios y sin selección se conserva «El horario es obligatorio». Sin fecha se mantiene la validación previa de campos obligatorios; no se redefine la prioridad general de todos los errores.
+- **Límites:** no se modifican aprobación/reserva de vacunación (DU-09), duración (DU-11), agenda, feriados o roles.
+- **Evidencia:** [cierre provisorio](sprint-2/bugs-y-mejoras/CIERRE-PROVISORIO.md). Pruebas actualizadas de botón, carga, error, recuperación y envío directo; verificación en Chrome con aviso accesible y teclado.

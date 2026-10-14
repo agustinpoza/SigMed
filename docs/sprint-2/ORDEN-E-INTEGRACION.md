@@ -12,6 +12,8 @@ La [revisión e incorporación del commit bea3fd1](REVISION-COMMIT-bea3fd1.md) i
 
 ## Tipos de dependencia
 
+Actualización del 14/10/2026: DU-07/DU-10 implementadas bajo DEC-005/006, con 141 pruebas aprobadas y teclado de MEJ-01.2 verificado en Chrome. [Cierre provisorio del bloque](bugs-y-mejoras/CIERRE-PROVISORIO.md): quedan aprobación definitiva DU-02 e integración/contratos externos. El usuario entrega su bloque sin implementar las US de otro integrante ni resolver ciclo/duración por inferencia.
+
 Actualización del 14/10/2026: [DEC-004](../decisiones.md#dec-004--rótulo-provisorio-de-indicaciones-del-historial) autoriza aplicar «Indicaciones» provisoriamente en SIG-MEJ-01.2 desde una constante, manteniendo pendiente la aprobación definitiva de SIG-MEJ-01.1 / DU-02. El cambio de texto no requiere nuevas US ni añade contenido clínico.
 
 Actualización del 14/10/2026: SIG-MEJ-02.3/03.3 entregan sus pruebas y correcciones sobre el flujo existente con PostgreSQL real. Por indicación del usuario, sesión real y permisos siguen en las US de otro integrante; [marco de integración](INTEGRACION-US-7.2-7.4.md) y [evidencia del bloque](bugs-y-mejoras/SIG-MEJ-02.3-03.3-IMPLEMENTACION.md) delimitan lo entregado y tres TODO externos. No se exige esperar esas US para verificar aislamiento/datos y stock, ni se cierran seguridad y auditoría autenticadas con un actor ficticio.

@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { StockRuleError } from "@/lib/stock";
-import { createStockMovement } from "./actions";
+import { createStockMovement, getLotAvailability } from "./actions";
+import { LOT_AVAILABILITY_ERROR } from "@/lib/stock-messages";
 
-const mocks = vi.hoisted(() => ({ register: vi.fn(), guard: vi.fn(), revalidate: vi.fn() }));
+const mocks = vi.hoisted(() => ({ register: vi.fn(), guard: vi.fn(), revalidate: vi.fn(), lot: vi.fn() }));
+vi.mock("@/lib/db", () => ({ prisma: { vaccineLot: { findUnique: mocks.lot } } }));
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidate }));
 vi.mock("@/lib/actor-guard", () => ({ requireEnfermeraOAdministrador: mocks.guard }));
 vi.mock("@/lib/stock", () => ({
@@ -31,6 +33,42 @@ beforeEach(() => {
   vi.resetAllMocks();
   mocks.guard.mockResolvedValue({ actor: { id: "operador-identificado" } });
   mocks.register.mockResolvedValue(undefined);
+  mocks.lot.mockResolvedValue({ quantityAvailable: 37 });
+});
+
+describe("DU-07: disponibilidad del lote", () => {
+  it("consulta la clave vacuna + número de lote y devuelve únicamente quantityAvailable", async () => {
+    const vaccineId = String(form().get("vaccineId"));
+    expect(await getLotAvailability(vaccineId, "  LOTE-PRUEBA  ")).toEqual({ status: "available", quantityAvailable: 37 });
+    expect(mocks.lot).toHaveBeenCalledExactlyOnceWith({
+      where: { vaccineId_lotNumber: { vaccineId, lotNumber: "LOTE-PRUEBA" } },
+      select: { quantityAvailable: true },
+    });
+  });
+  it("distingue un lote existente con cero dosis de un lote no encontrado", async () => {
+    mocks.lot.mockResolvedValueOnce({ quantityAvailable: 0 }).mockResolvedValueOnce(null);
+    const vaccineId = String(form().get("vaccineId"));
+    expect(await getLotAvailability(vaccineId, "LOTE-PRUEBA")).toEqual({ status: "available", quantityAvailable: 0 });
+    expect(await getLotAvailability(vaccineId, "OTRO-LOTE")).toEqual({ status: "not-found" });
+  });
+  it("un fallo de consulta devuelve un error, sin cantidad y sin exponer el error SQL", async () => {
+    mocks.lot.mockRejectedValue(new Error("Detalle interno de la base"));
+    expect(await getLotAvailability(String(form().get("vaccineId")), "LOTE-PRUEBA"))
+      .toEqual({ status: "error", message: LOT_AVAILABILITY_ERROR });
+  });
+  it("aplica el guard existente antes de consultar", async () => {
+    mocks.guard.mockResolvedValue({ error: "Operación no autorizada." });
+    expect(await getLotAvailability(String(form().get("vaccineId")), "LOTE-PRUEBA"))
+      .toEqual({ status: "error", message: "Operación no autorizada." });
+    expect(mocks.lot).not.toHaveBeenCalled();
+  });
+  it.each([["inválida", "LOTE"], ["11111111-1111-4111-8111-111111111111", "   "]])(
+    "una clave incompleta o inválida no consulta ni informa cero (%s, %s)", async (vaccineId, lotNumber) => {
+      expect((await getLotAvailability(vaccineId, lotNumber)).status).toBe("error");
+      expect(mocks.lot).not.toHaveBeenCalled();
+      expect(mocks.guard).not.toHaveBeenCalled();
+    },
+  );
 });
 
 describe("SIG-MEJ-03.2: entrada positiva y signo interno", () => {

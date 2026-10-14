@@ -20,7 +20,7 @@ La acción valida la fecha y consulta getFreeSlots antes de exigir una selecció
 
 **Evidencia:** [implementación y resultados de SIG-MEJ-04](../SIG-MEJ-04-IMPLEMENTACION.md). Pasaron 28 pruebas de formulario y acciones con base de datos simulada, typecheck y build. Lint pasó con un aviso preexistente en el buscador de pacientes. Las casillas de aceptación reflejan cobertura automatizada del alcance definido; no certifican un despliegue, sesión real o escritura contra la base compartida.
 
-Las dudas DU-09/DU-10/DU-11 siguen abiertas: no se cambiaron ciclo de aprobación, duración ni política del botón sin horarios. Se conservó la posibilidad existente de intentar confirmar sin cupos y se corrigió su respuesta; durante una consulta pendiente se impide enviar por coherencia técnica.
+Complemento del 14/10/2026: [DEC-006](../../../decisiones.md#dec-006--confirmación-deshabilitada-sin-horarios-de-vacunación) aplica DU-10. El botón y el handler bloquean sin horarios o ante error de consulta, con aviso/error asociado y diferenciado. La validación del servidor sigue protegiendo peticiones directas y exige horario cuando existen opciones. [Pruebas actualizadas y cierre provisorio](../CIERRE-PROVISORIO.md). DU-09/DU-11 siguen abiertos; no se cambia ciclo ni duración.
 
 ## Disponibilidad para arrancar
 
@@ -59,7 +59,7 @@ Dar un error acorde a la disponibilidad real y conservar la protección de la re
 ## Trabajo y entregable
 
 - En el servidor distinguir fecha válida sin slots de fecha con slots pero sin selección; no confiar en una bandera de disponibilidad del cliente.
-- Conservar validación de fecha/paciente/vacuna. El bloqueo durante carga es propuesta técnica; la interacción con botón sin cupos requiere resolver DU-10.
+- Conservar validación de fecha/paciente/vacuna y bloqueo durante carga; aplicar DU-10 / DEC-006 con aviso visible sin cupos.
 - Si el horario se ocupa entre consulta y envío, devolver conflicto comprensible y refrescar sin crear otro turno.
 - Conservar las restricciones actuales sin asumir que APROBADO directo es la regla validada: el ciclo y momento de reserva se aclaran en DU-09 con RF-31 y US-3.6.
 
@@ -69,6 +69,7 @@ Dar un error acorde a la disponibilidad real y conservar la protección de la re
 - [x] **[Explícito en SIG-MEJ-04 CA4]** Con cupos y sin selección: muestra El horario es obligatorio.
 - [x] **[Propuesta técnica]** Fecha inválida o consulta fallida no se presenta como falta de cupos.
 - [x] **[Integridad de US-3.6; ciclo pendiente DU-09]** Un envío directo o un horario ocupado no crea turno inválido ni descuenta stock.
+- [x] **[DU-10 / DEC-006; wireframe]** Confirmar queda deshabilitado sin horarios o con error de consulta, con su explicación asociada; recuperar horarios lo habilita.
 
 ## Validación prevista
 
@@ -112,7 +113,7 @@ Las etiquetas de los criterios separan obligación explícita, interpretación p
 
 RF-31 pide PENDIENTE antes de aprobar; el código crea APROBADO y asigna dosis en una acción. Falta definir si el botón representa solicitud, aprobación o ambas operaciones autorizadas.
 
-**Dudas abiertas relacionadas:** [DU-09](../REVISION.md#du-09), [DU-10](../REVISION.md#du-10), [DU-11](../REVISION.md#du-11), [DU-12](../REVISION.md#du-12). No hay respuestas registradas; no se adopta una opción como regla por defecto.
+**Dudas relacionadas:** [DU-10](../REVISION.md#du-10) aplicada/verificada bajo DEC-006. [DU-09](../REVISION.md#du-09), [DU-11](../REVISION.md#du-11) y [DU-12](../REVISION.md#du-12) mantienen sus pendientes; no se resuelven por esta decisión de interfaz.
 
 ### Tratamiento de la duda y alcance seguro
 

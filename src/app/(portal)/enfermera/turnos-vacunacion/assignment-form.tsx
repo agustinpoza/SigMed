@@ -24,11 +24,17 @@ type AssignmentFormState = VaccinationFormState & { slotRevision?: number };
 
 const initialState: AssignmentFormState = {};
 
-function SubmitButton({ pending, loadingSlots }: { pending: boolean; loadingSlots: boolean }) {
+function SubmitButton({ pending, loadingSlots, slotsUnavailable, descriptionId }: {
+  pending: boolean;
+  loadingSlots: boolean;
+  slotsUnavailable: boolean;
+  descriptionId?: string;
+}) {
   return (
     <button
       type="submit"
-      disabled={pending || loadingSlots}
+      disabled={pending || loadingSlots || slotsUnavailable}
+      aria-describedby={descriptionId}
       className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:bg-zinc-400"
     >
       {pending ? "Confirmando..." : "Confirmar turno"}
@@ -219,7 +225,7 @@ export function AssignmentForm({
   // resetea el form al terminar y desincroniza los campos controlados.
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (pending || loadingSlots) return;
+    if (pending || loadingSlots || noSlots || slotsError) return;
     const formData = new FormData(event.currentTarget);
     startTransition(() => dispatch(formData));
   }
@@ -419,7 +425,9 @@ export function AssignmentForm({
         >
           Cancelar
         </button>
-        <SubmitButton pending={pending} loadingSlots={loadingSlots} />
+        <SubmitButton pending={pending} loadingSlots={loadingSlots}
+          slotsUnavailable={noSlots || Boolean(slotsError)}
+          descriptionId={scheduledAtError ? "scheduledAt-error" : noSlots ? "scheduledAt-availability" : undefined} />
       </div>
     </form>
   );

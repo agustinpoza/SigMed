@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { StockRuleError } from "@/lib/stock";
 import { MovementForm } from "./movement-form";
 
-// Se usa la acción real; solo se simulan identidad, mutación del dominio y caché.
-const mocks = vi.hoisted(() => ({ register: vi.fn(), guard: vi.fn(), revalidate: vi.fn() }));
+// Acción real; se simulan identidad, mutación, lectura de disponibilidad y caché.
+const mocks = vi.hoisted(() => ({ register: vi.fn(), guard: vi.fn(), revalidate: vi.fn(), lot: vi.fn() }));
+vi.mock("@/lib/db", () => ({ prisma: { vaccineLot: { findUnique: mocks.lot } } }));
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidate }));
 vi.mock("@/lib/actor-guard", () => ({ requireEnfermeraOAdministrador: mocks.guard }));
 vi.mock("@/lib/stock", () => ({
@@ -16,8 +17,9 @@ vi.mock("@/lib/stock", () => ({
 }));
 
 const vaccineId = "11111111-1111-4111-8111-111111111111";
+const otherVaccineId = "22222222-2222-4222-8222-222222222222";
 function setup() {
-  render(<MovementForm vaccines={[{ id: vaccineId, name: "Vacuna de prueba" }]} />);
+  return render(<MovementForm vaccines={[{ id: vaccineId, name: "Vacuna de prueba" }, { id: otherVaccineId, name: "Otra vacuna" }]} />);
 }
 function input(label: string) { return screen.getByLabelText(label) as HTMLInputElement; }
 function selectType(type: string) {
@@ -37,6 +39,86 @@ beforeEach(() => {
   vi.resetAllMocks();
   mocks.guard.mockResolvedValue({ actor: { id: "operador-identificado" } });
   mocks.register.mockResolvedValue(undefined);
+  mocks.lot.mockResolvedValue({ quantityAvailable: 37 });
+});
+
+describe("DU-07: indicador de disponibilidad", () => {
+  it("oculta el indicador mientras falta vacuna o lote", () => {
+    setup();
+    expect(screen.queryByText("Stock disponible del lote")).toBeNull();
+    fireEvent.change(input("Lote"), { target: { value: "LOTE-PRUEBA" } });
+    expect(screen.queryByText("Stock disponible del lote")).toBeNull();
+    expect(mocks.lot).not.toHaveBeenCalled();
+  });
+  it("muestra la cantidad consultada y diferencia el cero real del lote no encontrado", async () => {
+    mocks.lot.mockResolvedValueOnce({ quantityAvailable: 0 }).mockResolvedValueOnce(null);
+    setup(); fillAdjustment("Descontar dosis");
+    expect(await screen.findByText("0 dosis")).toBeTruthy();
+    fireEvent.change(input("Lote"), { target: { value: "NO-EXISTE" } });
+    expect(screen.queryByText("0 dosis")).toBeNull();
+    expect(await screen.findByText("No se encontró ese lote para la vacuna seleccionada.")).toBeTruthy();
+  });
+  it("un error de consulta no muestra cero y permite reintentar", async () => {
+    mocks.lot.mockRejectedValueOnce(new Error("Sin conexión")).mockResolvedValueOnce({ quantityAvailable: 9 });
+    setup(); fillAdjustment("Descontar dosis");
+    expect((await screen.findByRole("alert")).textContent).toBe("No se pudo consultar la disponibilidad del lote. Intentá nuevamente.");
+    expect(screen.queryByText("0 dosis")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Reintentar consulta de stock" }));
+    expect(await screen.findByText("9 dosis")).toBeTruthy();
+  });
+  it("cambiar vacuna relee el mismo número de lote sin conservar la cantidad anterior", async () => {
+    mocks.lot.mockResolvedValueOnce({ quantityAvailable: 37 }).mockResolvedValueOnce({ quantityAvailable: 12 });
+    setup(); fillAdjustment("Sumar dosis");
+    await screen.findByText("37 dosis");
+    fireEvent.change(screen.getByLabelText("Seleccionar Vacuna del Catálogo"), { target: { value: otherVaccineId } });
+    expect(screen.queryByText("37 dosis")).toBeNull();
+    expect(await screen.findByText("12 dosis")).toBeTruthy();
+    expect(mocks.lot.mock.calls[1][0].where.vaccineId_lotNumber).toEqual({ vaccineId: otherVaccineId, lotNumber: "LOTE-PRUEBA" });
+  });
+  it.each(["respuesta", "rechazo"])("descarta la consulta tardía del lote anterior (%s)", async (outcome) => {
+    let resolve!: (value: { quantityAvailable: number }) => void;
+    let reject!: (error: Error) => void;
+    const old = new Promise<{ quantityAvailable: number }>((res, rej) => { resolve = res; reject = rej; });
+    mocks.lot.mockReturnValueOnce(old).mockResolvedValueOnce({ quantityAvailable: 12 });
+    setup(); fillAdjustment("Sumar dosis");
+    await waitFor(() => expect(mocks.lot).toHaveBeenCalledTimes(1));
+    fireEvent.change(input("Lote"), { target: { value: "LOTE-NUEVO" } });
+    await screen.findByText("12 dosis");
+    await act(async () => { if (outcome === "respuesta") resolve({ quantityAvailable: 99 }); else reject(new Error("Consulta anterior")); });
+    expect(screen.getByText("12 dosis")).toBeTruthy();
+    expect(screen.queryByText("99 dosis")).toBeNull();
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+  it("relee tras un descuento rechazado conservando el formulario y su operación", async () => {
+    mocks.lot.mockResolvedValueOnce({ quantityAvailable: 3 }).mockResolvedValueOnce({ quantityAvailable: 1 });
+    mocks.register.mockRejectedValue(new StockRuleError({ quantity: "No hay suficientes dosis disponibles en este lote." }));
+    setup(); fillAdjustment("Descontar dosis");
+    await screen.findByText("3 dosis"); submit();
+    await screen.findByText("No hay suficientes dosis disponibles en este lote.");
+    expect(screen.queryByText("3 dosis")).toBeNull();
+    expect(await screen.findByText("1 dosis")).toBeTruthy();
+    expect(input("Cantidad").value).toBe("5");
+    expect((screen.getByRole("radio", { name: "Descontar dosis" }) as HTMLInputElement).checked).toBe(true);
+  });
+  it("el éxito limpia el indicador y volver a identificar el lote obtiene su saldo actualizado", async () => {
+    mocks.lot.mockResolvedValueOnce({ quantityAvailable: 37 }).mockResolvedValueOnce({ quantityAvailable: 32 });
+    setup(); fillAdjustment("Descontar dosis");
+    await screen.findByText("37 dosis"); submit();
+    await screen.findByText("Se descontaron 5 dosis del lote.");
+    expect(screen.queryByText("Stock disponible del lote")).toBeNull();
+    fillAdjustment("Descontar dosis");
+    expect(await screen.findByText("32 dosis")).toBeTruthy();
+  });
+  it("cancelar retira el indicador e ignora una consulta todavía pendiente", async () => {
+    let resolve!: (value: { quantityAvailable: number }) => void;
+    mocks.lot.mockReturnValue(new Promise<{ quantityAvailable: number }>((done) => { resolve = done; }));
+    setup(); fillAdjustment("Sumar dosis");
+    await waitFor(() => expect(mocks.lot).toHaveBeenCalledTimes(1));
+    fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
+    await act(async () => resolve({ quantityAvailable: 37 }));
+    expect(screen.queryByText("Stock disponible del lote")).toBeNull();
+    expect(screen.queryByText("37 dosis")).toBeNull();
+  });
 });
 afterEach(cleanup);
 

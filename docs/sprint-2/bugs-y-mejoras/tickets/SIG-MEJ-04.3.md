@@ -20,7 +20,7 @@ Cambiar fecha limpia opciones, selección y error de consulta previos. Los conta
 
 **Evidencia:** [implementación y resultados de SIG-MEJ-04](../SIG-MEJ-04-IMPLEMENTACION.md). Pasaron 28 pruebas de formulario y acciones con base de datos simulada, typecheck y build. Lint pasó con un aviso preexistente en el buscador de pacientes. Las casillas de aceptación reflejan cobertura automatizada del alcance definido; no certifican un despliegue, sesión real o escritura contra la base compartida.
 
-Las dudas DU-09/DU-10/DU-11 siguen abiertas: no se cambiaron ciclo de aprobación, duración ni política del botón sin horarios. Se conservó la posibilidad existente de intentar confirmar sin cupos y se corrigió su respuesta; durante una consulta pendiente se impide enviar por coherencia técnica.
+Complemento del 14/10/2026: DU-10 aplicada mediante DEC-006. Las regresiones ahora comprueban botón deshabilitado sin cupos y ante consulta fallida, recuperación al cambiar fecha y conservación del descarte de respuestas anteriores. [Cierre provisorio y Chrome verificado](../CIERRE-PROVISORIO.md). DU-09/DU-11 siguen abiertos: ciclo y duración no se modifican.
 
 ## Disponibilidad para arrancar
 
@@ -111,7 +111,7 @@ Las etiquetas de los criterios separan obligación explícita, interpretación p
 
 Actualización básica ya presente; faltan evidencia runtime y decisión sobre mensajes y botón. La regla 60/30 minutos aparece como observación pendiente, no mandato.
 
-**Dudas abiertas relacionadas:** [DU-09](../REVISION.md#du-09), [DU-10](../REVISION.md#du-10), [DU-11](../REVISION.md#du-11), [DU-12](../REVISION.md#du-12). No hay respuestas registradas; no se adopta una opción como regla por defecto.
+**Dudas relacionadas:** [DU-10](../REVISION.md#du-10) aplicada/verificada bajo DEC-006. [DU-09](../REVISION.md#du-09), [DU-11](../REVISION.md#du-11) y [DU-12](../REVISION.md#du-12) mantienen sus pendientes; no se resuelven por esta decisión de interfaz.
 
 ### Tratamiento de la duda y alcance seguro
 
