@@ -1,6 +1,6 @@
 // app/ui/medico/tabla-trabajo.tsx
 import { UserRole } from "@/generated/prisma/enums";
-import { getCurrentActor } from "@/lib/dev-actor";
+import { getCurrentActor } from "@/lib/actor";
 import { obtenerTurnos } from "@/lib/turnos";
 import { ETIQUETAS_ESTADO } from "@/lib/turnos-estados";
 
@@ -34,8 +34,8 @@ export default async function TablaTrabajo({ props }: TablaTrabajoProps) {
     });
 
     return (
-        <div className="flex-1 min-h-0 overflow-y-auto rounded-xl border border-gray-400 m-2">
-            <table className="w-full p-2">
+        <div className="flex-1 min-h-0 min-w-0 overflow-auto rounded-xl border border-gray-400 m-2">
+            <table className="w-full min-w-[640px] p-2">
                 <thead className="sticky top-0">
                     <tr className="text-center text-lg text-slate-500 bg-gray-200">
                         <th>Hora</th>

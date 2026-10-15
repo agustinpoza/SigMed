@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { Specialty } from "@/generated/prisma/client";
-import { getCurrentActor } from "@/lib/dev-actor";
+import { getCurrentActor } from "@/lib/actor";
 import { HorariosForm } from "./horarios-form";
 
 export default async function HorariosPage() {

@@ -1,4 +1,6 @@
 import RoleShell from "../role-shell";
+import { requireActor } from "@/lib/actor";
+import { UserRole } from "@/generated/prisma/enums";
 
 const items = [
   { href: "/enfermera", label: "Inicio" },
@@ -7,7 +9,9 @@ const items = [
   { href: "/enfermera/turnos-vacunacion", label: "Turnos de vacunación" },
 ];
 
-export default function EnfermeraLayout({ children }: LayoutProps<"/enfermera">) {
+export default async function EnfermeraLayout({ children }: LayoutProps<"/enfermera">) {
+  await requireActor(UserRole.ENFERMERA);
+
   return (
     <RoleShell role="Enfermera" items={items}>
       {children}

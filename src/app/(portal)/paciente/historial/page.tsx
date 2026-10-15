@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { getCurrentActor } from "@/lib/dev-actor";
+import { getCurrentActor } from "@/lib/actor";
 import ClinicalHistoryTable, {
   type ClinicalHistoryEntry,
 } from "./clinical-history-table";
@@ -74,7 +74,7 @@ export default async function HistorialPage() {
           Mi historial clínico
         </h1>
       </header>
-      <ClinicalHistoryTable records={entries} />
+      <ClinicalHistoryTable key={actor.id} records={entries} />
     </section>
   );
 }
