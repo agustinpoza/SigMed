@@ -18,6 +18,9 @@ export const metadata: Metadata = {
     default: "SigMed",
   },
   description: "Sistema de agenda, vacunas e historial clinico para la sala medica",
+  icons: {
+    icon: [{ url: "/logo.png", type: "image/png" }],
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

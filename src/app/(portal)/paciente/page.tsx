@@ -34,12 +34,25 @@ export default async function PacientePage() {
             Mi historial clínico
           </h2>
           <p className="text-sm text-gray-400 mb-2">
-            Consulta tus diagnósticos, tratemientos e indicaciones.
+            Consulta tus diagnósticos, tratamientos e indicaciones.
           </p>
           <Link href="/paciente/historial"
                 className="text-gray-500 bg-gray-100 rounded-md border border-gray-400 p-1"
           >
             Ir a Mi historial
+          </Link>
+        </section>
+        <section className="flex-col bg-gray-100 rounded-md p-2">
+          <h2 className="text-lg text-black font-semibold">
+            Mis turnos
+          </h2>
+          <p className="text-sm text-gray-400 mb-2">
+            Consulta tus turnos reservados y confirmalos.
+          </p>
+          <Link href="/paciente/turnos"
+                className="text-gray-500 bg-gray-100 rounded-md border border-gray-400 p-1"
+          >
+            Ir a Mis turnos
           </Link>
         </section>
       </div>

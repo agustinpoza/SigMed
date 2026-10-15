@@ -29,6 +29,19 @@ export default async function MedicoPage() {
             Ir a Hoja de trabajo
           </Link>
         </section>
+        <section className="flex-col bg-gray-100 rounded-md p-2">
+          <h2 className="text-lg text-black font-semibold">
+            Disponibilidad mensual
+          </h2>
+          <p className="text-sm text-gray-400 mb-2">
+            Consulte, establezca y edite su disponibilidad mensual para la reserva de turnos.
+          </p>
+          <Link href="/medico/cronograma"
+                className="text-gray-500 bg-gray-100 rounded-md border border-gray-400 p-1"
+          >
+            Ir a Disponibilidad
+          </Link>
+        </section>
       </div>
     </main>
   );

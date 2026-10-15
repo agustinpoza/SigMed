@@ -12,6 +12,17 @@ export type DevActorCandidate = {
   role: string;
 };
 
+const ROLE_HOME_PATHS: Record<string, string> = {
+  ENFERMERA: "/enfermera",
+  ADMINISTRADOR: "/admin",
+  MEDICO: "/medico",
+  PACIENTE: "/paciente",
+};
+
+export function getRoleHomePath(role: string): string {
+  return ROLE_HOME_PATHS[role] ?? "/enfermera";
+}
+
 export function isDevActorEnabled() {
   return (
     process.env.SIGMED_DEV_ACTOR === "1" || process.env.NODE_ENV !== "production"
