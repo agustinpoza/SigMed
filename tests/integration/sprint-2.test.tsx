@@ -15,7 +15,7 @@ import { MovementForm } from "@/app/(portal)/enfermera/inventario/movement-form"
 // Solo se simulan la identidad y la invalidación de Next. Prisma, SQL, triggers,
 // dominio, guard, acciones y componentes son reales. Esto no autentica una sesión.
 const boundary = vi.hoisted(() => ({ actor: null as UserProfile | null, revalidate: vi.fn() }));
-vi.mock("@/lib/dev-actor", () => ({ getCurrentActor: async () => boundary.actor }));
+vi.mock("@/lib/actor", () => ({ getCurrentActor: async () => boundary.actor }));
 vi.mock("next/cache", () => ({ revalidatePath: boundary.revalidate }));
 
 let nurse: UserProfile, otherNurse: UserProfile, patientA: UserProfile, patientB: UserProfile;

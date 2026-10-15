@@ -4,8 +4,9 @@ Sistema de agenda medica, gestion de vacunas e historial clinico para una sala
 medica. App web en Next.js con Clerk (autenticacion), Neon (PostgreSQL) y Prisma.
 
 Estado actual: **Fase 1** - base de datos creada, integrada con la aplicacion y
-desplegada en Vercel. El rol se movio a Clerk. Todavia no hay autenticacion ni
-pantallas por rol.
+desplegada en Vercel. **Autenticacion con Clerk implementada**: inicio de sesion y
+registro funcionales, portal protegido por sesion y acceso por rol. El rol vive en
+la base (fuente de verdad) y se refleja como cache en Clerk (`publicMetadata.role`).
 
 La documentacion de decisiones, desvios y pendientes esta en
 [`implementacion-ia/`](implementacion-ia/README.md).
@@ -18,7 +19,7 @@ La documentacion de decisiones, desvios y pendientes esta en
 | Estilos | Tailwind CSS v4 |
 | Base de datos | Neon (PostgreSQL) |
 | ORM | Prisma 7 con `@prisma/adapter-neon` |
-| Autenticacion | Clerk (proximas fases) |
+| Autenticacion | Clerk (`@clerk/nextjs`) |
 | Deploy | Vercel |
 
 ## Puesta en marcha
@@ -46,6 +47,13 @@ DATABASE_URL="postgresql://USER:PASSWORD@ep-xxxx-pooler.REGION.aws.neon.tech/neo
 DATABASE_URL_UNPOOLED="postgresql://USER:PASSWORD@ep-xxxx.REGION.aws.neon.tech/neondb?sslmode=require"
 ```
 
+Y con las claves de Clerk (Developers > API keys, o `npx clerk init`):
+
+```bash
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_..."
+CLERK_SECRET_KEY="sk_test_..."
+```
+
 ### 3. Instalar dependencias y crear las tablas
 
 ```bash
@@ -58,13 +66,17 @@ npm run db:studio
 Las migraciones ya estan en el repo, asi que esto alcanza para crear la base desde
 cero. Para reconstruirla desde el cero de una vez: `npm run db:reset`.
 
-El repo tiene tres migraciones:
+El repo incluye las migraciones aplicadas:
 
 | Migracion | Que hace |
 | :--- | :--- |
-| `20261004060848_init` | Las 9 tablas, enums, claves foraneas e indices que genera Prisma |
+| `20261004060848_init` | Las tablas, enums, claves foraneas e indices que genera Prisma |
 | `20261004061200_constraints` | Las reglas que Prisma no puede modelar (origen: `prisma/constraints.sql`) |
-| `20261004135801_drop_user_profile_role` | Saca el enum `Role` y la columna `user_profile.role`; el rol pasa a Clerk |
+| `20261004135801_drop_user_profile_role` | Saca el enum `Role` y la columna `user_profile.role` (luego revertido por `reform_bd`) |
+| `20261005160000_reform_bd` | Reforma del esquema de la BD: repone `user_profile.role` y `clerk_user_id`, y agrega las reglas de inmutabilidad |
+| `20261005170000_corregir_mensajes_reglas` | Corrige los mensajes de las reglas de la base |
+| `20261005180000_alerta_stock_activa_unica` | Indice parcial unico de alerta activa por vacuna |
+| `20261008042027_agrega_laboratorio_vacuna` | Agrega `vaccine.laboratory` (texto libre) |
 
 Van separadas a proposito: editar una migracion ya aplicada cambia su checksum y
 `prisma migrate deploy` deja de funcionar en Vercel.
@@ -105,7 +117,7 @@ user_profile    1──1 doctor          personas del sistema (rol en Clerk)
 
 | Tabla | Que modela | RF / US |
 | :--- | :--- | :--- |
-| `user_profile` | Personas del sistema. `clerk_id` queda NULL hasta integrar Clerk | RF-22, RF-23, RF-24, RF-25 |
+| `user_profile` | Personas del sistema. `clerk_user_id` enlaza con la cuenta de Clerk | RF-22, RF-23, RF-24, RF-25 |
 | `doctor` | Perfil profesional (matricula) | RF-01, RF-27 |
 | `patient` | Perfil de paciente | RF-18 |
 | `doctor_schedule` | Franjas horarias con vigencia, versionables sin pisar turnos publicados | RF-01, RF-27 / US-1.5 |
@@ -117,10 +129,9 @@ user_profile    1──1 doctor          personas del sistema (rol en Clerk)
 
 ### Decisiones de modelado
 
-- **Estados del turno** (`appointment.status`): `DISPONIBLE`, `RESERVADO`,
-  `CONFIRMADO`, `ATENDIDO`, `AUSENTE`, `CANCELADO`, `BLOQUEADO`, `NO_DISPONIBLE`.
-  Un turno `DISPONIBLE` todavia no tiene `patient_id`, que es lo que representa la
-  agenda publicada de RF-02.
+- **Estados del turno** (`appointment.status`): `CONFIRMADO`, `RESERVADO`,
+  `CANCELADO`, `ATENDIDO`, `AUSENTE`. Coinciden con el enum `AppointmentState`
+  del schema.
 - **`doctor_schedule` versionable**: `valid_from` / `valid_to` permiten que el
   administrador cambie un horario (US-1.5.2) cerrando la fila vieja y abriendo una
   nueva, sin romper los turnos ya publicados.
@@ -128,10 +139,11 @@ user_profile    1──1 doctor          personas del sistema (rol en Clerk)
   `stock_movement`. El seed deja los dos consistentes.
 - **Inmutabilidad garantizada por la base**: `stock_movement` no tiene `updated_at`
   y tiene triggers que rechazan `UPDATE` y `DELETE`.
-- **Sin tabla `nurse`**: la enfermera es un `user_profile` sin ficha propia; su rol
-  vive en Clerk.
-- **El rol no esta en la base.** Vive en Clerk como `publicMetadata.role`.
-  `user_profile` conserva la identidad y el vinculo `clerk_id`. Ver
+- **Sin tabla `nurse`**: la enfermera es un `user_profile` sin ficha propia.
+- **El rol vive en la base** (`user_profile.role`), que es la fuente de verdad
+  (ver `docs/BD.md` D-02). Clerk guarda una **copia de lectura** en
+  `publicMetadata.role`, que `getCurrentActor()` mantiene sincronizada de forma
+  best-effort. La identidad se enlaza por email o por `clerk_user_id`. Ver
   [`implementacion-ia/consideraciones-tecnicas.md`](implementacion-ia/consideraciones-tecnicas.md)
   seccion 1.
 - **`/admin` no hereda las areas de medico ni paciente.** Es una desviacion
@@ -155,15 +167,18 @@ nivel de motor y no de aplicacion.
 ## Deploy en Vercel
 
 1. Importar el repositorio en [vercel.com](https://vercel.com).
-2. En **Settings > Environment Variables** cargar las dos variables para Production,
+2. En **Settings > Environment Variables** cargar las variables para Production,
    Preview y Development:
 
-   | Variable | Valor de Neon | Para que se usa |
+   | Variable | Valor | Para que se usa |
    | :--- | :--- | :--- |
-   | `DATABASE_URL` | Pooled connection | La app en runtime |
-   | `DATABASE_URL_UNPOOLED` | Direct connection | `prisma migrate deploy` |
+   | `DATABASE_URL` | Pooled connection de Neon | La app en runtime |
+   | `DATABASE_URL_UNPOOLED` | Direct connection de Neon | `prisma migrate deploy` |
+   | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Publishable key de Clerk | Cliente de Clerk |
+   | `CLERK_SECRET_KEY` | Secret key de Clerk | Backend de Clerk |
 
-   Marcar las dos como **Sensitive** si el proyecto es publico.
+   Marcar `DATABASE_URL`, `DATABASE_URL_UNPOOLED` y `CLERK_SECRET_KEY` como
+   **Sensitive** si el proyecto es publico.
 3. Build command: `prisma migrate deploy && next build`.
 
 `postinstall` ya corre `prisma generate`, asi que el cliente se compila solo.
@@ -179,8 +194,10 @@ incluir `migrate deploy` en el build.
 
 Verificacion post-deploy:
 
-- `/` muestra el estado de la conexion y la cantidad de filas de cada tabla.
-- `/api/health` devuelve el mismo chequeo en JSON.
+- `/` es la landing publica con accesos a iniciar sesion y crear cuenta; si hay
+  sesion, redirige al portal del rol.
+- `/sign-in` y `/sign-up` permiten autenticarse.
+- `/api/health` devuelve el chequeo de conexion y conteos en JSON.
 
 ## Fuera de alcance en esta fase
 

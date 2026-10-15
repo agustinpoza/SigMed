@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { getCurrentActor } from "@/lib/dev-actor";
+import { getCurrentActor } from "@/lib/actor";
 import ClinicalHistoryTable, {
   type ClinicalHistoryEntry,
 } from "./clinical-history-table";

@@ -77,6 +77,12 @@ pudimos reproducir; el resto espera a Clerk.
 
 ## Fase 3 — Actor de desarrollo · COMPLETADA
 
+> **Superado por la integración de Clerk.** Esta fase describe el actor de
+> desarrollo provisorio (`dev-actor`), que **ya fue eliminado**. El actor real se
+> resuelve con Clerk en `src/lib/actor.ts`; ver
+> [`consideraciones-tecnicas.md` §1, §3 y §4](consideraciones-tecnicas.md). El
+> contenido de abajo se conserva como registro histórico de la Fase 1.
+
 `getCurrentActor()` resuelve quién es el usuario actual. Con Clerk, solo cambia el
 interior de la función para resolver por `clerk_id`; la interfaz no se toca y los
 Server Actions de las fases 4 y 5 no se enteran del cambio.

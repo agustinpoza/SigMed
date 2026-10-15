@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { actualizarHorarioMedico, AgendaRuleError } from '@/lib/agenda';
-import { getCurrentActor } from '@/lib/dev-actor';
+import { getCurrentActor } from '@/lib/actor';
 
 export type HorariosFormState = {
   status: 'idle' | 'success' | 'error';

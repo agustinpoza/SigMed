@@ -25,6 +25,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@clerk/nextjs": "^7.9.15",
     "@prisma/adapter-neon": "^7.10.0",
     "@prisma/client": "^7.10.0",
     "next": "16.3.8",

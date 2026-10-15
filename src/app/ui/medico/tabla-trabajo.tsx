@@ -1,6 +1,6 @@
 // app/ui/medico/tabla-trabajo.tsx
 import { UserRole } from "@/generated/prisma/enums";
-import { getCurrentActor } from "@/lib/dev-actor";
+import { getCurrentActor } from "@/lib/actor";
 import { obtenerTurnos } from "@/lib/turnos";
 import { ETIQUETAS_ESTADO } from "@/lib/turnos-estados";
 

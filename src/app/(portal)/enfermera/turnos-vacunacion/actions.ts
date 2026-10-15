@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import { getCurrentActor } from "@/lib/dev-actor";
+import { getCurrentActor } from "@/lib/actor";
 import { type FieldErrors, hasErrors, isUuid, requiredDate, requiredText } from "@/lib/forms";
 import { NO_VACCINATION_SLOTS, VACCINATION_SLOTS_ERROR } from "@/lib/vaccination-messages";
 import {
@@ -31,7 +31,7 @@ const PAGE_PATH = "/enfermera/turnos-vacunacion";
 const INVENTORY_PATH = "/enfermera/inventario";
 
 const NO_ACTOR =
-  "No hay actor definido, asi que el turno no se puede atribuir. Selecciona uno en la barra superior.";
+  "No hay una sesión activa, asi que el turno no se puede atribuir.";
 
 const dateTimeFormat = new Intl.DateTimeFormat("es-AR", {
   timeZone: "America/Argentina/Buenos_Aires",

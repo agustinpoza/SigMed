@@ -1,24 +1,14 @@
 import Link from "next/link";
-import { getCurrentActor, isDevActorEnabled, listDevActorCandidates } from "@/lib/dev-actor";
-import DevActorPicker from "./dev-actor-picker";
+import { auth } from "@clerk/nextjs/server";
+import { UserButton } from "@clerk/nextjs";
+import { getCurrentActor } from "@/lib/actor";
 
 export const dynamic = "force-dynamic";
 
 export default async function PortalLayout({ children }: LayoutProps<"/">) {
-  const devEnabled = isDevActorEnabled();
-  const [actor, candidates] = devEnabled
-    ? await Promise.all([getCurrentActor(), listDevActorCandidates()])
-    : [null, []];
+  await auth.protect();
 
-  const current = actor
-    ? {
-        id: actor.id,
-        firstName: actor.firstName,
-        lastName: actor.lastName,
-        email: actor.email,
-        role: actor.role,
-      }
-    : null;
+  const actor = await getCurrentActor();
 
   return (
     <div className="flex min-h-dvh min-w-0 flex-col bg-zinc-50 text-zinc-900">
@@ -28,13 +18,17 @@ export default async function PortalLayout({ children }: LayoutProps<"/">) {
             SigMed
           </Link>
 
-          {devEnabled ? (
-            <DevActorPicker candidates={candidates} current={current} />
-          ) : (
-            <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800">
-              Sesion sin autenticar
-            </span>
-          )}
+          <div className="flex items-center gap-3">
+            {actor ? (
+              <span className="flex items-center gap-2 text-sm text-zinc-100">
+                {actor.firstName} {actor.lastName}
+                <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-zinc-600">
+                  {actor.role}
+                </span>
+              </span>
+            ) : null}
+            <UserButton />
+          </div>
         </div>
       </header>
 

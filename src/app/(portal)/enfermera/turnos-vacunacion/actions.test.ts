@@ -11,7 +11,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidate }));
 vi.mock("@/lib/db", () => ({ prisma: {} }));
-vi.mock("@/lib/dev-actor", () => ({ getCurrentActor: mocks.actor }));
+vi.mock("@/lib/actor", () => ({ getCurrentActor: mocks.actor }));
 vi.mock("@/lib/vaccination", () => ({
   getFreeSlots: mocks.slots,
   assignVaccinationAppointment: mocks.assign,
@@ -110,7 +110,7 @@ describe("SIG-MEJ-04.2: validación de confirmación", () => {
   it("no asigna sin actor, aunque exista un horario válido", async () => {
     mocks.actor.mockResolvedValue(null);
     const result = await createVaccinationAppointment({}, form({ scheduledAt: startsAt.toISOString() }));
-    expect(result.message).toContain("No hay actor definido");
+    expect(result.message).toContain("No hay una sesión activa");
     expect(mocks.assign).not.toHaveBeenCalled();
   });
 
