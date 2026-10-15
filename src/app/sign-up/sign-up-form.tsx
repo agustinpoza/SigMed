@@ -7,7 +7,7 @@ import { useSignUp } from "@clerk/nextjs";
 type Step = "form" | "verify";
 
 const inputClass =
-  "w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-slate-500 focus:ring-1 focus:ring-slate-500";
+  "w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-slate-500 focus:ring-1 focus:ring-slate-500";
 const labelClass = "flex flex-col gap-1 text-sm font-medium text-zinc-700";
 const errorClass = "text-xs text-red-600";
 const primaryButtonClass =
