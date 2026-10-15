@@ -1,5 +1,4 @@
 "use client";
-
 import { Fragment, useMemo, useState, type FormEvent } from "react";
 
 export type ClinicalHistoryEntry = {
@@ -143,7 +142,7 @@ export default function ClinicalHistoryTable({
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[760px] table-fixed text-left text-sm">
+        <table className="w-full min-w-190 table-fixed text-left text-sm">
           <colgroup>
             <col className="w-[13%]" />
             <col className="w-[20%]" />
@@ -177,10 +176,10 @@ export default function ClinicalHistoryTable({
                       <p className="font-medium text-zinc-900">{record.doctor}</p>
                       <p className="mt-0.5 text-xs text-zinc-500">{record.specialty}</p>
                     </td>
-                    <td className="whitespace-pre-wrap break-words px-3 py-3 leading-5 text-zinc-800 sm:px-4">
+                    <td className="whitespace-pre-wrap wrap-break-word px-3 py-3 leading-5 text-zinc-800 sm:px-4">
                       {record.diagnosis}
                     </td>
-                    <td className="whitespace-pre-wrap break-words px-3 py-3 leading-5 text-zinc-700 sm:px-4">
+                    <td className="whitespace-pre-wrap wrap-break-word px-3 py-3 leading-5 text-zinc-700 sm:px-4">
                       {record.treatment || <span className="text-zinc-400">Sin tratamiento</span>}
                     </td>
                     <td className="px-3 py-3 text-center sm:px-4">

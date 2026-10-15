@@ -1,13 +1,35 @@
 // app/(portal)/medico/page.tsx
-import Placeholder from "../placeholder";
+import { getCurrentActor } from "@/lib/dev-actor";
+import Link from "next/link";
 
-export default function Medico() {
+export default async function MedicoPage() {
+  const medico = await getCurrentActor();
 
   return (
-    <Placeholder
-      title="Área del médico"
-      description="Consultas de la jornada y organización de la atención propia. Esta área es exclusiva del rol médico."
-      tasks={["US-1.4 · Hoja de trabajo diaria (RF-04)"]}
-    />
+    <main>
+      <div className="flex flex-col justify-start mb-2">
+        <h1 className="text-2xl text-black font-bold">
+          Bienvenido/a, Doctor/a {medico?.firstName} {medico?.lastName}
+        </h1>
+        <p className="text-sm text-gray-500">
+          Estas son las funciones disponibles para tu rol de médico
+        </p>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <section className="flex-col bg-gray-100 rounded-md p-2">
+          <h2 className="text-lg text-black font-semibold">
+            Hoja de trabajo
+          </h2>
+          <p className="text-sm text-gray-400 mb-2">
+            Consulta su hoja de trabajo diaria disponibles por fecha.
+          </p>
+          <Link href="/medico/agenda"
+                className="text-gray-500 bg-gray-100 rounded-md border border-gray-400 p-1"
+          >
+            Ir a Hoja de trabajo
+          </Link>
+        </section>
+      </div>
+    </main>
   );
 }
