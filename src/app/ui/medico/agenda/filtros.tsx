@@ -1,4 +1,4 @@
-// app/ui/medico/filtros.tsx
+// app/ui/medico/agenda/filtros.tsx
 'use client';
 import { ETIQUETAS_ESTADO } from "@/lib/turnos-estados";
 import { useState } from "react";

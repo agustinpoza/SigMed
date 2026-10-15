@@ -1,6 +1,6 @@
 // app/(portal)/medico/agenda/page.tsx
-import Filtros from "@/app/ui/medico/filtros";
-import TablaTrabajo from "@/app/ui/medico/tabla-trabajo";
+import Filtros from "@/app/ui/medico/agenda/filtros";
+import TablaTrabajo from "@/app/ui/medico/agenda/tabla-trabajo";
 import { Suspense } from "react";
 
 type SearchParams = {

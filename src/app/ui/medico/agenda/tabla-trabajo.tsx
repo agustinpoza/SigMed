@@ -1,4 +1,4 @@
-// app/ui/medico/tabla-trabajo.tsx
+// app/ui/medico/agenda/tabla-trabajo.tsx
 import { UserRole } from "@/generated/prisma/enums";
 import { getCurrentActor } from "@/lib/dev-actor";
 import { obtenerTurnos } from "@/lib/turnos";
@@ -49,7 +49,7 @@ export default async function TablaTrabajo({ props }: TablaTrabajoProps) {
                     {(turnos.length > 0) ? (
                         turnos.map((t) => {
                             return (
-                                <tr key={t.id} className="text-slate-400 ">
+                                <tr key={t.id} className="text-slate-400">
                                     <td className="border-r-2 p-1">
                                         {/* XX:XX */}
                                         { t.startsAt ? t.startsAt.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Argentina/Buenos_Aires" }) : "Hora no disponible" }
