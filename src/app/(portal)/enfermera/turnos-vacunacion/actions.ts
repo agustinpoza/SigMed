@@ -2,9 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import { getCurrentActor } from "@/lib/actor";
-import { type FieldErrors, hasErrors, isUuid, requiredDate, requiredText } from "@/lib/forms";
-import { NO_VACCINATION_SLOTS, VACCINATION_SLOTS_ERROR } from "@/lib/vaccination-messages";
+import { getCurrentActor } from "@/lib/dev-actor";
+import { type FieldErrors, hasErrors, isUuid, requiredText } from "@/lib/forms";
 import {
   VaccinationRuleError,
   assignVaccinationAppointment,
@@ -31,7 +30,7 @@ const PAGE_PATH = "/enfermera/turnos-vacunacion";
 const INVENTORY_PATH = "/enfermera/inventario";
 
 const NO_ACTOR =
-  "No hay una sesión activa, asi que el turno no se puede atribuir.";
+  "No hay actor definido, asi que el turno no se puede atribuir. Selecciona uno en la barra superior.";
 
 const dateTimeFormat = new Intl.DateTimeFormat("es-AR", {
   timeZone: "America/Argentina/Buenos_Aires",
@@ -68,9 +67,12 @@ export async function createVaccinationAppointment(
     "La vacuna",
   );
   const date = requiredText(formData.get("date"), "date", errors, "La fecha");
-  const scheduledAtRaw = rawValue(formData, "scheduledAt");
-
-  if (date) requiredDate(date, "date", errors, "La fecha");
+  const scheduledAtRaw = requiredText(
+    formData.get("scheduledAt"),
+    "scheduledAt",
+    errors,
+    "El horario",
+  );
 
   if (patientId && !isUuid(patientId)) {
     errors.patientId = "El paciente seleccionado no es valido.";
@@ -87,27 +89,6 @@ export async function createVaccinationAppointment(
       errors.scheduledAt = "El horario seleccionado no es valido.";
     } else {
       scheduledAt = parsed;
-    }
-  }
-
-  // La ausencia de un horario elegido no demuestra que existan opciones.
-  // Consultar en el servidor también protege los envíos directos o desactualizados.
-  if (date && !errors.date && !errors.scheduledAt) {
-    try {
-      const slots = await getFreeSlots(date);
-      if (slots.length === 0) {
-        errors.scheduledAt = NO_VACCINATION_SLOTS;
-      } else if (!scheduledAtRaw) {
-        errors.scheduledAt = "El horario es obligatorio.";
-      } else if (!slots.some((slot) => slot.startsAt.getTime() === scheduledAt?.getTime())) {
-        errors.scheduledAt = "Ese horario ya no está disponible. Elegí otro horario.";
-      }
-    } catch (error) {
-      if (error instanceof VaccinationRuleError) {
-        Object.assign(errors, error.fields);
-      } else {
-        errors.scheduledAt = VACCINATION_SLOTS_ERROR;
-      }
     }
   }
 
@@ -238,11 +219,6 @@ export async function getAvailableSlots(
     return { slots: [], error: "La fecha no es valida." };
   }
 
-  const errors: FieldErrors = {};
-  if (!requiredDate(date, "date", errors, "La fecha")) {
-    return { slots: [], error: errors.date };
-  }
-
   try {
     const slots = await getFreeSlots(date);
     return {
@@ -253,6 +229,6 @@ export async function getAvailableSlots(
       return { slots: [], error: firstError(error, "La fecha no es valida.") };
     }
 
-    return { slots: [], error: VACCINATION_SLOTS_ERROR };
+    throw error;
   }
 }

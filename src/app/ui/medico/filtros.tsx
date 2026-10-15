@@ -36,9 +36,9 @@ export default function Filtros({ fecha }: FiltrosProps) {
     }
 
     return(
-        <div className="flex min-w-0 flex-col">
+        <div className="flex flex-col">
             {/* Selector de fecha */}
-            <div className="flex flex-wrap items-center justify-center border-y border-gray-300 p-4 gap-3">
+            <div className="flex flex-row justify-center border-y border-gray-300 p-4 gap-3">
                 <button className="flex flex-row items-center border bg-gray-200 rounded-md text-sm text-slate-500 p-1 gap-2"
                         onClick={() => actualizar("fecha", moverDia(fecha, -1))}>
                     <HiOutlineChevronLeft /> Anterior
@@ -49,7 +49,7 @@ export default function Filtros({ fecha }: FiltrosProps) {
                     type="date"
                     value={fecha}
                     onChange={(e) => actualizar("fecha", e.target.value)}
-                    className="min-w-0 max-w-full border border-gray-300 rounded-md text-black p-0.5"
+                    className="border border-gray-300 rounded-md text-black p-0.5"
                 />
                 <button className="flex flex-row items-center border bg-gray-200 rounded-md text-sm text-slate-500 p-1 gap-2"
                         onClick={() => actualizar("fecha", moverDia(fecha, 1))}>
@@ -57,8 +57,8 @@ export default function Filtros({ fecha }: FiltrosProps) {
                 </button>
             </div>
             {/* Opciones de filtros y busqueda */}
-            <div className="flex flex-col gap-3 rounded-sm bg-gray-200 my-4 p-2 lg:flex-row lg:items-center lg:justify-between">
-                <div className="flex flex-wrap text-black gap-2">
+            <div className="flex justify-between rounded-sm bg-gray-200 my-4 p-2">
+                <div className="flex flex-row text-black gap-2">
                     Estados:
                     {/* Ajustar según la cantidad de filtros y como se obtienen */}
                     {FILTROS.map((opcion) => (
@@ -75,17 +75,17 @@ export default function Filtros({ fecha }: FiltrosProps) {
                         </label>
                     ))}
                 </div>
-                <div className="flex min-w-0 items-center gap-1 lg:max-w-sm">
-                    <div className="flex min-w-0 flex-1 items-center border-2 border-gray-300 rounded-xl bg-white px-1">
+                <div className="flex flex-row items-center gap-1">
+                    <div className="flex flex-row items-center border-2 border-gray-300 rounded-xl bg-white px-1">
                         <input
-                            className="w-full min-w-0 text-gray-400 placeholder-gray-400 focus:outline-none"
+                            className="text-gray-400 placeholder-gray-400 focus:outline-none"
                             type="search"
                             placeholder="Paciente..."
                             value={busqueda}
                             onChange={(e) => setBusqueda(e.target.value)}
                         />
                     </div>
-                    <button type="submit" className="flex shrink-0 items-center text-slate-500 hover:text-gray-200 bg-gray-200 hover:bg-slate-500 border rounded-lg px-1 gap-1"
+                    <button type="submit" className="flex flex-row items-center text-slate-500 hover:text-gray-200 bg-gray-200 hover:bg-slate-500 border rounded-lg px-1 gap-1"
                         onClick={() => actualizar("busqueda", busqueda.trim())}>
                             <HiOutlineSearch /> Buscar
                     </button>

@@ -9,29 +9,27 @@ dependa de la memoria de una conversación.
 
 ---
 
-## 1. Roles: la base es la fuente de verdad, Clerk es cache
+## 1. Roles: de la base de datos a Clerk
 
-**Decisión (vigente).** El rol vive en la base (`user_profile.role`, enum
-`UserRole`), y esa es la fuente de verdad (ver `docs/BD.md`, desvío D-02). Clerk
-mantiene una **copia de lectura** en `publicMetadata.role`, que la aplicación
-sincroniza de forma best-effort. El trigger `fn_usuario_rol_inmutable` impide
-cambiar el rol de un perfil ya creado, así que el rol se asigna al dar de alta.
+**Decisión.** El rol del usuario vive únicamente en Clerk
+(`publicMetadata.role`). Se eliminó el enum `Role` y la columna
+`user_profile.role`.
 
-**Historia.** Hubo un intento previo de mudar el rol a Clerk y sacarlo de la base
-(migración `20261004135801_drop_user_profile_role`). Se revirtió en la reforma
-`20261005160000_reform_bd`. Los documentos y el README que todavía digan "el rol
-no está en la base" reflejan ese estado anterior y están desactualizados.
+**Qué se conserva.** `user_profile.clerk_id` sigue en la base. La **identidad**
+permanece en el sistema; lo que se mudó a Clerk es el **rol**. Ese campo es el
+puente entre un usuario de Clerk y su perfil, sus fichas de `doctor` o
+`patient`, y su firma en `stock_movement.actor_id`.
 
-**Identidad.** `user_profile.clerk_user_id` enlaza cada fila con la cuenta de
-Clerk. Ese campo es el puente entre un usuario de Clerk y su perfil, sus fichas de
-`doctor` o `patient`, y su firma en `stock_movement.actor_id`.
+**Consecuencia asumida.** RF-24 dice que el administrador crea las cuentas del
+personal. Con el rol fuera de la base, esa asignación deja de ser un `INSERT`/`UPDATE`
+y pasa a ser una operación del Backend API de Clerk o del Dashboard. La base ya
+no registra **quién** asignó cada rol ni **cuándo**. Si más adelante se necesita
+esa auditoría, hay que resolverla en el lado de Clerk o guardar un log de eventos.
 
-**Resolución del actor.** `src/lib/actor.ts` (`getCurrentActor()`) resuelve la
-sesión de Clerk en este orden: (1) fila ya enlazada por `clerk_user_id`; (2) enlace
-por email con un usuario existente —incluido el seed—, adoptando su rol y
-reemplazando el `clerk_user_id` provisorio; (3) alta JIT, tomando el rol de
-`publicMetadata.role` o cayendo a `PACIENTE`, con el DNI cargado en
-`unsafeMetadata` durante el registro.
+**Alternativa considerada y descartada.** Base de datos como fuente de verdad del
+rol, con Clerk manejando solo la autenticación. Se descartó porque duplicaba el
+dato y obligaba a mantenerlo sincronizado. Volver atrás es posible, pero implica
+revertir la migración `20261004135801_drop_user_profile_role`.
 
 ---
 
@@ -52,54 +50,90 @@ un `if` suelto por ruta. Anotado en el README para que no se pierda de vista.
 
 ---
 
-## 3. Protección de rutas con Clerk
+## 3. Rutas sin protección en esta etapa
 
-**Estado.** Autenticación implementada con Clerk (`@clerk/nextjs` v7, Core 3).
+**Estado.** No hay autenticación implementada. No existen guards, y
+`proxy.ts` de Clerk no fue creado todavía.
 
-- `src/proxy.ts` usa `clerkMiddleware()` (Next 16 renombró `middleware.ts` a
-  `proxy.ts`). Se dejó "pelado": la autorización se decide por recurso, no en el
-  matcher.
-- `src/app/(portal)/layout.tsx` llama a `auth.protect()`, así que todo el portal
-  exige sesión.
-- Cada layout de rol (`enfermera`, `admin`, `medico`, `paciente`) exige su rol con
-  `requireActor(UserRole.X)`, que redirige a `/sign-in` sin sesión o al inicio de
-  su rol si el rol no corresponde.
-- Las Server Actions que escriben siguen resolviendo el actor con
-  `requireEnfermeraOAdministrador()`, que ahora **exige sesión** (ya no hay
-  fallback).
+**Riesgo.** `/medico`, `/enfermera`, `/admin` y `/paciente` responden sin
+verificar nada. **No desplegar a producción en este estado.**
 
-**Riesgo residual.** El control de rol se hace en los layouts; un recurso nuevo
-debe colgar del layout correcto para heredarlo. La matriz de permisos explícita de
-RF-26 sigue pendiente (ver §2).
+**Mitigación prevista.** Un interruptor `SIGMED_DEV_ACTOR` habilita el actor de
+desarrollo solo si `NODE_ENV !== "production"`. Las Server Actions que necesitan
+`actor_id` hoy no bloquean sin sesión: resuelven un actor por defecto (ver §4).
+Eso limita el engorro de la demo, pero **las páginas seguirían siendo accesibles**:
+para un despliegue real hace falta además un gate de acceso.
 
 ---
 
-## 4. Actor real con Clerk
+## 4. Actor de desarrollo
 
 **Problema.** US-3.2 CA2 exige trazabilidad inmutable del usuario responsable en
-cada movimiento de stock. `stock_movement.actor_id` es obligatorio.
+cada movimiento de stock. Sin Clerk no hay identidad real, y `stock_movement.actor_id`
+es obligatorio.
 
-**Solución.** `src/lib/actor.ts` expone `getCurrentActor()`, que resuelve la
-sesión de Clerk contra `user_profile` (enlace por `clerk_user_id`, enlace por
-email o alta JIT; ver §1). Los Server Actions y las páginas consumen esa función;
-ya no existe el actor de desarrollo (`src/lib/dev-actor.ts` y su selector se
-eliminaron).
+**Solución.** `src/lib/dev-actor.ts` expone `getCurrentActor()`, que hoy resuelve
+un `user_profile` desde una cookie de desarrollo. Cuando se integre Clerk, cambia
+solo el interior de esa función para resolver por `clerk_id`. **La interfaz no
+cambia y los Server Actions no se tocan.**
 
-**Por qué se eliminó el actor de desarrollo.** El `SIGMED_DEV_ACTOR` permitía
-elegir a mano el usuario responsable y por defecto dejaba escribir a cualquiera
-sin sesión. Era transitorio hasta integrar Clerk. Con la autenticación real, la
-cookie y el interruptor se borraron y `requireEnfermeraOAdministrador()` volvió a
-exigir sesión.
+**Server Actions en lugar de un endpoint HTTP.** La primera implementación usó
+`/api/dev/actor` con GET, POST y DELETE. Se eliminó y se rehízo con Server
+Actions (`setDevActor` / `clearDevActor`). Un route handler que escribe una cookie
+de identidad es una superficie de escalamiento de privilegios: cualquiera que lo
+alcance se elige a sí mismo. La Server Action no es intrínsecamente más segura,
+pero mantiene el control en el servidor y evita exponer el mecanismo.
 
-**Registro y enlace.** El registro es una pantalla propia (`/sign-up`) que usa el
-flujo Core 3 (`useSignUp`): `signUp.password(...)` crea el intento con nombre,
-apellido y `unsafeMetadata.dni`, se verifica el email por código y
-`signUp.finalize()` activa la sesión. `getCurrentActor()` enlaza después ese
-usuario con la fila de la base por email, o lo crea si no existe.
+**El control vive en el header, no en una banda.** La primera versión era una
+banda ámbar con un `<select>` y un botón "Aplicar". Ahora el botón "Sesión sin
+autenticar" del header es el login provisional: al presionarlo se despliega un
+panel con un botón por usuario y basta con elegir uno. El "Salir" del header
+también pasó de `disabled` a funcional.
 
-**Sincronización del rol.** `publicMetadata.role` se actualiza best-effort con
-`clerkClient().users.updateUserMetadata(...)`; un fallo ahí no interrumpe la
-operación, porque la fuente de verdad es la base.
+**La lista no muestra roles.** No puede: en la Fase 1 el rol se sacó de la base
+para que la fuente de verdad sea Clerk, y Clerk todavía no está integrado. Se
+eligió mostrar nombre y email antes que inventar una etiqueta. Las relaciones
+`Doctor` y `Patient` permitirían inferir "Médico" y "Paciente", pero Ana y Lucía
+—las dos perfiles que más interesta distinguir— no tienen ninguna de las dos, así
+que el resultado habría sido engañoso a medias.
+
+**El panel se renderiza siempre, con `hidden`.** Con render condicional,
+`aria-controls` del botón apuntaba a un elemento inexistente mientras el menú
+estaba cerrado. Renderizarlo con `hidden` mantiene válida la referencia y saca
+los botones del orden de tabulación, porque `display: none` los hace
+infocalizables.
+
+**El panel se cierra al hacer click, no cuando termina la acción.** La primera
+versión cerraba con un `useEffect` que vigilaba `state.selectedId`, y eslint lo
+rechazó con `react-hooks/set-state-in-effect`: setState en el cuerpo de un efecto
+causa renders en cascada. Cerrar en el click evita eso, pero deja el error de la
+acción oculto detrás del panel cerrado, así que **el error se renderiza fuera**,
+en el mismo lugar donde aparecería el panel.
+
+**Interruptor.** `isDevActorEnabled()` devuelve `true` si
+`SIGMED_DEV_ACTOR === "1"` o si `NODE_ENV !== "production"`. En producción sin el
+flag, `getCurrentActor()` devuelve `null` **sin tocar la base** y el control no se
+renderiza: queda el `<span>` estático. Las Server Actions resuelven el actor con
+`requireEnfermeraOAdministrador()`; hoy, si no hay sesión, esa función **no
+bloquea**: usa como actor por defecto el primer enfermera/administrador de la
+base para no cortar la demo. Es transitorio: al integrar Clerk la función debe
+volver a exigir sesión.
+
+**Elegir un usuario no da permisos.** El panel deja elegir cualquiera de los
+perfiles activos, así que un paciente puede registrar movimientos de stock igual
+que una enfermera. Es lo que habilita trabajar sin Clerk; el filtro por rol llega
+con la integración.
+
+**Trampa de prerender.** Durante `next build`, `NODE_ENV` es `production`, así que
+`isDevActorEnabled()` devuelve `false` y las páginas del portal se prerenderizan
+estáticas **sin el selector**. Poner `SIGMED_DEV_ACTOR=1` en un deploy no
+alcanzaría: se seguiría sirviendo el HTML horneado. Por eso
+`src/app/(portal)/layout.tsx` lleva `export const dynamic = "force-dynamic"`, que
+fuerza la evaluación de la cookie y del flag en cada request.
+
+**Pendiente.** El interruptor protege las escrituras pero **no las páginas**: las
+cuatro áreas siguen accesibles sin restricción. Para un despliegue real hace falta
+un gate de acceso adicional. Ver [§3](#3-rutas-sin-protección-en-esta-etapa).
 
 ---
 
@@ -183,10 +217,6 @@ Prisma advierte que se descartan 7 valores no nulos de `role`. Es esperado.
 **Trampa encontrada.** Tras modificar el schema hay que correr `npm run db:generate`
 **antes** de `db:seed`. El cliente generado conservó `role` en el modelo y el seed
 falló con `P2022: The column 'role' does not exist`.
-
-**Nota posterior.** Esta migración fue revertida por
-`20261005160000_reform_bd`, que repone `user_profile.role`. Se conserva como
-registro del intento; la decisión vigente está en §1.
 
 ---
 

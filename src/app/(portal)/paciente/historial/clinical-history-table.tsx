@@ -1,6 +1,5 @@
 "use client";
 import { Fragment, useMemo, useState, type FormEvent } from "react";
-import { createHistorySearchMatcher } from "@/lib/clinical-history-search";
 
 export type ClinicalHistoryEntry = {
   id: string;
@@ -22,13 +21,6 @@ const dateFormatter = new Intl.DateTimeFormat("es-AR", {
 });
 
 const pageSize = 5;
-const searchHelp = "Buscar por profesional (nombre o apellido), especialidad, diagnóstico, tratamiento, indicaciones o fecha (dd/mm/aaaa).";
-// DU-02 / DEC-004: rótulo provisorio; la aprobación definitiva sigue pendiente.
-const detailTexts = {
-  label: "Indicaciones",
-  open: "Detalle",
-  close: "Cerrar",
-} as const;
 
 export default function ClinicalHistoryTable({
   records,
@@ -43,20 +35,24 @@ export default function ClinicalHistoryTable({
   const [expandedRecord, setExpandedRecord] = useState<string | null>(null);
 
   const filteredRecords = useMemo(() => {
-    const matchesSearch = createHistorySearchMatcher(searchTerm);
     const matches = records.filter((record) => {
       const matchesFilter =
         filter === "all" ||
         (filter === "treatment" && Boolean(record.treatment)) ||
         (filter === "indications" && Boolean(record.indications));
-      return matchesFilter && matchesSearch([
+      const searchableText = [
         record.doctor,
         record.specialty,
         record.diagnosis,
         record.treatment,
         record.indications,
         dateFormatter.format(new Date(record.date)),
-      ]);
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLocaleLowerCase("es-AR");
+
+      return matchesFilter && searchableText.includes(searchTerm);
     });
 
     return matches.sort((a, b) => {
@@ -72,7 +68,7 @@ export default function ClinicalHistoryTable({
 
   function submitSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setSearchTerm(searchInput.trim());
+    setSearchTerm(searchInput.trim().toLocaleLowerCase("es-AR"));
     setPage(1);
   }
 
@@ -124,30 +120,24 @@ export default function ClinicalHistoryTable({
           ))}
         </fieldset>
 
-        <form onSubmit={submitSearch} className="flex w-full flex-col gap-2 lg:max-w-sm">
+        <form onSubmit={submitSearch} className="flex w-full gap-2 lg:max-w-sm">
           <label htmlFor="history-search" className="sr-only">
             Buscar por fecha, profesional o contenido clínico
           </label>
-          <div className="flex gap-2">
-            <input
-              id="history-search"
-              type="search"
-              aria-describedby="history-search-help"
-              value={searchInput}
-              onChange={(event) => setSearchInput(event.target.value)}
-              placeholder="Buscar..."
-              className="h-9 min-w-0 flex-1 rounded-md border border-zinc-300 bg-white px-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-teal-700 focus:ring-2 focus:ring-teal-700/20"
-            />
-            <button
-              type="submit"
-              className="h-9 shrink-0 rounded-md bg-zinc-800 px-3 text-sm font-medium text-white transition hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700"
-            >
-              Buscar
-            </button>
-          </div>
-          <p id="history-search-help" className="text-xs leading-5 text-zinc-600">
-            {searchHelp}
-          </p>
+          <input
+            id="history-search"
+            type="search"
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+            placeholder="Buscar..."
+            className="h-9 min-w-0 flex-1 rounded-md border border-zinc-300 bg-white px-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-teal-700 focus:ring-2 focus:ring-teal-700/20"
+          />
+          <button
+            type="submit"
+            className="h-9 shrink-0 rounded-md bg-zinc-800 px-3 text-sm font-medium text-white transition hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700"
+          >
+            Buscar
+          </button>
         </form>
       </div>
 
@@ -166,7 +156,7 @@ export default function ClinicalHistoryTable({
               <th scope="col" className="px-3 py-3 font-medium sm:px-4">Profesional</th>
               <th scope="col" className="px-3 py-3 font-medium sm:px-4">Diagnóstico</th>
               <th scope="col" className="px-3 py-3 font-medium sm:px-4">Tratamiento</th>
-              <th scope="col" className="px-3 py-3 text-center font-medium sm:px-4">{detailTexts.label}</th>
+              <th scope="col" className="px-3 py-3 text-center font-medium sm:px-4">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-100">
@@ -200,7 +190,7 @@ export default function ClinicalHistoryTable({
                         onClick={() => setExpandedRecord(isExpanded ? null : record.id)}
                         className="rounded-md border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700"
                       >
-                        {isExpanded ? detailTexts.close : detailTexts.open}
+                        {isExpanded ? "Cerrar" : "Detalle"}
                       </button>
                     </td>
                   </tr>
@@ -209,7 +199,7 @@ export default function ClinicalHistoryTable({
                       <td colSpan={5} className="px-4 py-4 sm:px-6">
                         <dl>
                           <dt className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-                            {detailTexts.label}
+                            Indicaciones
                           </dt>
                           <dd className="mt-1 whitespace-pre-wrap text-sm leading-6 text-zinc-800">
                             {record.indications || "No se registraron indicaciones."}

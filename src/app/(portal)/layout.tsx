@@ -1,35 +1,41 @@
 import Link from "next/link";
-import { auth } from "@clerk/nextjs/server";
-import { UserButton } from "@clerk/nextjs";
 import { getCurrentActor, isDevActorEnabled, listDevActorCandidates } from "@/lib/dev-actor";
+import DevActorPicker from "./dev-actor-picker";
 import Footer from "@/app/ui/footer";
 
 export const dynamic = "force-dynamic";
 
 export default async function PortalLayout({ children }: LayoutProps<"/">) {
-  await auth.protect();
+  const devEnabled = isDevActorEnabled();
+  const [actor, candidates] = devEnabled
+    ? await Promise.all([getCurrentActor(), listDevActorCandidates()])
+    : [null, []];
 
-  const actor = await getCurrentActor();
+  const current = actor
+    ? {
+        id: actor.id,
+        firstName: actor.firstName,
+        lastName: actor.lastName,
+        email: actor.email,
+        role: actor.role,
+      }
+    : null;
 
   return (
-    <div className="flex min-h-dvh min-w-0 flex-col bg-zinc-50 text-zinc-900">
-      <header className="border-b border-zinc-200 bg-slate-600 text-zinc-100">
-        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-4 px-3 py-4 sm:px-6">
+    <div className="flex min-h-full flex-col bg-zinc-50">
+      <header className="border-b border-zinc-200 bg-slate-600">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-6 py-4">
           <Link href="/" className="text-base font-semibold tracking-tight">
             SigMed
           </Link>
 
-          <div className="flex items-center gap-3">
-            {actor ? (
-              <span className="flex items-center gap-2 text-sm text-zinc-100">
-                {actor.firstName} {actor.lastName}
-                <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-zinc-600">
-                  {actor.role}
-                </span>
-              </span>
-            ) : null}
-            <UserButton />
-          </div>
+          {devEnabled ? (
+            <DevActorPicker candidates={candidates} current={current} />
+          ) : (
+            <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800">
+              Sesion sin autenticar
+            </span>
+          )}
         </div>
       </header>
 

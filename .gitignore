@@ -43,12 +43,3 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
-# Documentación local de trabajo: planificación, tickets, decisiones y evidencias.
-# Checklist local: docs/sprint-2/REVISAR-DESPUES-DEL-MERGE.md
-/docs/sprint-2/
-/docs/decisiones.md
-
-# Markdown y recursos derivados de las conversiones de documentación.
-/DocumentacionSigMed/**/*.md
-/DocumentacionSigMed/**/*.assets/

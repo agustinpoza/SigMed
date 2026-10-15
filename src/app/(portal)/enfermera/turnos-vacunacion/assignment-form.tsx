@@ -10,7 +10,6 @@ import {
   type ReactNode,
 } from "react";
 import type { VaccineWithStock } from "@/lib/vaccination";
-import { NO_VACCINATION_SLOTS, VACCINATION_SLOTS_ERROR } from "@/lib/vaccination-messages";
 import {
   createVaccinationAppointment,
   getAvailableSlots,
@@ -20,21 +19,13 @@ import {
   type VaccinationFormState,
 } from "./actions";
 
-type AssignmentFormState = VaccinationFormState & { slotRevision?: number };
+const initialState: VaccinationFormState = {};
 
-const initialState: AssignmentFormState = {};
-
-function SubmitButton({ pending, loadingSlots, slotsUnavailable, descriptionId }: {
-  pending: boolean;
-  loadingSlots: boolean;
-  slotsUnavailable: boolean;
-  descriptionId?: string;
-}) {
+function SubmitButton({ pending }: { pending: boolean }) {
   return (
     <button
       type="submit"
-      disabled={pending || loadingSlots || slotsUnavailable}
-      aria-describedby={descriptionId}
+      disabled={pending}
       className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:bg-zinc-400"
     >
       {pending ? "Confirmando..." : "Confirmar turno"}
@@ -62,11 +53,7 @@ function Field({
       </label>
       <div className="mt-1">{children}</div>
       {error ? (
-        <p
-          id={`${id}-error`}
-          role={id === "scheduledAt" || id === "date" ? "alert" : undefined}
-          className="mt-1 text-xs text-red-600"
-        >
+        <p id={`${id}-error`} className="mt-1 text-xs text-red-600">
           {error}
         </p>
       ) : hint ? (
@@ -108,19 +95,10 @@ export function AssignmentForm({
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [scheduledAt, setScheduledAt] = useState("");
   const slotsRequest = useRef(0);
-  // Los errores de un envío solo corresponden a la fecha/selección que lo originó.
-  const slotRevision = useRef(0);
-  const [slotVersion, setSlotVersion] = useState(0);
-
-  function markSlotEdited() {
-    slotRevision.current++;
-    setSlotVersion(slotRevision.current);
-  }
 
   useEffect(
     () => () => {
       if (searchTimer.current) clearTimeout(searchTimer.current);
-      slotsRequest.current++;
     },
     [],
   );
@@ -128,26 +106,21 @@ export function AssignmentForm({
   async function loadSlots(value: string) {
     const request = ++slotsRequest.current;
     setScheduledAt("");
-    setSlots([]);
-    setSlotsError(null);
 
     if (!value) {
+      setSlots([]);
+      setSlotsError(null);
       setLoadingSlots(false);
       return;
     }
 
     setLoadingSlots(true);
-    try {
-      const result = await getAvailableSlots(value);
-      if (request !== slotsRequest.current) return;
-      setSlots(result.slots);
-      setSlotsError(result.error ?? null);
-    } catch {
-      if (request !== slotsRequest.current) return;
-      setSlotsError(VACCINATION_SLOTS_ERROR);
-    } finally {
-      if (request === slotsRequest.current) setLoadingSlots(false);
-    }
+    const result = await getAvailableSlots(value);
+    if (request !== slotsRequest.current) return;
+
+    setSlots(result.slots);
+    setSlotsError(result.error ?? null);
+    setLoadingSlots(false);
   }
 
   function handleQueryChange(value: string) {
@@ -185,7 +158,6 @@ export function AssignmentForm({
     if (searchTimer.current) clearTimeout(searchTimer.current);
     searchRequest.current++;
     slotsRequest.current++;
-    markSlotEdited();
     setQuery("");
     setPatient(null);
     setResults([]);
@@ -199,24 +171,19 @@ export function AssignmentForm({
   }
 
   const [state, dispatch, pending] = useActionState(
-    async (previous: AssignmentFormState, formData: FormData): Promise<AssignmentFormState> => {
-      const submittedRevision = slotRevision.current;
+    async (previous: VaccinationFormState, formData: FormData) => {
       const result = await createVaccinationAppointment(previous, formData);
-
-      if (submittedRevision !== slotRevision.current) {
-        return { ...result, slotRevision: submittedRevision };
-      }
 
       if (!result.errors && !result.values) {
         // Exito: la accion no devuelve values
         resetForm();
-      } else if (result.errors?.scheduledAt && formData.get("scheduledAt")) {
+      } else if (result.errors?.scheduledAt) {
         // El horario se ocupo mientras tanto: refrescar la lista
         const submittedDate = formData.get("date");
-        if (typeof submittedDate === "string") await loadSlots(submittedDate);
+        if (typeof submittedDate === "string") void loadSlots(submittedDate);
       }
 
-      return { ...result, slotRevision: submittedRevision };
+      return result;
     },
     initialState,
   );
@@ -225,18 +192,11 @@ export function AssignmentForm({
   // resetea el form al terminar y desincroniza los campos controlados.
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (pending || loadingSlots || noSlots || slotsError) return;
     const formData = new FormData(event.currentTarget);
     startTransition(() => dispatch(formData));
   }
 
   const errors = state.errors ?? {};
-  const currentSlotErrors = state.slotRevision === slotVersion;
-  const dateError = currentSlotErrors ? errors.date : undefined;
-  const scheduledAtError = loadingSlots
-    ? undefined
-    : slotsError ?? (currentSlotErrors ? errors.scheduledAt : undefined);
-  const noSlots = Boolean(date) && !loadingSlots && !slotsError && slots.length === 0;
   const isError = Object.keys(errors).length > 0 || Boolean(state.values);
   const generalError = errors.form;
 
@@ -247,11 +207,9 @@ export function AssignmentForm({
     ? "Elegi una fecha primero"
     : loadingSlots
       ? "Buscando horarios..."
-      : slotsError
-        ? "No se pudieron cargar los horarios"
-        : slots.length === 0
-          ? "No hay horarios libres"
-          : "Seleccionar...";
+      : slots.length === 0
+        ? "No hay horarios libres"
+        : "Seleccionar...";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6" noValidate>
@@ -358,7 +316,7 @@ export function AssignmentForm({
 
       {/* Fila 2: fecha, horario */}
       <div className="grid gap-4 sm:grid-cols-3">
-        <Field id="date" label="Fecha de vacunacion" error={dateError}>
+        <Field id="date" label="Fecha de vacunacion" error={errors.date}>
           <input
             id="date"
             name="date"
@@ -366,12 +324,11 @@ export function AssignmentForm({
             min={minDate}
             value={date}
             onChange={(e) => {
-              markSlotEdited();
               setDate(e.target.value);
               void loadSlots(e.target.value);
             }}
-            aria-invalid={Boolean(dateError)}
-            aria-describedby={dateError ? "date-error" : undefined}
+            aria-invalid={Boolean(errors.date)}
+            aria-describedby={errors.date ? "date-error" : undefined}
             className={controlClass}
           />
         </Field>
@@ -379,21 +336,16 @@ export function AssignmentForm({
         <Field
           id="scheduledAt"
           label="Horario asignado"
-          error={scheduledAtError}
+          error={errors.scheduledAt ?? slotsError ?? undefined}
         >
           <select
             id="scheduledAt"
             name="scheduledAt"
             value={scheduledAt}
-            onChange={(e) => {
-              markSlotEdited();
-              setScheduledAt(e.target.value);
-            }}
+            onChange={(e) => setScheduledAt(e.target.value)}
             disabled={!date || loadingSlots || slots.length === 0}
-            aria-invalid={Boolean(scheduledAtError)}
-            aria-describedby={scheduledAtError
-              ? "scheduledAt-error"
-              : noSlots ? "scheduledAt-availability" : undefined}
+            aria-invalid={Boolean(errors.scheduledAt)}
+            aria-describedby={errors.scheduledAt || slotsError ? "scheduledAt-error" : undefined}
             className={controlClass}
           >
             <option value="">{slotPlaceholder}</option>
@@ -403,15 +355,6 @@ export function AssignmentForm({
               </option>
             ))}
           </select>
-          <p
-            id="scheduledAt-availability"
-            role="status"
-            className={noSlots && !scheduledAtError
-              ? "mt-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800"
-              : "sr-only"}
-          >
-            {noSlots && !scheduledAtError ? NO_VACCINATION_SLOTS : ""}
-          </p>
         </Field>
 
         {/* Observaciones: pendiente de decidir si se agrega la columna en turno_vacunacion */}
@@ -425,9 +368,7 @@ export function AssignmentForm({
         >
           Cancelar
         </button>
-        <SubmitButton pending={pending} loadingSlots={loadingSlots}
-          slotsUnavailable={noSlots || Boolean(slotsError)}
-          descriptionId={scheduledAtError ? "scheduledAt-error" : noSlots ? "scheduledAt-availability" : undefined} />
+        <SubmitButton pending={pending} />
       </div>
     </form>
   );
