@@ -1,5 +1,5 @@
 // app/(portal)/enfermera/page.tsx
-import { getCurrentActor } from "@/lib/dev-actor";
+import { getCurrentActor } from "@/lib/actor";
 import Link from "next/link";
 
 export default async function EnfermeraPage() {

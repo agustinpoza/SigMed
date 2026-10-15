@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import { UserButton } from "@clerk/nextjs";
-import { getCurrentActor, isDevActorEnabled, listDevActorCandidates } from "@/lib/dev-actor";
 import Footer from "@/app/ui/footer";
+import { getCurrentActor } from "@/lib/actor";
 
 export const dynamic = "force-dynamic";
 
