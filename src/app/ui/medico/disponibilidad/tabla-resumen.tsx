@@ -8,6 +8,7 @@ type FilaDisponibilidad = {
     horaFin: string;
     duracion: number;
 };
+
 interface TablaResumenProps {
     filas: FilaDisponibilidad[];
 }
@@ -16,11 +17,11 @@ export default function TablaResumen({ filas }: TablaResumenProps) {
     const filasOrdenadas = [...filas].sort((a, b) => a.dia.getTime() - b.dia.getTime());
 
     return (
-        <section className="flex flex-col gap-1">
-            <h2 className="text-lg text-black font-semibold m-1">
+        <section className="flex flex-col gap-2 m-2">
+            <h2 className="text-lg text-black font-semibold">
                 Resumen de disponibilidad cargada
             </h2>
-            <div className="rounded-lg border">
+            <div className="rounded-xl border-2 border-slate-400 m-1">
                 <table className="w-full p-2">
                     <thead className="sticky top-0">
                         <tr className="text-center text-lg text-slate-500 bg-gray-200">
@@ -32,21 +33,21 @@ export default function TablaResumen({ filas }: TablaResumenProps) {
                     <tbody>
                         {filasOrdenadas.length > 0 ? (
                             filasOrdenadas.map((fila) => (
-                                <tr key={fila.dia.toISOString()} className="text-slate-400">
-                                    <td className="border-r-2 p-1 capitalize">
+                                <tr key={fila.dia.toISOString()} className="text-center text-black">
+                                    <td className="border-r border-gray-400 p-1 capitalize">
                                         {format(fila.dia, "EEEE dd/MM/yyyy", { locale: es })}
                                     </td>
-                                    <td className="border-r-2 p-1">
+                                    <td className="border-r border-gray-400 p-1">
                                         {fila.horaInicio} - {fila.horaFin}
                                     </td>
-                                    <td className="border-r-2 p-1">
+                                    <td className="border-r border-gray-400 p-1">
                                         {fila.duracion} min
                                     </td>
                                 </tr>
                             ))
                         ) : (
                             <tr>
-                                <td className="text-center text-lg text-black italic" colSpan={5}>
+                                <td className="text-center text-lg text-black italic" colSpan={3}>
                                     No hay información para mostrar
                                 </td>
                             </tr>

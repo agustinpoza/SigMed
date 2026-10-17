@@ -5,7 +5,7 @@ export default function DisponibilidadPage() {
 
     return (
         <section className="rounded-xl border bg-white">
-            <div className="flex flex-col m-1">
+            <div className="flex flex-col m-4">
                 <h1 className="text-2xl text-black font-bold">
                     Disponibilidad mensual
                 </h1>

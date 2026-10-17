@@ -8,14 +8,15 @@ interface FranjaHorariaProps {
     onChangeFin: (value: string) => void;
     deshabilitado: boolean;
     error: string | null;
-    onGuardar: () => void;
+    onGuardar: () => void | Promise<void>;
+    guardando?: boolean;
 }
 
-export default function FranjaHoraria({ horaInicio, onChangeInicio, horaFin, onChangeFin, deshabilitado, error, onGuardar }: FranjaHorariaProps) {
+export default function FranjaHoraria({ horaInicio, onChangeInicio, horaFin, onChangeFin, deshabilitado, error, onGuardar, guardando = false }: FranjaHorariaProps) {
 
     return (
-        <section>
-            <h2 className="text-xl text-black font-semibold m-1">
+        <section className="m-2">
+            <h2 className="text-xl text-black font-semibold m-2">
                 Configuración de franja horaria
             </h2>
             <div className="grid grid-cols-2 gap-1">
@@ -57,11 +58,11 @@ export default function FranjaHoraria({ horaInicio, onChangeInicio, horaFin, onC
             <button
                 onClick={onGuardar}
                 disabled={deshabilitado}
-                className="justify-center rounded-lg text-gray-200 bg-slate-600 w-full m-2 p-2"
+                className="justify-center rounded-lg text-gray-200 bg-slate-600 w-full m-1 p-2"
             >
-                Guardar disponibilidad
+                {guardando ? "Guardando..." : "Guardar disponibilidad"}
             </button>
-            <div className="flex flex-row rounded-md border border-blue-800 bg-blue-200 w-full m-2 p-2">
+            <div className="flex flex-row rounded-md border border-blue-800 bg-blue-200 w-full m-1 p-2">
                 <HiOutlineInformationCircle className="text-lg text-blue-800"/>
                 <p className="text-sm text-blue-800 ml-1">
                     Una vez guardad la disponibilidad mensual, solo un administrador podrá modificarla.
