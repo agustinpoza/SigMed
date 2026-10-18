@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { auth } from "@clerk/nextjs/server";
+import { SignOutButton } from "@clerk/nextjs";
 import { getCurrentActor } from "@/lib/actor";
 import { homeForRole } from "@/lib/roles";
 
@@ -10,6 +12,31 @@ export default async function Home() {
 
   if (actor) {
     redirect(homeForRole(actor.role));
+  }
+
+  // Sesión de Clerk abierta con una cuenta que no está en la base: /sign-in
+  // vuelve a "/" por tener sesión, así que hay que ofrecer cerrarla.
+  const { userId } = await auth();
+
+  if (userId) {
+    return (
+      <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-6 py-16">
+        <header className="flex flex-col gap-2">
+          <h1 className="text-3xl font-semibold tracking-tight">SigMed</h1>
+          <p className="text-zinc-600">
+            La cuenta con la que iniciaste sesión no está habilitada en SigMed. Cerrá
+            sesión e ingresá con otra cuenta.
+          </p>
+        </header>
+        <div>
+          <SignOutButton redirectUrl="/sign-in">
+            <button className="rounded-md bg-slate-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-slate-700">
+              Cerrar sesión
+            </button>
+          </SignOutButton>
+        </div>
+      </main>
+    );
   }
 
   return (
