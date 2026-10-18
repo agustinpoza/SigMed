@@ -38,7 +38,11 @@ function Aviso({ children, patientId }: { children: React.ReactNode; patientId?:
   );
 }
 
-export default async function EvolucionPage({ params }: PageProps<"/medico/evolucion/[turnoId]">) {
+export default async function EvolucionPage({
+  params,
+}: {
+  params: Promise<{ turnoId: string }>;
+}) {
   const { turnoId } = await params;
   const actor = await requireActor(UserRole.MEDICO);
 

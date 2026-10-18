@@ -96,7 +96,7 @@ describe("US-5.1: registrar evolución médica", () => {
     expect(mocks.create).not.toHaveBeenCalled();
   });
 
-  it.each(["CONFIRMADO", "RESERVADO", "CANCELADO", "AUSENTE"])("rechaza turnos en estado %s", async (status) => {
+  it.each(["CONFIRMADO", "RESERVADO", "CANCELADO", "AUSENTE"])("rechaza turnos en estado %s", async (status: string) => {
     mocks.turno.mockResolvedValue({ id: TURNO_ID, patientId: PACIENTE_ID, status, clinicalRecord: null });
     const result = await registrarEvolucion({}, form());
     expect(result.message).toBe("Solo se puede registrar la evolución de un turno atendido.");

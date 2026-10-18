@@ -13,7 +13,10 @@ export const metadata = {
 export default async function HistorialPacientePage({
   params,
   searchParams,
-}: PageProps<"/medico/pacientes/[pacienteId]/historial">) {
+}: {
+  params: Promise<{ pacienteId: string }>;
+  searchParams: Promise<{ registrado?: string }>;
+}) {
   const { pacienteId } = await params;
   const { registrado } = await searchParams;
   const actor = await requireActor(UserRole.MEDICO);
