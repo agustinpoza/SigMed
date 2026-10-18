@@ -2,6 +2,7 @@
 import { prisma } from "@/lib/db";
 import type { AppointmentState, Prisma } from "@/generated/prisma/client";
 import { ESTADOS } from "@/lib/turnos-estados";
+import { createHistorySearchMatcher } from "@/lib/clinical-history-search";
 
 function esAppointmentState(value: string): value is AppointmentState {
   return ESTADOS.some((estado) => estado === value);
@@ -28,19 +29,7 @@ export async function obtenerTurnos(opts: {
     where.status = opts.estado;
   };
 
-  const q = opts.busqueda?.trim();
-  if (q) {
-    where.patient = {
-      profile: {
-        OR: [
-          { lastName: { contains: q, mode: "insensitive" } },
-          { firstName: { contains: q, mode: "insensitive" } },
-        ],
-      },
-    };
-  }
-
-  return prisma.appointment.findMany({
+  const turnos = await prisma.appointment.findMany({
     where,
     orderBy: { startsAt: "asc" },
     select: {
@@ -54,4 +43,14 @@ export async function obtenerTurnos(opts: {
       },
     },
   });
+
+  // La agenda de un día es chica: se filtra en memoria para que la búsqueda
+  // ignore acentos ("perez" encuentra "Pérez") y acepte el DNI.
+  const q = opts.busqueda?.trim();
+  if (!q) return turnos;
+
+  const coincide = createHistorySearchMatcher(q);
+  return turnos.filter(({ patient: { profile } }) =>
+    coincide([profile.lastName, profile.firstName, profile.dni]),
+  );
 }
