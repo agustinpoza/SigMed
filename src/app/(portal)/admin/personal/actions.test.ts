@@ -108,7 +108,6 @@ describe("US-7.3: alta de personal", () => {
     ["dni", { dni: "123" }],
     ["email", { email: "no-es-un-correo" }],
     ["password", { password: "" }],
-    ["password", { password: "corta" }],
   ])("valida %s antes de tocar Clerk o la base", async (field, overrides: Record<string, string>) => {
     const result = await crearPersonal({}, form(overrides));
     expect(result.errors?.[field]).toBeTruthy();
@@ -138,10 +137,20 @@ describe("US-7.3: alta de personal", () => {
     expect(mocks.createProfile).not.toHaveBeenCalled();
   });
 
-  it("traduce una contraseña filtrada a error de campo", async () => {
-    mocks.createUser.mockRejectedValue(new FakeClerkError([{ code: "form_password_pwned", message: "pwned" }]));
+  it("deja el largo mínimo a Clerk: una contraseña corta llega a Clerk", async () => {
+    await crearPersonal({}, form({ password: "corta" }));
+    expect(mocks.createUser).toHaveBeenCalledWith(expect.objectContaining({ password: "corta" }));
+  });
+
+  it.each([
+    ["form_password_length_too_short", "Passwords must be 15 characters or more.", "La contraseña debe tener al menos 15 caracteres."],
+    ["form_password_pwned", "Password has been found in an online data breach.", "Esa contraseña apareció en filtraciones conocidas. Elegí otra."],
+    ["form_password_not_strong_enough", "Given password is not strong enough.", "La contraseña es muy débil. Combiná mayúsculas, minúsculas, números y símbolos."],
+    ["form_password_validation_failed", "Password must contain an uppercase letter.", "La contraseña no cumple los requisitos de seguridad."],
+  ])("traduce al español el error de Clerk %s", async (code, message, expected) => {
+    mocks.createUser.mockRejectedValue(new FakeClerkError([{ code, message, longMessage: message }]));
     const result = await crearPersonal({}, form());
-    expect(result.errors?.password).toMatch(/filtraciones/);
+    expect(result.errors).toEqual({ password: expected });
   });
 
   it("si falla la base deshace la cuenta de Clerk", async () => {

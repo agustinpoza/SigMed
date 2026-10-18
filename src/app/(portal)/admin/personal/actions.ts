@@ -18,11 +18,36 @@ export type StaffFormState = {
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const DNI_PATTERN = /^\d{7,9}$/;
 const MAX_NAME_LENGTH = 80;
-const MIN_PASSWORD_LENGTH = 8;
 
 function rawValue(formData: FormData, field: string) {
   const value = formData.get(field);
   return typeof value === "string" ? value.trim() : "";
+}
+
+/**
+ * Las reglas de contraseña (largo mínimo, complejidad) se configuran en el
+ * dashboard de Clerk, así que se validan allá y acá solo se traducen.
+ */
+function passwordMessage(code: string, clerkMessage: string): string {
+  switch (code) {
+    case "form_password_length_too_short": {
+      const minimo = clerkMessage.match(/\d+/)?.[0];
+      return minimo
+        ? `La contraseña debe tener al menos ${minimo} caracteres.`
+        : "La contraseña es demasiado corta.";
+    }
+    case "form_password_pwned":
+    case "form_password_compromised":
+      return "Esa contraseña apareció en filtraciones conocidas. Elegí otra.";
+    case "form_password_not_strong_enough":
+      return "La contraseña es muy débil. Combiná mayúsculas, minúsculas, números y símbolos.";
+    case "form_password_matches_identifier":
+      return "La contraseña no puede ser igual al correo electrónico.";
+    case "form_password_size_in_bytes_exceeded":
+      return "La contraseña es demasiado larga.";
+    default:
+      return "La contraseña no cumple los requisitos de seguridad.";
+  }
 }
 
 /** Traduce los errores de la API de Clerk a errores de campo del formulario. */
@@ -35,10 +60,7 @@ function clerkErrors(error: unknown): FieldErrors | null {
     if (item.code === "form_identifier_exists") {
       errors.email = "Ya existe una cuenta con ese correo electrónico.";
     } else if (item.code.startsWith("form_password")) {
-      errors.password =
-        item.code === "form_password_pwned"
-          ? "Esa contraseña apareció en filtraciones conocidas. Elegí otra."
-          : (item.longMessage ?? item.message);
+      errors.password = passwordMessage(item.code, item.longMessage ?? item.message);
     } else if (item.meta?.paramName === "email_address") {
       errors.email = "El correo electrónico no es válido.";
     }
@@ -74,8 +96,6 @@ export async function crearPersonal(
   }
   if (!password) {
     errors.password = "La contraseña inicial es obligatoria.";
-  } else if (password.length < MIN_PASSWORD_LENGTH) {
-    errors.password = `La contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres.`;
   }
   if (!isStaffRole(role)) {
     errors.role = "Seleccioná un rol: Médico o Enfermera.";
