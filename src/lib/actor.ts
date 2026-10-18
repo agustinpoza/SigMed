@@ -4,7 +4,6 @@ import { prisma } from "@/lib/db";
 import { UserRole } from "@/generated/prisma/enums";
 import type { UserProfile } from "@/generated/prisma/client";
 import { homeForRole } from "@/lib/roles";
-import { devAuthEmail } from "@/lib/dev-auth";
 
 function isUserRole(value: unknown): value is UserRole {
   return (
@@ -55,11 +54,6 @@ async function syncRoleMetadata(userId: string, role: UserRole): Promise<void> {
  * incompletos). Los llamadores deciden si rechazar o redirigir.
  */
 export async function getCurrentActor(): Promise<UserProfile | null> {
-  const devEmail = devAuthEmail();
-  if (devEmail) {
-    return prisma.userProfile.findUnique({ where: { email: devEmail } });
-  }
-
   const { userId } = await auth();
   if (!userId) return null;
 
