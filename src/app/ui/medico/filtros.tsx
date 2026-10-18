@@ -4,13 +4,13 @@ import { ETIQUETAS_ESTADO } from "@/lib/turnos-estados";
 import { useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { HiOutlineChevronLeft, HiOutlineChevronRight, HiOutlineSearch } from "react-icons/hi";
-import { AppointmentState } from "@/generated/prisma/client";
+import type { AppointmentState } from "@/generated/prisma/client";
 
 interface FiltrosProps {
     fecha: string;
 }
 
-const ESTADOS_FILTRO: AppointmentState[] = [ "CONFIRMADO", "AUSENTE", "ATENDIDO" ];
+const ESTADOS_FILTRO: AppointmentState[] = [ "RESERVADO", "CONFIRMADO", "AUSENTE", "ATENDIDO" ];
 
 const FILTROS = [{ valor: "", texto: "Todos" },
                 ...ESTADOS_FILTRO.map((e) => ({ valor: e, texto: ETIQUETAS_ESTADO[e]}))];
@@ -75,21 +75,26 @@ export default function Filtros({ fecha }: FiltrosProps) {
                         </label>
                     ))}
                 </div>
-                <div className="flex min-w-0 items-center gap-1 lg:max-w-sm">
+                <form
+                    className="flex min-w-0 items-center gap-1 lg:max-w-sm"
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        actualizar("busqueda", busqueda.trim());
+                    }}
+                >
                     <div className="flex min-w-0 flex-1 items-center border-2 border-gray-300 rounded-xl bg-white px-1">
                         <input
-                            className="w-full min-w-0 text-gray-400 placeholder-gray-400 focus:outline-none"
+                            className="w-full min-w-0 text-black placeholder-gray-400 focus:outline-none"
                             type="search"
                             placeholder="Paciente..."
                             value={busqueda}
                             onChange={(e) => setBusqueda(e.target.value)}
                         />
                     </div>
-                    <button type="submit" className="flex shrink-0 items-center text-slate-500 hover:text-gray-200 bg-gray-200 hover:bg-slate-500 border rounded-lg px-1 gap-1"
-                        onClick={() => actualizar("busqueda", busqueda.trim())}>
+                    <button type="submit" className="flex shrink-0 items-center text-slate-500 hover:text-gray-200 bg-gray-200 hover:bg-slate-500 border rounded-lg px-1 gap-1">
                             <HiOutlineSearch /> Buscar
                     </button>
-                </div>
+                </form>
             </div>
         </div>
     );
