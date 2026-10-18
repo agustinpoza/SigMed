@@ -1,17 +1,9 @@
-import { prisma } from "@/lib/db";
 import { getCurrentActor } from "@/lib/actor";
-import ClinicalHistoryTable, {
-  type ClinicalHistoryEntry,
-} from "./clinical-history-table";
+import { obtenerHistorialPaciente } from "@/lib/clinical-records";
+import ClinicalHistoryTable from "./clinical-history-table";
 
 export const metadata = {
   title: "Mi historial clínico | SigMed",
-};
-
-const specialtyNames: Record<string, string> = {
-  CLINICO: "Clínica médica",
-  PEDIATRA: "Pediatría",
-  TRAUMATOLOGO: "Traumatología",
 };
 
 export default async function HistorialPage() {
@@ -34,38 +26,7 @@ export default async function HistorialPage() {
     );
   }
 
-  const records = await prisma.clinicalRecord.findMany({
-    where: { appointment: { patientId: actor.id } },
-    orderBy: { appointment: { startsAt: "desc" } },
-    select: {
-      id: true,
-      diagnosis: true,
-      treatment: true,
-      indications: true,
-      appointment: {
-        select: {
-          startsAt: true,
-          attendanceAt: true,
-          doctor: {
-            select: {
-              specialty: true,
-              profile: { select: { firstName: true, lastName: true } },
-            },
-          },
-        },
-      },
-    },
-  });
-
-  const entries: ClinicalHistoryEntry[] = records.map((record) => ({
-    id: record.id,
-    date: (record.appointment.attendanceAt ?? record.appointment.startsAt).toISOString(),
-    doctor: `${record.appointment.doctor.profile.lastName}, ${record.appointment.doctor.profile.firstName}`,
-    specialty: specialtyNames[record.appointment.doctor.specialty],
-    diagnosis: record.diagnosis,
-    treatment: record.treatment,
-    indications: record.indications,
-  }));
+  const entries = await obtenerHistorialPaciente(actor.id);
 
   return (
     <section className="mx-auto w-full max-w-5xl overflow-hidden rounded-md border border-zinc-200 bg-white">

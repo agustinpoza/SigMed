@@ -1,4 +1,5 @@
 // app/ui/medico/tabla-trabajo.tsx
+import Link from "next/link";
 import { UserRole } from "@/generated/prisma/enums";
 import { getCurrentActor } from "@/lib/actor";
 import { obtenerTurnos } from "@/lib/turnos";
@@ -76,6 +77,20 @@ export default async function TablaTrabajo({ props }: TablaTrabajoProps) {
                                                         Ausente
                                                     </button>
                                                 </div>
+                                        ) : ("")
+                                        }
+                                        {(t.status === "ATENDIDO") ? (
+                                            <div className="flex flex-row justify-center gap-1">
+                                                {(t.clinicalRecord) ? (
+                                                    <Link href={`/medico/pacientes/${t.patientId}/historial`} className="text-white bg-slate-600 rounded-sm m-1 p-1">
+                                                        Ver historial
+                                                    </Link>
+                                                ) : (
+                                                    <Link href={`/medico/evolucion/${t.id}`} className="text-white bg-slate-600 rounded-sm m-1 p-1">
+                                                        Cargar evolución
+                                                    </Link>
+                                                )}
+                                            </div>
                                         ) : ("")
                                         }
                                     </td>

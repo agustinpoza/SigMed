@@ -23,3 +23,17 @@ export async function requireEnfermeraOAdministrador(): Promise<ActorGuardResult
 
   return { actor: { id: actor.id } };
 }
+
+export async function requireMedico(): Promise<ActorGuardResult> {
+  const actor = await getCurrentActor();
+
+  if (!actor) {
+    return { error: "Se requiere iniciar sesión para registrar la evolución médica." };
+  }
+
+  if (actor.role !== UserRole.MEDICO) {
+    return { error: "Solo los médicos pueden registrar la evolución médica." };
+  }
+
+  return { actor: { id: actor.id } };
+}

@@ -47,6 +47,8 @@ export async function obtenerTurnos(opts: {
       id: true,
       startsAt: true,
       status: true,
+      patientId: true,
+      clinicalRecord: { select: { id: true } },
       patient: {
         select: { profile: { select: { firstName: true, lastName: true, dni: true } } },
       },
