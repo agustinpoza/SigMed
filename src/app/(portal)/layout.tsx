@@ -3,11 +3,13 @@ import { auth } from "@clerk/nextjs/server";
 import { UserButton } from "@clerk/nextjs";
 import Footer from "@/app/ui/footer";
 import { getCurrentActor } from "@/lib/actor";
+import { devAuthEmail } from "@/lib/dev-auth";
 
 export const dynamic = "force-dynamic";
 
 export default async function PortalLayout({ children }: LayoutProps<"/">) {
-  await auth.protect();
+  const devBypass = devAuthEmail() !== null;
+  if (!devBypass) await auth.protect();
 
   const actor = await getCurrentActor();
 
@@ -28,7 +30,13 @@ export default async function PortalLayout({ children }: LayoutProps<"/">) {
                 </span>
               </span>
             ) : null}
-            <UserButton />
+            {devBypass ? (
+              <span className="rounded-full bg-amber-300 px-2 py-0.5 text-xs font-medium text-amber-950">
+                Modo dev sin Clerk
+              </span>
+            ) : (
+              <UserButton />
+            )}
           </div>
         </div>
       </header>
