@@ -4,6 +4,7 @@ import { UserRole } from "@/generated/prisma/enums";
 
 const items = [
   { href: "/paciente", label: "Inicio" },
+  { href: "/paciente/turnos", label: "Buscar turnos" },
   { href: "/paciente/historial", label: "Mi historial" },
 ];
 
