@@ -24,6 +24,20 @@ export async function requireEnfermeraOAdministrador(): Promise<ActorGuardResult
   return { actor: { id: actor.id } };
 }
 
+export async function requireAdministrador(): Promise<ActorGuardResult> {
+  const actor = await getCurrentActor();
+
+  if (!actor) {
+    return { error: "Se requiere iniciar sesión para dar de alta personal." };
+  }
+
+  if (actor.role !== UserRole.ADMINISTRADOR) {
+    return { error: "Solo los administradores pueden dar de alta personal." };
+  }
+
+  return { actor: { id: actor.id } };
+}
+
 export async function requireMedico(): Promise<ActorGuardResult> {
   const actor = await getCurrentActor();
 
