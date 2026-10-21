@@ -9,8 +9,8 @@ import { AlertStatus, AppointmentState, MovementType, UserRole, Specialty } from
 import { createVaccineWithInitialLot, registerStockMovement, StockRuleError } from "@/lib/stock";
 import HistorialPage from "@/app/(portal)/paciente/historial/page";
 import ClinicalHistoryTable, { type ClinicalHistoryEntry } from "@/app/(portal)/paciente/historial/clinical-history-table";
-import { createStockMovement, getLotAvailability } from "@/app/(portal)/enfermera/stock/actions";
-import { MovementForm } from "@/app/(portal)/enfermera/stock/movement-form";
+import { createStockMovement, getLotAvailability } from "@/app/(portal)/enfermera/inventario/actions";
+import { MovementForm } from "@/app/(portal)/enfermera/inventario/movement-form";
 
 // Solo se simulan la identidad y la invalidación de Next. Prisma, SQL, triggers,
 // dominio, guard, acciones y componentes son reales. Esto no autentica una sesión.

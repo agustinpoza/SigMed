@@ -3,8 +3,8 @@ import { revalidatePath } from "next/cache";
 import { Weekday } from "@/generated/prisma/client";
 import { UserRole } from "@/generated/prisma/enums";
 import { prisma } from "@/lib/db";
-import { getCurrentActor } from "@/lib/dev-actor";
 import { FieldErrors } from "@/lib/forms";
+import { getCurrentActor } from "@/lib/actor";
 
 export type DisponibilidadState = {
   status: "success" | "error";
