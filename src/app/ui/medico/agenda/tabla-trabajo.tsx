@@ -1,4 +1,4 @@
-// app/ui/medico/tabla-trabajo.tsx
+// app/ui/medico/agenda/tabla-trabajo.tsx
 import Link from "next/link";
 import { UserRole } from "@/generated/prisma/enums";
 import { getCurrentActor } from "@/lib/actor";
@@ -50,7 +50,7 @@ export default async function TablaTrabajo({ props }: TablaTrabajoProps) {
                     {(turnos.length > 0) ? (
                         turnos.map((t) => {
                             return (
-                                <tr key={t.id} className="text-slate-400 ">
+                                <tr key={t.id} className="text-slate-400">
                                     <td className="border-r-2 p-1">
                                         {/* XX:XX */}
                                         { t.startsAt ? t.startsAt.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Argentina/Buenos_Aires" }) : "Hora no disponible" }
@@ -77,9 +77,8 @@ export default async function TablaTrabajo({ props }: TablaTrabajoProps) {
                                                         Ausente
                                                     </button>
                                                 </div>
-                                        ) : ("")
-                                        }
-                                        {(t.status === "ATENDIDO") ? (
+                                        ) : (
+                                        (t.status === "ATENDIDO") ? (
                                             <div className="flex flex-row justify-center gap-1">
                                                 {(t.clinicalRecord) ? (
                                                     <Link href={`/medico/pacientes/${t.patientId}/historial`} className="text-white bg-slate-600 rounded-sm m-1 p-1">
@@ -92,7 +91,7 @@ export default async function TablaTrabajo({ props }: TablaTrabajoProps) {
                                                 )}
                                             </div>
                                         ) : ("")
-                                        }
+                                        )}
                                     </td>
                                 </tr>
                             );
