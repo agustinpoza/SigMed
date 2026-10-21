@@ -65,7 +65,7 @@ export default function FranjaHoraria({ horaInicio, onChangeInicio, horaFin, onC
             <div className="flex flex-row rounded-md border border-blue-800 bg-blue-200 w-full m-1 p-2">
                 <HiOutlineInformationCircle className="text-lg text-blue-800"/>
                 <p className="text-sm text-blue-800 ml-1">
-                    Una vez guardad la disponibilidad mensual, solo un administrador podrá modificarla.
+                    Una vez guardada la disponibilidad mensual, solo un administrador podrá modificarla.
                 </p>
             </div>
         </section>

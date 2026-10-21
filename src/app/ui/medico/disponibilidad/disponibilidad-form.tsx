@@ -98,6 +98,25 @@ export default function DisponibilidadForm() {
                     locale={es}
                     weekStartsOn={0}
                     className="border border-gray-400 bg-white rounded-lg text-black p-4"
+                    classNames={{
+                        root:"w-full",
+                        months: "relative",
+                        month: "w-full",
+                        month_caption: "flex h-9 items-center",
+                        caption_label: "font-semibold capitalize",
+                        nav: "absolute right-0 top-0 gap-1",
+                        button_previous: "inline-flex h-9 w-9 items-center justify-center rounded-md border border-slate-300 hover:bg-slate-100",
+                        button_next: "inline-flex h-9 w-9 items-center justify-center rounded-md border border-slate-300 hover:bg-slate-100",
+                        month_grid: "mt-2 w-full border-collapse",
+                        weekdays: "bg-slate-200",
+                        weekday: "py-2 text-sm font-medium capitalize text-slate-500",
+                        day: "p-0.5 text-center",
+                        day_button: "h-10 w-10 rounded-md text-sm hover:bg-slate-100",
+                        selected: "[&>button]:bg-blue-200 [&>button]:font-bold [&>button]:text-blue-800",
+                        today: "[&>button]:font-bold",
+                        outside: "[&>button]:text-slate-300",
+                        disabled: "[&>button]:cursor-not-allowed [&>button]:text-slate-300",
+                    }}
                 />
             </div>
             <FranjaHoraria
