@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
 import { getCurrentActor } from "@/lib/actor";
 import { AppointmentState } from "@/generated/prisma/client";
+import { eliminarTurnosVencidos } from "@/lib/turnos";
 import MisTurnosClient, { MyAppointment } from "./mis-turnos-client";
 
 const SPECIALTY_LABELS: Record<string, string> = {
@@ -10,15 +11,33 @@ const SPECIALTY_LABELS: Record<string, string> = {
   TRAUMATOLOGO: "Traumatología",
 };
 
+function isPastTurno(dateTimeStr: string): boolean {
+  try {
+    const [datePart, timePart] = dateTimeStr.split(" - ");
+    const [d, m, y] = datePart.split("/").map(Number);
+    const [hh, mm] = timePart.split(":").map(Number);
+    const dateObj = new Date(y, m - 1, d, hh, mm);
+    return dateObj.getTime() < Date.now();
+  } catch {
+    return false;
+  }
+}
+
 export default async function MisTurnosPage() {
   const actor = await getCurrentActor();
+
+  // Eliminar turnos vencidos de la base de datos
+  await eliminarTurnosVencidos();
 
   // Leer turnos reservados recientemente en la sesión
   const cookieStore = await cookies();
   const recentCookie = cookieStore.get("sigmed_recent_turnos")?.value;
   let recentTurnos: MyAppointment[] = [];
   try {
-    if (recentCookie) recentTurnos = JSON.parse(recentCookie);
+    if (recentCookie) {
+      const parsed: MyAppointment[] = JSON.parse(recentCookie);
+      recentTurnos = parsed.filter((t) => !isPastTurno(t.dateTime));
+    }
   } catch {}
 
   // Consultar turnos reales del paciente en BD
@@ -26,6 +45,9 @@ export default async function MisTurnosPage() {
     ? await prisma.appointment.findMany({
         where: {
           patientId: actor.id,
+          status: {
+            not: AppointmentState.CANCELADO,
+          },
         },
         include: {
           doctor: {
@@ -57,40 +79,9 @@ export default async function MisTurnosPage() {
     };
   });
 
-  // Base prototípica de US-2.2
-  const baseDemoTurnos: MyAppointment[] = [
-    {
-      id: "demo-turno-1",
-      doctorName: "Sofía Duarte",
-      doctorLicense: "MP-54210",
-      specialty: "Pediatría",
-      dateTime: "14/10/2026 - 13:00",
-      status: "RESERVADO",
-    },
-    {
-      id: "demo-turno-2",
-      doctorName: "Martín Gómez",
-      doctorLicense: "MP-41890",
-      specialty: "Clínica médica",
-      dateTime: "19/10/2026 - 14:00",
-      status: "CONFIRMADO",
-    },
-    {
-      id: "demo-turno-3",
-      doctorName: "Sofía Duarte",
-      doctorLicense: "MP-54210",
-      specialty: "Pediatría",
-      dateTime: "28/10/2026 - 17:00",
-      status: "RESERVADO",
-    },
-  ];
-
-  const currentList = listTurnos.length > 0 ? listTurnos : baseDemoTurnos;
-
-  // Los turnos recién reservados se colocan prioritariamente al principio
   const finalTurnos: MyAppointment[] = [
-    ...recentTurnos.filter((rt) => !currentList.some((cl) => cl.id === rt.id)),
-    ...currentList.map((cl) => {
+    ...recentTurnos.filter((rt) => !listTurnos.some((cl) => cl.id === rt.id)),
+    ...listTurnos.map((cl) => {
       const match = recentTurnos.find((rt) => rt.id === cl.id);
       return match ? { ...cl, status: match.status } : cl;
     }),

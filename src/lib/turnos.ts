@@ -102,3 +102,22 @@ export async function buscarTurnosDisponibles(filtros: FiltrosTurnos) {
 
   return turnos;
 }
+
+/**
+ * Elimina de la base de datos los turnos cuya fecha y hora de inicio ya han pasado
+ * y que se encontraban en estado RESERVADO o CONFIRMADO (turnos vencidos sin haber sido atendidos).
+ */
+export async function eliminarTurnosVencidos() {
+  try {
+    const ahora = new Date();
+    return await prisma.appointment.deleteMany({
+      where: {
+        startsAt: { lt: ahora },
+        status: { in: [AppointmentState.RESERVADO, AppointmentState.CONFIRMADO] },
+      },
+    });
+  } catch (error) {
+    console.error("Error al eliminar turnos vencidos:", error);
+    return { count: 0 };
+  }
+}

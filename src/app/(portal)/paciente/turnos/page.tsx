@@ -1,6 +1,6 @@
-import { buscarTurnosDisponibles } from "@/lib/turnos";
+import { eliminarTurnosVencidos } from "@/lib/turnos";
 import { prisma } from "@/lib/db";
-import { Specialty } from "@/generated/prisma/client";
+import { Specialty, AppointmentState } from "@/generated/prisma/client";
 import InteractiveBooking from "./interactive-booking";
 
 export default async function BusquedaTurnosPage({
@@ -9,7 +9,14 @@ export default async function BusquedaTurnosPage({
   searchParams: Promise<{ specialty?: string; doctorId?: string; date?: string; fecha?: string }>;
 }) {
   const params = await searchParams;
-  const dateParam = params.date || params.fecha || "2026-10-14";
+  const hoyStr = new Date().toLocaleDateString("en-CA", { timeZone: "America/Argentina/Buenos_Aires" });
+  let dateParam = params.date || params.fecha || hoyStr;
+  if (dateParam < hoyStr) {
+    dateParam = hoyStr;
+  }
+
+  // Eliminar turnos pasados de fecha y/o hora (turnos vencidos sin atención)
+  await eliminarTurnosVencidos();
 
   // Cargar lista de médicos con horarios para el selector y el calendario interactivo
   const medicos = await prisma.doctor.findMany({
@@ -20,10 +27,36 @@ export default async function BusquedaTurnosPage({
     orderBy: { profile: { lastName: "asc" } },
   });
 
-  const turnosDB = await buscarTurnosDisponibles({
-    specialty: params.specialty,
-    doctorId: params.doctorId,
-    date: dateParam,
+  // Consultar todos los turnos ocupados (reservados, confirmados, atendidos o ausentes)
+  // desde hoy en adelante para asegurar que ningún turno ocupado vuelva a ofrecerse
+  const turnosOcupados = await prisma.appointment.findMany({
+    where: {
+      startsAt: {
+        gte: new Date(`${hoyStr}T00:00:00-03:00`),
+      },
+      status: {
+        in: [
+          AppointmentState.RESERVADO,
+          AppointmentState.CONFIRMADO,
+          AppointmentState.ATENDIDO,
+          AppointmentState.AUSENTE,
+        ],
+      },
+      ...(params.doctorId ? { doctorId: params.doctorId } : {}),
+      ...(params.specialty
+        ? { doctor: { specialty: params.specialty as Specialty } }
+        : {}),
+    },
+    include: {
+      doctor: {
+        include: {
+          profile: true,
+        },
+      },
+    },
+    orderBy: {
+      startsAt: "asc",
+    },
   });
 
   const serializedDoctors = medicos.map((m) => ({
@@ -37,7 +70,7 @@ export default async function BusquedaTurnosPage({
     })),
   }));
 
-  const serializedTurnos = turnosDB.map((t) => ({
+  const serializedTurnos = turnosOcupados.map((t) => ({
     id: t.id,
     doctorId: t.doctorId,
     startsAt: t.startsAt.toISOString(),
@@ -64,3 +97,4 @@ export default async function BusquedaTurnosPage({
     </section>
   );
 }
+

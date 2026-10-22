@@ -83,19 +83,20 @@ export default function InteractiveBooking({
   const [selectedSpecialty, setSelectedSpecialty] = useState<string>(initialSpecialty || "");
   const [selectedDoctorId, setSelectedDoctorId] = useState<string>(initialDoctorId || "");
 
-  // Fecha seleccionada (por defecto la fecha enviada o "2026-10-14")
-  const defaultDateStr = initialDate || "2026-10-14";
+  // Fecha seleccionada (por defecto la fecha enviada o la fecha actual)
+  const todayStr = new Date().toLocaleDateString("en-CA", { timeZone: "America/Argentina/Buenos_Aires" });
+  const defaultDateStr = initialDate || todayStr;
   const [selectedDate, setSelectedDate] = useState<string>(defaultDateStr);
 
   // Navegación de mes del calendario
-  const initialYear = parseInt(defaultDateStr.slice(0, 4), 10) || 2026;
-  const initialMonth = parseInt(defaultDateStr.slice(5, 7), 10) - 1 || 9; // 9 = Octubre (0-indexed)
+  const initialYear = parseInt(defaultDateStr.slice(0, 4), 10) || new Date().getFullYear();
+  const parsedMonth = parseInt(defaultDateStr.slice(5, 7), 10);
+  const initialMonth = parsedMonth ? parsedMonth - 1 : new Date().getMonth();
   const [viewYear, setViewYear] = useState<number>(initialYear);
   const [viewMonth, setViewMonth] = useState<number>(initialMonth);
 
   // Slot seleccionado
   const [selectedSlot, setSelectedSlot] = useState<{
-    id?: string;
     doctorId: string;
     time: string;
     startsAt: string;
@@ -123,6 +124,12 @@ export default function InteractiveBooking({
 
   // Función para determinar si una fecha tiene disponibilidad
   const hasAvailabilityOnDate = (year: number, month: number, day: number) => {
+    const dateStr = formatYMD(year, month, day);
+    // Turnos previos a la fecha actual no tienen disponibilidad
+    if (dateStr < todayStr) {
+      return false;
+    }
+
     const dateObj = new Date(year, month, day);
     const jsDay = dateObj.getDay();
     // Fines de semana (Sábado y Domingo) no tienen atención regular
@@ -130,69 +137,62 @@ export default function InteractiveBooking({
       return false;
     }
 
-    const weekdayEnum = WEEKDAY_NAMES_MAP[jsDay];
-    const dateStr = formatYMD(year, month, day);
-
-    // Si hay turnos en la base de datos para esa fecha que cumplan filtros
-    const hasTurnoDB = turnosDB.some((t) => {
-      const tDate = t.startsAt.slice(0, 10);
-      const matchesDate = tDate === dateStr;
-      const matchesDoc = !selectedDoctorId || t.doctorId === selectedDoctorId;
-      const matchesSpec = !selectedSpecialty || t.doctor.specialty === selectedSpecialty;
-      return matchesDate && matchesDoc && matchesSpec;
-    });
-    if (hasTurnoDB) return true;
-
-    // Médicos a evaluar según filtro
     const doctorsToCheck = selectedDoctorId
       ? medicos.filter((m) => m.id === selectedDoctorId)
       : filteredDoctors;
 
-    return doctorsToCheck.length > 0;
+    if (doctorsToCheck.length === 0) return false;
+
+    const defaultHours = ["13:00", "14:00", "15:00", "16:00", "17:00"];
+    const now = Date.now();
+
+    // Comprobar si al menos un horario futuro está libre
+    for (const doc of doctorsToCheck) {
+      for (const h of defaultHours) {
+        const startsAt = `${dateStr}T${h}:00-03:00`;
+        const slotDate = new Date(startsAt);
+        if (slotDate.getTime() <= now) {
+          continue;
+        }
+
+        const isOccupied = turnosDB.some((t) => {
+          if (t.doctorId !== doc.id) return false;
+          const tDate = new Date(t.startsAt);
+          const tDateStr = tDate.toLocaleDateString("en-CA", { timeZone: "America/Argentina/Buenos_Aires" });
+          const tTimeStr = tDate.toLocaleTimeString("es-AR", {
+            hour: "2-digit",
+            minute: "2-digit",
+            timeZone: "America/Argentina/Buenos_Aires",
+          });
+          return tDateStr === dateStr && tTimeStr === h;
+        });
+
+        if (!isOccupied) {
+          return true; // Encontró al menos un turno libre y futuro
+        }
+      }
+    }
+
+    return false;
   };
 
   // Horarios disponibles para el día seleccionado
   const getSlotsForSelectedDate = () => {
-    if (!selectedDate) return [];
+    if (!selectedDate || selectedDate < todayStr) return [];
 
-    const dateObj = new Date(`${selectedDate}T12:00:00Z`);
+    const [y, m, d] = selectedDate.split("-").map(Number);
+    const dateObj = new Date(y, m - 1, d);
     const jsDay = dateObj.getDay();
     // Fines de semana no hay turnos
     if (jsDay === 0 || jsDay === 6) {
       return [];
     }
 
-    // Primero turnos de la DB para esa fecha
-    const dbSlots = turnosDB
-      .filter((t) => {
-        const matchesDate = t.startsAt.slice(0, 10) === selectedDate;
-        const matchesDoc = !selectedDoctorId || t.doctorId === selectedDoctorId;
-        const matchesSpec = !selectedSpecialty || t.doctor.specialty === selectedSpecialty;
-        return matchesDate && matchesDoc && matchesSpec;
-      })
-      .map((t) => {
-        const d = new Date(t.startsAt);
-        const time = d.toLocaleTimeString("es-AR", {
-          hour: "2-digit",
-          minute: "2-digit",
-          timeZone: "America/Argentina/Buenos_Aires",
-        });
-        return {
-          id: t.id,
-          doctorId: t.doctorId,
-          doctorName: `Dr. ${t.doctor.profile.lastName}, ${t.doctor.profile.firstName}`,
-          specialty: t.doctor.specialty,
-          time,
-          startsAt: t.startsAt,
-        };
-      });
-
     const doctorsToCheck = selectedDoctorId
       ? medicos.filter((m) => m.id === selectedDoctorId)
       : filteredDoctors;
 
-    const generatedSlots: {
-      id?: string;
+    const availableSlots: {
       doctorId: string;
       doctorName: string;
       specialty: Specialty;
@@ -200,15 +200,34 @@ export default function InteractiveBooking({
       startsAt: string;
     }[] = [];
 
-    // Tiempos prototípicos de atención clínica (13:00 a 17:00, idéntico a Screenshot 3)
     const defaultHours = ["13:00", "14:00", "15:00", "16:00", "17:00"];
+    const now = Date.now();
 
     for (const doc of doctorsToCheck) {
       for (const h of defaultHours) {
         const startsAt = `${selectedDate}T${h}:00-03:00`;
-        // Evitar duplicar con DB
-        if (!dbSlots.some((dbs) => dbs.doctorId === doc.id && dbs.time === h)) {
-          generatedSlots.push({
+        const slotDate = new Date(startsAt);
+
+        // Turnos previos a la fecha y hora actual no se pueden seleccionar
+        if (slotDate.getTime() <= now) {
+          continue;
+        }
+
+        // Si ya fue reservado o está ocupado en la base de datos, no se muestra
+        const isOccupied = turnosDB.some((t) => {
+          if (t.doctorId !== doc.id) return false;
+          const tDate = new Date(t.startsAt);
+          const tDateStr = tDate.toLocaleDateString("en-CA", { timeZone: "America/Argentina/Buenos_Aires" });
+          const tTimeStr = tDate.toLocaleTimeString("es-AR", {
+            hour: "2-digit",
+            minute: "2-digit",
+            timeZone: "America/Argentina/Buenos_Aires",
+          });
+          return tDateStr === selectedDate && tTimeStr === h;
+        });
+
+        if (!isOccupied) {
+          availableSlots.push({
             doctorId: doc.id,
             doctorName: doc.name,
             specialty: doc.specialty,
@@ -219,7 +238,7 @@ export default function InteractiveBooking({
       }
     }
 
-    return [...dbSlots, ...generatedSlots].sort((a, b) => a.time.localeCompare(b.time));
+    return availableSlots.sort((a, b) => a.time.localeCompare(b.time));
   };
 
   const slotsAvailable = getSlotsForSelectedDate();
@@ -266,6 +285,7 @@ export default function InteractiveBooking({
 
   const handleSelectDay = (day: number) => {
     const ymd = formatYMD(viewYear, viewMonth, day);
+    if (ymd < todayStr) return;
     setSelectedDate(ymd);
     setSelectedSlot(null);
   };
@@ -273,7 +293,7 @@ export default function InteractiveBooking({
   const handleCleanFilters = () => {
     setSelectedSpecialty("");
     setSelectedDoctorId("");
-    setSelectedDate("2026-10-14");
+    setSelectedDate(todayStr);
     setSelectedSlot(null);
     router.push("/paciente/turnos");
   };
@@ -286,12 +306,8 @@ export default function InteractiveBooking({
     startTransition(async () => {
       try {
         const formData = new FormData();
-        if (selectedSlot.id) {
-          formData.set("appointmentId", selectedSlot.id);
-        } else {
-          formData.set("doctorId", selectedSlot.doctorId);
-          formData.set("startsAt", selectedSlot.startsAt);
-        }
+        formData.set("doctorId", selectedSlot.doctorId);
+        formData.set("startsAt", selectedSlot.startsAt);
 
         await reservarTurno(formData);
         router.push("/paciente/mis-turnos?reservado=1");
@@ -379,12 +395,18 @@ export default function InteractiveBooking({
                 id="date"
                 type="date"
                 name="date"
+                min={todayStr}
                 value={selectedDate}
                 onChange={(e) => {
-                  setSelectedDate(e.target.value);
+                  const val = e.target.value;
+                  if (val && val < todayStr) {
+                    setSelectedDate(todayStr);
+                    return;
+                  }
+                  setSelectedDate(val);
                   setSelectedSlot(null);
-                  if (e.target.value) {
-                    const [y, m] = e.target.value.split("-").map(Number);
+                  if (val) {
+                    const [y, m] = val.split("-").map(Number);
                     setViewYear(y);
                     setViewMonth(m - 1);
                   }
@@ -492,20 +514,24 @@ export default function InteractiveBooking({
                 const dateStr = formatYMD(viewYear, viewMonth, dayNum);
                 const isSelected = selectedDate === dateStr;
                 const hasSlots = hasAvailabilityOnDate(viewYear, viewMonth, dayNum);
+                const isPast = dateStr < todayStr;
 
                 return (
                   <button
                     key={`day-${dayNum}`}
                     type="button"
-                    onClick={() => handleSelectDay(dayNum)}
+                    disabled={isPast}
+                    onClick={() => !isPast && handleSelectDay(dayNum)}
                     className={`relative flex h-10 w-full flex-col items-center justify-center rounded-lg text-xs transition ${
-                      isSelected
+                      isPast
+                        ? "cursor-not-allowed opacity-30 text-zinc-300"
+                        : isSelected
                         ? "border-2 border-blue-600 bg-blue-50 font-bold text-blue-900 shadow-sm"
                         : "text-zinc-700 hover:bg-zinc-100"
                     }`}
                   >
                     <span>{dayNum}</span>
-                    {hasSlots && (
+                    {hasSlots && !isPast && (
                       <span className="mt-0.5 h-1.5 w-1.5 rounded-full bg-emerald-500" />
                     )}
                   </button>
@@ -590,7 +616,6 @@ export default function InteractiveBooking({
                       }`}
                       onClick={() =>
                         setSelectedSlot({
-                          id: slot.id,
                           doctorId: slot.doctorId,
                           time: slot.time,
                           startsAt: slot.startsAt,

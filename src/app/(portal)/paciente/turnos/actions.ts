@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/db';
 import { getCurrentActor } from '@/lib/actor';
 import { AppointmentState } from '@/generated/prisma/client';
+import { eliminarTurnosVencidos } from '@/lib/turnos';
 
 const SPECIALTY_LABELS: Record<string, string> = {
   CLINICO: 'Clínica médica',
@@ -87,13 +88,71 @@ export async function confirmarTurno(formData: FormData) {
   return { success: true };
 }
 
+export async function cancelarTurnoPaciente(formData: FormData) {
+  const actor = await getCurrentActor();
+  if (!actor) throw new Error('No autorizado.');
+
+  const appointmentId = formData.get('appointmentId') as string;
+  if (!appointmentId) throw new Error('Identificador de turno inválido.');
+
+  const paciente = await prisma.patient.findUnique({
+    where: { id: actor.id },
+  });
+
+  if (!paciente) {
+    throw new Error('Solo los pacientes pueden cancelar sus turnos.');
+  }
+
+  // Si el turno está en la cookie de recientes, eliminarlo
+  const cookieStore = await getSafeCookieStore();
+  let removedFromCookie = false;
+  if (cookieStore) {
+    try {
+      const recentCookie = cookieStore.get('sigmed_recent_turnos')?.value;
+      if (recentCookie) {
+        let list = JSON.parse(recentCookie);
+        const prevLength = list.length;
+        list = list.filter((item: any) => item.id !== appointmentId);
+        if (list.length < prevLength) {
+          removedFromCookie = true;
+          cookieStore.set('sigmed_recent_turnos', JSON.stringify(list), {
+            path: '/',
+            maxAge: 86400 * 7,
+          });
+        }
+      }
+    } catch {}
+  }
+
+  // Eliminar el turno físicamente de la base de datos (dar de baja)
+  if (UUID_REGEX.test(appointmentId)) {
+    const deleted = await prisma.appointment.deleteMany({
+      where: {
+        id: appointmentId,
+        patientId: paciente.id,
+      },
+    });
+
+    if (deleted.count === 0 && !removedFromCookie) {
+      throw new Error('El turno no se encuentra disponible o pertenece a otro usuario.');
+    }
+  }
+
+  revalidatePath('/paciente/turnos');
+  revalidatePath('/paciente/mis-turnos');
+  return { success: true };
+}
+
 export async function reservarTurno(formData: FormData) {
   const actor = await getCurrentActor();
   if (!actor) throw new Error('No autorizado.');
 
-  const appointmentId = formData.get('appointmentId') as string | null;
   const doctorId = formData.get('doctorId') as string | null;
   const startsAtStr = formData.get('startsAt') as string | null;
+
+  if (!doctorId || !startsAtStr) {
+    throw new Error('Información de turno incompleta.');
+  }
 
   const paciente = await prisma.patient.findUnique({
     where: { id: actor.id },
@@ -102,117 +161,92 @@ export async function reservarTurno(formData: FormData) {
     throw new Error('Solo los pacientes pueden reservar turnos.');
   }
 
-  if (appointmentId) {
-    if (UUID_REGEX.test(appointmentId)) {
-      const existing = await prisma.appointment.findUnique({
-        where: { id: appointmentId },
+  // Eliminar turnos vencidos antes de operar
+  await eliminarTurnosVencidos();
+
+  const startsAt = new Date(startsAtStr);
+  if (Number.isNaN(startsAt.getTime())) {
+    throw new Error('Fecha u hora inválida.');
+  }
+
+  // RF: Turnos previos a la fecha actual no se pueden seleccionar
+  if (startsAt.getTime() <= Date.now()) {
+    throw new Error('No se pueden seleccionar turnos previos a la fecha y hora actual.');
+  }
+
+  const doctor = await prisma.doctor.findUnique({
+    where: { id: doctorId },
+    include: { profile: true },
+  });
+  if (!doctor) {
+    throw new Error('El profesional seleccionado no existe.');
+  }
+
+  const duration = doctor?.consultDuration ?? 30;
+  const endsAt = new Date(startsAt.getTime() + duration * 60_000);
+
+  // RF: Una vez que se selecciona un turno, este no puede volver a seleccionarse
+  const occupied = await prisma.appointment.findFirst({
+    where: {
+      doctorId,
+      startsAt,
+      status: {
+        in: [
+          AppointmentState.CONFIRMADO,
+          AppointmentState.RESERVADO,
+          AppointmentState.ATENDIDO,
+          AppointmentState.AUSENTE,
+        ],
+      },
+    },
+  });
+  if (occupied) {
+    throw new Error('El turno seleccionado ya fue reservado por otro usuario.');
+  }
+
+  const created = await prisma.appointment.create({
+    data: {
+      patientId: paciente.id,
+      doctorId,
+      startsAt,
+      endsAt,
+      status: AppointmentState.RESERVADO,
+      reservedById: actor.id,
+    },
+  });
+
+  const datePart = startsAtStr.slice(0, 10);
+  const [y, m, d] = datePart.split('-');
+  const timePart = startsAtStr.slice(11, 16);
+  const formattedDateTime = `${d}/${m}/${y} - ${timePart}`;
+  const docName = `Dr. ${doctor.profile.lastName}, ${doctor.profile.firstName}`;
+  const specName = SPECIALTY_LABELS[doctor.specialty] ?? doctor.specialty;
+  const docLicense = doctor.licenseNumber || 'MP-54210';
+
+  // Guardar en la sesión/cookie para que aparezca reflejado inmediatamente en "Mis turnos"
+  const cookieStore = await getSafeCookieStore();
+  if (cookieStore) {
+    try {
+      const existingCookie = cookieStore.get('sigmed_recent_turnos')?.value;
+      let recentList: any[] = [];
+      if (existingCookie) recentList = JSON.parse(existingCookie);
+      const newEntry = {
+        id: created.id,
+        doctorName: docName,
+        doctorLicense: docLicense,
+        specialty: specName,
+        dateTime: formattedDateTime,
+        status: AppointmentState.RESERVADO,
+      };
+      recentList = [newEntry, ...recentList.filter((item) => item.id !== created.id)];
+      cookieStore.set('sigmed_recent_turnos', JSON.stringify(recentList), {
+        path: '/',
+        maxAge: 86400 * 7,
       });
-      if (!existing) {
-        throw new Error('El turno seleccionado ya no se encuentra disponible.');
-      }
-      await prisma.appointment.update({
-        where: { id: appointmentId },
-        data: {
-          patientId: paciente.id,
-          status: AppointmentState.RESERVADO,
-          reservedById: actor.id,
-          reservedAt: new Date(),
-        },
-      });
-    }
-  } else if (doctorId && startsAtStr) {
-    const startsAt = new Date(startsAtStr);
-    if (Number.isNaN(startsAt.getTime())) {
-      throw new Error('Fecha u hora inválida.');
-    }
-
-    const doctor = await prisma.doctor.findUnique({
-      where: { id: doctorId },
-      include: { profile: true },
-    });
-    const duration = doctor?.consultDuration ?? 30;
-    const endsAt = new Date(startsAt.getTime() + duration * 60_000);
-
-    const datePart = startsAtStr.slice(0, 10);
-    const [y, m, d] = datePart.split('-');
-    const timePart = startsAtStr.slice(11, 16);
-    const formattedDateTime = `${d}/${m}/${y} - ${timePart}`;
-    const docName = doctor
-      ? `Dr. ${doctor.profile.lastName}, ${doctor.profile.firstName}`
-      : 'Dra. Duarte, Sofía';
-    const specName = doctor
-      ? (SPECIALTY_LABELS[doctor.specialty] ?? doctor.specialty)
-      : 'Pediatría';
-    const docLicense = doctor?.licenseNumber || 'MP-54210';
-
-    let assignedId: string = crypto.randomUUID();
-
-    // Si es fecha futura, persistir en PostgreSQL
-    if (startsAt >= new Date()) {
-      const occupied = await prisma.appointment.findFirst({
-        where: {
-          doctorId,
-          startsAt,
-          status: {
-            in: [
-              AppointmentState.CONFIRMADO,
-              AppointmentState.RESERVADO,
-              AppointmentState.ATENDIDO,
-              AppointmentState.AUSENTE,
-            ],
-          },
-        },
-      });
-      if (occupied) {
-        throw new Error('El turno seleccionado ya fue reservado por otro usuario.');
-      }
-
-      try {
-        const created = await prisma.appointment.create({
-          data: {
-            patientId: paciente.id,
-            doctorId,
-            startsAt,
-            endsAt,
-            status: AppointmentState.RESERVADO,
-            reservedById: actor.id,
-          },
-        });
-        assignedId = created.id;
-      } catch (dbErr: any) {
-        if (!dbErr?.message?.includes('No se admiten reservas en fecha u hora previa a la actual')) {
-          throw new Error(dbErr?.message || 'Error al registrar la reserva del turno.');
-        }
-      }
-    }
-
-    // Guardar en la sesión/cookie para que aparezca reflejado en "Mis turnos"
-    const cookieStore = await getSafeCookieStore();
-    if (cookieStore) {
-      try {
-        const existingCookie = cookieStore.get('sigmed_recent_turnos')?.value;
-        let recentList: any[] = [];
-        if (existingCookie) recentList = JSON.parse(existingCookie);
-        const newEntry = {
-          id: assignedId,
-          doctorName: docName,
-          doctorLicense: docLicense,
-          specialty: specName,
-          dateTime: formattedDateTime,
-          status: AppointmentState.RESERVADO,
-        };
-        recentList = [newEntry, ...recentList.filter((item) => item.id !== assignedId)];
-        cookieStore.set('sigmed_recent_turnos', JSON.stringify(recentList), {
-          path: '/',
-          maxAge: 86400 * 7,
-        });
-      } catch {}
-    }
-  } else {
-    throw new Error('Información de turno incompleta.');
+    } catch {}
   }
 
   revalidatePath('/paciente/turnos');
   revalidatePath('/paciente/mis-turnos');
-  return { success: true };
+  return { success: true, appointmentId: created.id };
 }

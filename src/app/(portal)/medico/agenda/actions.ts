@@ -70,10 +70,15 @@ export async function registrarAsistencia(formData: FormData): Promise<void> {
   // CA2: Verificar que el turno pertenezca al médico asignado
   const turno = await prisma.appointment.findUnique({
     where: { id: appointmentId },
+    include: { clinicalRecord: true },
   });
 
   if (turno && turno.doctorId !== medico.id) {
     throw new Error('No puedes actualizar el turno de otro profesional.');
+  }
+
+  if (turno && turno.clinicalRecord && nuevoEstado === 'AUSENTE') {
+    throw new Error('No se puede marcar como ausente un turno que ya posee registro clínico.');
   }
 
   const attendanceDate = turno && turno.startsAt > new Date() ? turno.startsAt : new Date();
