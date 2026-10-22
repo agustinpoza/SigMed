@@ -205,6 +205,23 @@ Verificacion post-deploy:
 - `/sign-in` y `/sign-up` permiten autenticarse.
 - `/api/health` devuelve el chequeo de conexion y conteos en JSON.
 
+### Si el deploy responde 500
+
+1. **Logs del runtime**: en Vercel, deployment > Runtime Logs, filtrando por
+   `error`. Un 500 en el middleware o en el primer render casi siempre es una
+   variable de entorno faltante o con el prefijo equivocado.
+2. **Revisar las variables del entorno** del deploy (Production y Preview):
+   - `CLERK_SECRET_KEY` (`sk_...`) y `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
+     (`pk_...`) tienen que ser **del mismo modo**: mezclar `pk_live` con `sk_test`
+     rompe el middleware de `src/proxy.ts`.
+   - `DATABASE_URL` tiene que ser la connection **pooled** (contiene `-pooler`);
+     la directa no aguanta el trafico del serverless.
+   - Las variables `NEXT_PUBLIC_*` se incrustan en el build: cambiar su valor
+     exige redesplegar, no alcanza con redeployar el runtime.
+3. **Prueba minima**: `/api/health` no necesita sesion. Si tambien devuelve 500
+   (o 503), el problema es la conexion a la base; si `/api/health` responde y el
+   portal no, el problema es Clerk.
+
 ## Fuera de alcance en esta fase
 
 `consultation_fee` (RF-34), obra social (RF-14), la auditoria general de
