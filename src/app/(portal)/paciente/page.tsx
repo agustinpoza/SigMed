@@ -49,7 +49,7 @@ export default async function PacientePage() {
           <p className="text-sm text-gray-400 mb-2">
             Consulta tus turnos reservados y confirmalos.
           </p>
-          <Link href="/paciente/turnos"
+          <Link href="/paciente/mis-turnos"
                 className="text-gray-500 bg-gray-100 rounded-md border border-gray-400 p-1"
           >
             Ir a Mis turnos

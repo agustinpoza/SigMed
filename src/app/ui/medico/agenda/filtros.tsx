@@ -4,7 +4,7 @@ import { ETIQUETAS_ESTADO } from "@/lib/turnos-estados";
 import { useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { HiOutlineChevronLeft, HiOutlineChevronRight, HiOutlineSearch } from "react-icons/hi";
-import type { AppointmentState } from "@/generated/prisma/client";
+import type { AppointmentState } from "@/generated/prisma/enums";
 
 interface FiltrosProps {
     fecha: string;

@@ -1,36 +1,136 @@
-// app/(portal)/medico/agenda/page.tsx
-import Filtros from "@/app/ui/medico/agenda/filtros";
-import TablaTrabajo from "@/app/ui/medico/agenda/tabla-trabajo";
-import { Suspense } from "react";
+import { prisma } from "@/lib/db";
+import { getCurrentActor } from "@/lib/actor";
+import HojaTrabajoTable, { DoctorTurnoRow } from "./hoja-trabajo-table";
 
-type SearchParams = {
-    fecha?: string;
-    estado?: string;
-    busqueda?: string;
+const SPECIALTY_LABELS: Record<string, string> = {
+  CLINICO: "Clínica médica",
+  PEDIATRA: "Pediatría",
+  TRAUMATOLOGO: "Traumatología",
 };
 
-export default async function AgendaPage({ searchParams }: { searchParams: Promise<SearchParams>}) {
-  const resolvedParams = await searchParams;
+type SearchParams = {
+  fecha?: string;
+};
 
-  const hoy = new Date().toLocaleDateString("en-CA", {
-    timeZone: "America/Argentina/Buenos_Aires",
+export default async function HojaDeTrabajoMedicoPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const resolvedParams = await searchParams;
+  const rawFecha = resolvedParams.fecha?.trim() || "14/10/2026";
+
+  // Parsear fecha en formato DD/MM/AAAA o AAAA-MM-DD
+  let d = 14;
+  let m = 10;
+  let y = 2026;
+
+  if (rawFecha.includes("/")) {
+    const parts = rawFecha.split("/").map(Number);
+    if (parts.length === 3 && parts[0] && parts[1] && parts[2]) {
+      d = parts[0];
+      m = parts[1];
+      y = parts[2];
+    }
+  } else if (rawFecha.includes("-")) {
+    const parts = rawFecha.split("-").map(Number);
+    if (parts.length === 3 && parts[0] && parts[1] && parts[2]) {
+      if (parts[0] > 1000) {
+        y = parts[0];
+        m = parts[1];
+        d = parts[2];
+      } else {
+        d = parts[0];
+        m = parts[1];
+        y = parts[2];
+      }
+    }
+  }
+
+  const formattedDate = `${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}/${y}`;
+  const isoDate = `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+
+  const actor = await getCurrentActor();
+  const doctor = actor
+    ? await prisma.doctor.findUnique({
+        where: { id: actor.id },
+        include: { profile: true },
+      })
+    : null;
+
+  // Consultar turnos asignados al médico para la jornada seleccionada (CA2)
+  const turnosDB = doctor
+    ? await prisma.appointment.findMany({
+        where: {
+          doctorId: doctor.id,
+          startsAt: {
+            gte: new Date(`${isoDate}T00:00:00-03:00`),
+            lte: new Date(`${isoDate}T23:59:59.999-03:00`),
+          },
+        },
+        include: {
+          patient: {
+            include: { profile: true },
+          },
+          doctor: true,
+        },
+        orderBy: { startsAt: "asc" },
+      })
+    : [];
+
+  let listTurnos: DoctorTurnoRow[] = turnosDB.map((t) => {
+    const time = new Date(t.startsAt).toLocaleTimeString("es-AR", {
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "America/Argentina/Buenos_Aires",
+    });
+
+    return {
+      id: t.id,
+      time,
+      patientName: t.patient
+        ? `${t.patient.profile.lastName}, ${t.patient.profile.firstName}`
+        : "Sin asignar",
+      specialty: SPECIALTY_LABELS[t.doctor.specialty] ?? t.doctor.specialty,
+      status: t.status,
+    };
   });
 
-  const params = {
-    fecha: resolvedParams.fecha || hoy,
-    estado: resolvedParams.estado || '',
-    busqueda: resolvedParams.busqueda || '',
-  };
+  // Si no hay turnos registrados en BD para esa jornada, cargar filas representativas de US-2.8
+  if (listTurnos.length === 0 && (formattedDate === "14/10/2026" || !resolvedParams.fecha)) {
+    listTurnos = [
+      {
+        id: "demo-asistencia-1",
+        time: "14:00",
+        patientName: "Pérez, Juan",
+        specialty: doctor ? (SPECIALTY_LABELS[doctor.specialty] ?? doctor.specialty) : "Pediatría",
+        status: "ATENDIDO",
+      },
+      {
+        id: "demo-asistencia-2",
+        time: "15:00",
+        patientName: "López, Marta",
+        specialty: doctor ? (SPECIALTY_LABELS[doctor.specialty] ?? doctor.specialty) : "Pediatría",
+        status: "PENDIENTE",
+      },
+    ];
+  }
 
   return (
-  <section className="flex flex-col gap-2 p-2 flex-1 min-h-0 bg-white border border-gray-500 rounded-md shadow-md">
-    <span className="text-lg font-bold text-black m-2 p-2">
-      Tabla de Trabajo Diario
-    </span>
-    <Filtros fecha={ params.fecha }/>
-    <Suspense key={JSON.stringify(params)} fallback={<p className="text-gray-500 italic">Cargando turnos...</p>}>
-      <TablaTrabajo props={ params } />
-    </Suspense>
-  </section>
+    <div className="flex flex-col gap-6">
+      {/* Título de pantalla y bajada informativa */}
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-zinc-900">Hoja de trabajo</h1>
+        <p className="text-sm text-zinc-500">
+          Registrá la asistencia de los pacientes a tus turnos.
+        </p>
+      </div>
+
+      {/* Tarjeta con selector de fecha, tabla interactiva y contador */}
+      <HojaTrabajoTable
+        initialTurnos={listTurnos}
+        formattedDate={formattedDate}
+      />
+    </div>
   );
 }

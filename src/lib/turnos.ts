@@ -1,6 +1,6 @@
 // app/lib/turnos.ts
 import { prisma } from "@/lib/db";
-import type { AppointmentState, Prisma } from "@/generated/prisma/client";
+import { Specialty, AppointmentState, type Prisma } from "@/generated/prisma/client";
 import { ESTADOS } from "@/lib/turnos-estados";
 import { createHistorySearchMatcher } from "@/lib/clinical-history-search";
 
@@ -27,7 +27,7 @@ export async function obtenerTurnos(opts: {
       throw new Error(`Estado de turno invalido: ${opts.estado}`);
     }
     where.status = opts.estado;
-  };
+  }
 
   const turnos = await prisma.appointment.findMany({
     where,
@@ -53,4 +53,52 @@ export async function obtenerTurnos(opts: {
   return turnos.filter(({ patient: { profile } }) =>
     coincide([profile.lastName, profile.firstName, profile.dni]),
   );
+}
+
+export interface FiltrosTurnos {
+  specialty?: string;
+  doctorId?: string;
+  date?: string; // Formato YYYY-MM-DD
+}
+
+export async function buscarTurnosDisponibles(filtros: FiltrosTurnos) {
+  const whereClause: any = {
+    status: AppointmentState.RESERVADO, // O filtrado según la lógica de espacios libres creados
+  };
+
+  // 1. Filtrar por Médico específico o por Especialidad
+  if (filtros.doctorId) {
+    whereClause.doctorId = filtros.doctorId;
+  }
+  if (filtros.specialty) {
+    whereClause.doctor = {
+      specialty: filtros.specialty as Specialty,
+    };
+  }
+
+  // 2. Filtrar por rango de Fecha (inicio y fin del día)
+  if (filtros.date) {
+    const startOfDay = new Date(`${filtros.date}T00:00:00.000Z`);
+    const endOfDay = new Date(`${filtros.date}T23:59:59.999Z`);
+    whereClause.startsAt = {
+      gte: startOfDay,
+      lte: endOfDay,
+    };
+  }
+
+  const turnos = await prisma.appointment.findMany({
+    where: whereClause,
+    include: {
+      doctor: {
+        include: {
+          profile: true,
+        },
+      },
+    },
+    orderBy: {
+      startsAt: "asc",
+    },
+  });
+
+  return turnos;
 }
