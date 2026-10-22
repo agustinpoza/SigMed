@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { actualizarHorarioMedico, AgendaRuleError } from '@/lib/agenda';
-import { getCurrentActor } from '@/lib/actor';
+import { getRealActor } from '@/lib/actor';
 
 export type HorariosFormState = {
   status: 'idle' | 'success' | 'error';
@@ -13,7 +13,9 @@ export async function modificarHorarios(
   _previousState: HorariosFormState,
   formData: FormData,
 ): Promise<HorariosFormState> {
-  const actor = await getCurrentActor();
+  // La gestión de horarios es propia del administrador: se valida con el rol
+  // real, no con el rol efectivo del modo ejercicio.
+  const actor = await getRealActor();
   if (!actor || actor.role !== 'ADMINISTRADOR') {
     return {
       status: 'error',

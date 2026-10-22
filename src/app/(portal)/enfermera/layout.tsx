@@ -1,6 +1,5 @@
 import RoleShell from "../role-shell";
-import { requireActor } from "@/lib/actor";
-import { UserRole } from "@/generated/prisma/enums";
+import { requireArea } from "@/lib/actor";
 
 const items = [
   { href: "/enfermera", label: "Inicio" },
@@ -10,7 +9,8 @@ const items = [
 ];
 
 export default async function EnfermeraLayout({ children }: LayoutProps<"/enfermera">) {
-  await requireActor(UserRole.ENFERMERA);
+  // El area de enfermeria se valida con el rol efectivo.
+  await requireArea("enfermera");
 
   return (
     <RoleShell role="Enfermera" items={items}>

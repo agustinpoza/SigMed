@@ -126,6 +126,7 @@ user_profile    1──1 doctor          personas del sistema (rol en Clerk)
 | `vaccine_lot` | Lotes con vencimiento y saldo disponible | RF-11 / US-3.2 |
 | `stock_movement` | Libro de movimientos inmutable: quien, cuando, que lote | RF-11 CA2 / US-3.2 |
 | `clinical_record` | Diagnostico, tratamiento e indicaciones por turno atendido | RF-17, RF-18 / US-5.2 |
+| `auditoria` | Registro append-only de las operaciones del administrador bajo el modo ejercicio | RF-26 / US-7.5 |
 
 ### Decisiones de modelado
 
@@ -146,8 +147,13 @@ user_profile    1──1 doctor          personas del sistema (rol en Clerk)
   best-effort. La identidad se enlaza por email o por `clerk_user_id`. Ver
   [`implementacion-ia/consideraciones-tecnicas.md`](implementacion-ia/consideraciones-tecnicas.md)
   seccion 1.
-- **`/admin` no hereda las areas de medico ni paciente.** Es una desviacion
-  consciente respecto de RF-26, registrada en la seccion 2 del mismo documento.
+- **El administrador puede ejercer los roles de medico, enfermera y paciente**
+  (RF-26 / US-7.5). No se reencarna: conserva su identidad y elige el contexto de
+  datos (el profesional o el paciente) al entrar. El contexto viaja en una cookie
+  firmada (`sigmed_ejercicio`) y solo se honra si el actor real es administrador.
+  Las operaciones hechas bajo el modo ejercicio quedan en `auditoria`, que es
+  append-only. Ver la seccion 2 de
+  [`implementacion-ia/consideraciones-tecnicas.md`](implementacion-ia/consideraciones-tecnicas.md).
 
 ### Reglas que viven en la base (no solo en la aplicacion)
 
@@ -199,11 +205,29 @@ Verificacion post-deploy:
 - `/sign-in` y `/sign-up` permiten autenticarse.
 - `/api/health` devuelve el chequeo de conexion y conteos en JSON.
 
+### Si el deploy responde 500
+
+1. **Logs del runtime**: en Vercel, deployment > Runtime Logs, filtrando por
+   `error`. Un 500 en el middleware o en el primer render casi siempre es una
+   variable de entorno faltante o con el prefijo equivocado.
+2. **Revisar las variables del entorno** del deploy (Production y Preview):
+   - `CLERK_SECRET_KEY` (`sk_...`) y `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
+     (`pk_...`) tienen que ser **del mismo modo**: mezclar `pk_live` con `sk_test`
+     rompe el middleware de `src/proxy.ts`.
+   - `DATABASE_URL` tiene que ser la connection **pooled** (contiene `-pooler`);
+     la directa no aguanta el trafico del serverless.
+   - Las variables `NEXT_PUBLIC_*` se incrustan en el build: cambiar su valor
+     exige redesplegar, no alcanza con redeployar el runtime.
+3. **Prueba minima**: `/api/health` no necesita sesion. Si tambien devuelve 500
+   (o 503), el problema es la conexion a la base; si `/api/health` responde y el
+   portal no, el problema es Clerk.
+
 ## Fuera de alcance en esta fase
 
-`consultation_fee` (RF-34), obra social (RF-14), `audit_log` (RNF-04), pagos y
-facturas (RF-15/16), notificaciones por mail (RF-07/10) y la API para la app
-movil (RNF-05). Se resuelven en sus respectivos sprints.
+`consultation_fee` (RF-34), obra social (RF-14), la auditoria general de
+operaciones (`audit_log` de RNF-04, distinta de la auditoria del modo ejercicio
+de US-7.5), pagos y facturas (RF-15/16), notificaciones por mail (RF-07/10) y la
+API para la app movil (RNF-05). Se resuelven en sus respectivos sprints.
 
 ## Seguridad: exposicion de credencial aceptada
 

@@ -15,7 +15,14 @@ import { MovementForm } from "@/app/(portal)/enfermera/inventario/movement-form"
 // Solo se simulan la identidad y la invalidación de Next. Prisma, SQL, triggers,
 // dominio, guard, acciones y componentes son reales. Esto no autentica una sesión.
 const boundary = vi.hoisted(() => ({ actor: null as UserProfile | null, revalidate: vi.fn() }));
-vi.mock("@/lib/actor", () => ({ getCurrentActor: async () => boundary.actor }));
+vi.mock("@/lib/actor", () => ({
+  getCurrentActor: async () => boundary.actor,
+  // Sin modo ejercicio: el actor real y el efectivo son el mismo.
+  getActorContext: async () =>
+    boundary.actor
+      ? { real: boundary.actor, effective: boundary.actor, acting: null }
+      : null,
+}));
 vi.mock("next/cache", () => ({ revalidatePath: boundary.revalidate }));
 
 let nurse: UserProfile, otherNurse: UserProfile, patientA: UserProfile, patientB: UserProfile;
@@ -124,7 +131,7 @@ describe("SIG-MEJ-02.3: aislamiento del servidor con PostgreSQL real", () => {
   });
 
   it.each([UserRole.MEDICO, UserRole.ENFERMERA, UserRole.ADMINISTRADOR])(
-    "preserva el guard actual para %s; no define la futura matriz de US-7.5", async (role) => {
+    "la matriz de US-7.5 deja el historial de paciente fuera del alcance de %s", async (role) => {
       boundary.actor = { ...nurse, role };
       const view = await HistorialPage();
       expect(clientEntries(view)).toBeNull();

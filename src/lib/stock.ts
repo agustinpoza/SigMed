@@ -2,6 +2,7 @@ import { prisma, isUniqueViolation } from "@/lib/db";
 import type { FieldErrors } from "@/lib/forms";
 import { MovementType } from "@/generated/prisma/enums";
 import { Prisma } from "@/generated/prisma/client";
+import { insertAudit, type AuditEntry } from "@/lib/audit";
 
 export class StockRuleError extends Error {
   constructor(readonly fields: FieldErrors) {
@@ -28,6 +29,8 @@ export type NewVaccineInput = {
   expiresAt: Date;
   quantity: number;
   actorId: string;
+  /** Auditoria opcional del modo ejercicio: se asienta en la misma transaccion. */
+  audit?: AuditEntry | null;
 };
 
 export type StockMovementInput = {
@@ -38,6 +41,8 @@ export type StockMovementInput = {
   movementType: MovementType;
   reason: string | null;
   actorId: string;
+  /** Auditoria opcional del modo ejercicio: se asienta en la misma transaccion. */
+  audit?: AuditEntry | null;
 };
 
 /** Coincide con el criterio del trigger (fecha_vencimiento >= CURRENT_DATE). */
@@ -93,6 +98,10 @@ export async function createVaccineWithInitialLot(input: NewVaccineInput) {
           actorId: input.actorId,
         },
       });
+
+      if (input.audit) {
+        await insertAudit(tx, { ...input.audit, entityId: vaccine.id });
+      }
     });
   } catch (error) {
     if (isUniqueViolation(error)) {
@@ -229,6 +238,10 @@ export async function registerStockMovement(input: StockMovementInput) {
         actorId: input.actorId,
       },
     });
+
+    if (input.audit) {
+      await insertAudit(tx, { ...input.audit, entityId: lotId });
+    }
   }).catch((error: unknown) => {
     if (isInsufficientStockError(error)) {
       throw new StockRuleError({ quantity: "No hay suficientes dosis disponibles en este lote." });

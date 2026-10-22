@@ -1,10 +1,12 @@
 import { prisma } from "@/lib/db";
 import { Specialty } from "@/generated/prisma/client";
-import { getCurrentActor } from "@/lib/actor";
+import { getRealActor } from "@/lib/actor";
 import { HorariosForm } from "./horarios-form";
 
 export default async function HorariosPage() {
-  const actor = await getCurrentActor();
+  // La gestión de horarios es propia del administrador: se valida con el rol
+  // real, no con el rol efectivo del modo ejercicio.
+  const actor = await getRealActor();
   const canEditSchedules = actor?.role === "ADMINISTRADOR";
 
   // 1. Obtenemos los médicos para poblar el selector

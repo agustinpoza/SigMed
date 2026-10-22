@@ -2,14 +2,24 @@ import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import { UserButton } from "@clerk/nextjs";
 import Footer from "@/app/ui/footer";
-import { getCurrentActor } from "@/lib/actor";
+import EjercicioBanner from "@/app/ui/admin/ejercicio-banner";
+import { getActorContext } from "@/lib/actor";
+import { ROLE_LABELS } from "@/lib/permissions";
 
 export const dynamic = "force-dynamic";
 
 export default async function PortalLayout({ children }: LayoutProps<"/">) {
   await auth.protect();
 
-  const actor = await getCurrentActor();
+  const context = await getActorContext();
+  const actor = context?.real ?? null;
+  const acting = context?.acting ?? null;
+
+  // El contexto del modo ejercicio: el profesional o el paciente sobre el que
+  // opera el administrador.
+  const contexto = acting?.actor
+    ? `${acting.actor.lastName}, ${acting.actor.firstName}`
+    : null;
 
   return (
     <div className="flex min-h-dvh min-w-0 flex-col bg-zinc-50 text-zinc-900">
@@ -32,6 +42,10 @@ export default async function PortalLayout({ children }: LayoutProps<"/">) {
           </div>
         </div>
       </header>
+
+      {acting ? (
+        <EjercicioBanner rol={ROLE_LABELS[acting.role]} contexto={contexto} />
+      ) : null}
 
       <main className="mx-auto w-full min-w-0 bg-gray-300 max-w-6xl flex-1 px-3 py-8 sm:px-6">{children}</main>
 

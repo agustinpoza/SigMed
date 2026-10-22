@@ -2,7 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import { getCurrentActor } from "@/lib/actor";
+import { requireEnfermeraOAdministrador } from "@/lib/actor-guard";
+import { AuditAction, AuditEntity } from "@/generated/prisma/enums";
+import { buildExerciseAudit } from "@/lib/audit";
 import { type FieldErrors, hasErrors, isUuid, requiredDate, requiredText } from "@/lib/forms";
 import { NO_VACCINATION_SLOTS, VACCINATION_SLOTS_ERROR } from "@/lib/vaccination-messages";
 import {
@@ -29,9 +31,6 @@ export type SlotOption = { time: string; value: string };
 
 const PAGE_PATH = "/enfermera/turnos-vacunacion";
 const INVENTORY_PATH = "/enfermera/inventario";
-
-const NO_ACTOR =
-  "No hay una sesión activa, asi que el turno no se puede atribuir.";
 
 const dateTimeFormat = new Intl.DateTimeFormat("es-AR", {
   timeZone: "America/Argentina/Buenos_Aires",
@@ -125,18 +124,25 @@ export async function createVaccinationAppointment(
     return { errors, values };
   }
 
-  const actor = await getCurrentActor();
+  const guard = await requireEnfermeraOAdministrador();
 
-  if (!actor) {
-    return { message: NO_ACTOR, values };
+  if ("error" in guard) {
+    return { message: guard.error, values };
   }
+
+  const audit = buildExerciseAudit(guard.context, {
+    action: AuditAction.CREAR_TURNO_VACUNACION,
+    entity: AuditEntity.TURNO_VACUNACION,
+    details: { pacienteId: patientId, vacunaId: vaccineId, fecha: date },
+  });
 
   try {
     await assignVaccinationAppointment({
       patientId,
       vaccineId,
       scheduledAt,
-      actorId: actor.id,
+      actorId: guard.actor.id,
+      audit,
     });
   } catch (error) {
     if (error instanceof VaccinationRuleError) {
@@ -165,17 +171,24 @@ export async function cancelVaccinationAppointment(
     return { error: "El turno no es valido." };
   }
 
-  const actor = await getCurrentActor();
+  const guard = await requireEnfermeraOAdministrador();
 
-  if (!actor) {
-    return { error: NO_ACTOR };
+  if ("error" in guard) {
+    return { error: guard.error };
   }
+
+  const audit = buildExerciseAudit(guard.context, {
+    action: AuditAction.CANCELAR_TURNO_VACUNACION,
+    entity: AuditEntity.TURNO_VACUNACION,
+    entityId: appointmentId,
+  });
 
   try {
     await cancelAppointment({
       appointmentId,
-      actorId: actor.id,
+      actorId: guard.actor.id,
       reason: rawValue(formData, "reason") || null,
+      audit,
     });
   } catch (error) {
     if (error instanceof VaccinationRuleError) {
@@ -202,8 +215,10 @@ export async function searchPatients(query: unknown): Promise<PatientOption[]> {
   const q = query.trim();
   if (q.length < 2 || q.length > 50) return [];
 
-  const actor = await getCurrentActor();
-  if (!actor) return [];
+  // El buscador expone nombre y DNI: solo enfermería y administración.
+  const guard = await requireEnfermeraOAdministrador();
+
+  if ("error" in guard) return [];
 
   const patients = await prisma.patient.findMany({
     where: {
@@ -241,6 +256,12 @@ export async function getAvailableSlots(
   const errors: FieldErrors = {};
   if (!requiredDate(date, "date", errors, "La fecha")) {
     return { slots: [], error: errors.date };
+  }
+
+  const guard = await requireEnfermeraOAdministrador();
+
+  if ("error" in guard) {
+    return { slots: [], error: guard.error };
   }
 
   try {

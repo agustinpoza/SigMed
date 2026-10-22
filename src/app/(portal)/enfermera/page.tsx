@@ -49,7 +49,7 @@ export default async function EnfermeraPage() {
           <p className="text-sm text-gray-400 mb-2">
             Consulta el control de stock, registro e historial disponible.
           </p>
-          <Link href="/enfermera/Stock"
+          <Link href="/enfermera/inventario"
                 className="text-gray-500 bg-gray-100 rounded-md border border-gray-400 p-1"
           >
             Ir a Stock

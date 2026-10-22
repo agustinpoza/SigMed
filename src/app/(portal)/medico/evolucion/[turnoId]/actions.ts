@@ -7,7 +7,8 @@ import { type FieldErrors, hasErrors, isUuid, requiredText } from "@/lib/forms";
 import { requireMedico } from "@/lib/actor-guard";
 import { obtenerTurnoParaEvolucion } from "@/lib/clinical-records";
 import { CLINICAL_RECORD_MAX_LENGTH } from "@/lib/clinical-records-limits";
-import { AppointmentState } from "@/generated/prisma/enums";
+import { AppointmentState, AuditAction, AuditEntity } from "@/generated/prisma/enums";
+import { buildExerciseAudit, insertAudit } from "@/lib/audit";
 
 export type EvolutionFormState = {
   errors?: FieldErrors;
@@ -87,9 +88,21 @@ export async function registrarEvolucion(
     return { message: "Este turno ya tiene una evolución registrada.", values };
   }
 
+  const audit = buildExerciseAudit(guard.context, {
+    action: AuditAction.CREAR_EVOLUCION,
+    entity: AuditEntity.REGISTRO_CLINICO,
+    details: { turnoId: turno.id, pacienteId: turno.patientId },
+  });
+
   try {
-    await prisma.clinicalRecord.create({
-      data: { appointmentId: turno.id, diagnosis, treatment, indications },
+    await prisma.$transaction(async (tx) => {
+      const record = await tx.clinicalRecord.create({
+        data: { appointmentId: turno.id, diagnosis, treatment, indications },
+      });
+
+      if (audit) {
+        await insertAudit(tx, { ...audit, entityId: record.id });
+      }
     });
   } catch (error) {
     if (isUniqueViolation(error)) {

@@ -104,6 +104,33 @@ enum ReceiptType {
   @@map("tipo_comprobante")
 }
 
+// US-7.5: el modo ejercicio del administrador queda registrado. Hoy la tabla
+// cubre solo ese alcance; la auditoria general (RNF-04) sigue fuera de alcance.
+enum AuditAction {
+  EJERCER_INICIO             @map("ejercicio_inicio")
+  EJERCER_FIN                @map("ejercicio_fin")
+  CREAR_EVOLUCION            @map("crear_evolucion")
+  GUARDAR_DISPONIBILIDAD     @map("guardar_disponibilidad")
+  CREAR_MOVIMIENTO_STOCK     @map("crear_movimiento_stock")
+  CREAR_VACUNA               @map("crear_vacuna")
+  ACTUALIZAR_VACUNA          @map("actualizar_vacuna")
+  CREAR_TURNO_VACUNACION     @map("crear_turno_vacunacion")
+  CANCELAR_TURNO_VACUNACION  @map("cancelar_turno_vacunacion")
+
+  @@map("accion_auditoria")
+}
+
+enum AuditEntity {
+  EJERCICIO          @map("ejercicio")
+  REGISTRO_CLINICO   @map("registro_clinico")
+  HORARIO_ATENCION   @map("horario_atencion")
+  MOVIMIENTO_STOCK   @map("movimiento_stock")
+  VACUNA             @map("vacuna")
+  TURNO_VACUNACION   @map("turno_vacunacion")
+
+  @@map("entidad_auditoria")
+}
+
 model UserProfile {
   id          String   @id @default(uuid()) @db.Uuid
   firstName   String   @map("nombre")
@@ -128,7 +155,9 @@ model UserProfile {
   vaccinationsRegistered VaccinationAppointment[] @relation("vacunacion_registro")
   vaccinationsResolved   VaccinationAppointment[] @relation("vacunacion_resolucion")
   vaccinationsApplied    VaccinationAppointment[] @relation("vacunacion_aplicacion")
-  paymentsRegistered     Payment[]        @relation("pago_registrado_por")
+  paymentsRegistered Payment[]        @relation("pago_registrado_por")
+
+  auditLogs      AuditLog[] @relation("auditoria_usuario")
 
   @@map("usuario")
 }
@@ -392,4 +421,25 @@ model ClinicalRecord {
   appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Restrict)
 
   @@map("registro_clinico")
+}
+
+// US-7.5 / RF-26: registro append-only del modo ejercicio del administrador.
+// `id_usuario` es el actor real (el administrador) y `rol_efectivo` el rol que
+// estaba ejerciendo; `id_objetivo` es el medico o el paciente del contexto.
+model AuditLog {
+  id            String       @id @default(uuid()) @map("id_auditoria") @db.Uuid
+  actorId       String       @map("id_usuario") @db.Uuid
+  effectiveRole UserRole     @map("rol_efectivo")
+  action        AuditAction  @map("accion")
+  entity        AuditEntity? @map("entidad")
+  entityId      String?      @map("id_entidad") @db.Uuid
+  targetId      String?      @map("id_objetivo") @db.Uuid
+  details       Json?        @map("detalles")
+  createdAt     DateTime     @default(now()) @map("fecha_hora") @db.Timestamptz(3)
+
+  actor UserProfile @relation("auditoria_usuario", fields: [actorId], references: [id], onDelete: Restrict)
+
+  @@index([actorId, createdAt])
+  @@index([entity, entityId])
+  @@map("auditoria")
 }

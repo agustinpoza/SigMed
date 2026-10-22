@@ -1,10 +1,11 @@
 'use server';
 import { revalidatePath } from "next/cache";
 import { Weekday } from "@/generated/prisma/client";
-import { UserRole } from "@/generated/prisma/enums";
+import { AuditAction, AuditEntity, UserRole } from "@/generated/prisma/enums";
 import { prisma } from "@/lib/db";
 import { FieldErrors } from "@/lib/forms";
-import { getCurrentActor } from "@/lib/actor";
+import { getActorContext, getCurrentActor } from "@/lib/actor";
+import { buildExerciseAudit, insertAudit } from "@/lib/audit";
 
 export type DisponibilidadState = {
   status: "success" | "error";
@@ -34,10 +35,13 @@ const WEEKDAYS = Object.values(Weekday);
 const WEEKDAY_VALUES = new Set<string>(WEEKDAYS);
 
 export async function guardarDisponibilidad(datos: DatosDisponibilidad): Promise<DisponibilidadState> {
-    const actor = await getCurrentActor();
-    if (!actor) {
+    const context = await getActorContext();
+    if (!context) {
         return { status: "error", message: NO_ACTOR };
     }
+    // El rol efectivo define sobre que profesional se guarda; el autor real es
+    // quien lo modifico (el administrador no se reencarna en el profesional).
+    const actor = context.effective;
     if (actor.role !== UserRole.MEDICO) {
         return { status: "error", message: NO_MEDICO };
     }
@@ -86,6 +90,13 @@ export async function guardarDisponibilidad(datos: DatosDisponibilidad): Promise
             return { status: "error", message: "No se encontró el perfil médico para guardar la disponibilidad." };
         }
 
+        const audit = buildExerciseAudit(context, {
+            action: AuditAction.GUARDAR_DISPONIBILIDAD,
+            entity: AuditEntity.HORARIO_ATENCION,
+            entityId: medico.id,
+            details: { dias, horaInicio: datos.horaInicio, horaFin: datos.horaFin },
+        });
+
         await prisma.$transaction(async (tx) => {
             await tx.doctorSchedule.deleteMany({
                 where: { doctorId: medico.id },
@@ -97,10 +108,14 @@ export async function guardarDisponibilidad(datos: DatosDisponibilidad): Promise
                     weekday,
                     startTime: horaInicio,
                     endTime: horaFin,
-                    modifiedById: actor.id,
+                    modifiedById: context.real.id,
                     modifiedAt: fechaModificacion,
                 })),
             });
+
+            if (audit) {
+                await insertAudit(tx, audit);
+            }
         });
 
         revalidatePath("/medico/agenda");

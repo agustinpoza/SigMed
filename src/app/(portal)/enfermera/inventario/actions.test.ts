@@ -87,6 +87,7 @@ describe("SIG-MEJ-03.2: entrada positiva y signo interno", () => {
       quantity,
       reason: "Corrección de conteo",
       actorId: "operador-identificado",
+      audit: null,
     });
     expect(mocks.revalidate).toHaveBeenCalledWith("/enfermera/inventario");
   });

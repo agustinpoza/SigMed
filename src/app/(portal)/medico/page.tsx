@@ -36,7 +36,7 @@ export default async function MedicoPage() {
           <p className="text-sm text-gray-400 mb-2">
             Consulte, establezca y edite su disponibilidad mensual para la reserva de turnos.
           </p>
-          <Link href="/medico/cronograma"
+          <Link href="/medico/disponibilidad"
                 className="text-gray-500 bg-gray-100 rounded-md border border-gray-400 p-1"
           >
             Ir a Disponibilidad

@@ -63,6 +63,23 @@ Los usuarios de desarrollo usan valores sintéticos en `clerk_user_id` (`seed_<s
 ### Nota sobre la matriz de transición
 La sección final de este documento está incompleta: cierra el diagrama de `turno.estado` sin terminarlo y no cubre los demás ciclos. Para los estados de `turno_vacunacion` la fuente de verdad es `docs/Turno-vacunacion.txt`.
 
+### D-12 · `auditoria` para el modo ejercicio del administrador (RF-26 / US-7.5)
+La especificación no define una tabla de auditoría de operaciones (la de RNF-04 sigue fuera de alcance). Se agrega `auditoria`, **append-only**, para registrar lo que el administrador hace bajo el modo ejercicio: el inicio y el fin del ejercicio y las escrituras ejecutadas durante él.
+
+| Campo | Tipo | Clave | Nulidad | Descripción |
+| :--- | :--- | :--- | :--- | :--- |
+| `id_auditoria` | Uuid | PK | No nulo | Identificador del asiento |
+| `id_usuario` | Uuid | FK → usuario | No nulo | Actor **real** (el administrador) |
+| `rol_efectivo` | Texto | | No nulo | Rol que se estaba ejerciendo |
+| `accion` | Texto | | No nulo | `ejercicio_inicio`, `ejercicio_fin`, `crear_evolucion`, `guardar_disponibilidad`, `crear_movimiento_stock`, `crear_vacuna`, `actualizar_vacuna`, `crear_turno_vacunacion`, `cancelar_turno_vacunacion` |
+| `entidad` | Texto | | Nulo | `ejercicio`, `registro_clinico`, `horario_atencion`, `movimiento_stock`, `vacuna`, `turno_vacunacion` |
+| `id_entidad` | Uuid | | Nulo | Entidad afectada por la operación |
+| `id_objetivo` | Uuid | | Nulo | Médico o paciente del contexto del ejercicio |
+| `detalles` | Jsonb | | Nulo | Datos adicionales de la operación |
+| `fecha_hora` | FechaHora | | No nulo | Momento del asiento |
+
+`UPDATE` y `DELETE` están rechazados por trigger, igual que en `movimiento_stock` y `registro_clinico`. El asiento se escribe **en la misma transacción** que la escritura de dominio: si la operación falla, no queda rastro.
+
 ---
 
 ## 0. Arquitectura de Estado y Reglas Globales
@@ -72,7 +89,8 @@ La sección final de este documento está incompleta: cierra el diagrama de `tur
    - **Stock de Vacuna:** Suma del stock de todos sus lotes no vencidos (`fecha_vencimiento >= fecha_actual`).
    - **Horarios Disponibles:** Se computan proyectando `horario_atencion` menos `bloqueo_agenda` y menos turnos en estado `reservado` o `atendido`.
 2. **Inmutabilidad y Auditoría:**
-   - `movimiento_stock` y `registro_clinico` son tablas **append-only**. Queda estrictamente prohibido realizar operaciones `UPDATE` o `DELETE` (respaldado por trazabilidad operativa y Ley 26.529). Correcciones en stock se hacen exclusivamente mediante movimientos de tipo `ajuste`.
+   - `movimiento_stock`, `registro_clinico` y `auditoria` son tablas **append-only**. Queda estrictamente prohibido realizar operaciones `UPDATE` o `DELETE` (respaldado por trazabilidad operativa y Ley 26.529). Correcciones en stock se hacen exclusivamente mediante movimientos de tipo `ajuste`.
+   - `auditoria` (ver D-12) registra las operaciones del administrador bajo el modo ejercicio: quién las ejecutó, con qué rol efectivo y sobre qué objetivo.
 3. **Reportes Administrativos (RF-19, RF-20, RF-21):**
    - No poseen tablas físicas dedicadas. Deben inferirse agregando `turno`, `movimiento_stock` y `pago`.
 

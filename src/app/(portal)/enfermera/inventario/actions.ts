@@ -10,8 +10,9 @@ import {
   requiredText,
 } from "@/lib/forms";
 import { StockRuleError, registerStockMovement } from "@/lib/stock";
-import { MovementType } from "@/generated/prisma/enums";
+import { AuditAction, AuditEntity, MovementType } from "@/generated/prisma/enums";
 import { requireEnfermeraOAdministrador } from "@/lib/actor-guard";
+import { buildExerciseAudit } from "@/lib/audit";
 import { MAX_STOCK_INPUT_QUANTITY } from "@/lib/stock-input";
 import { prisma } from "@/lib/db";
 import { LOT_AVAILABILITY_ERROR } from "@/lib/stock-messages";
@@ -142,6 +143,12 @@ export async function createStockMovement(
     return { message: guard.error, values };
   }
 
+  const audit = buildExerciseAudit(guard.context, {
+    action: AuditAction.CREAR_MOVIMIENTO_STOCK,
+    entity: AuditEntity.MOVIMIENTO_STOCK,
+    details: { vacunaId: vaccineId, lote: lotNumber, cantidad: quantity },
+  });
+
   try {
     // La UI siempre envía una magnitud positiva; el dominio mantiene cantidades con signo.
     const signedQuantity = movementType === MovementType.AJUSTE && operation === "DESCONTAR"
@@ -155,6 +162,7 @@ export async function createStockMovement(
       movementType,
       reason: reason || null,
       actorId: guard.actor.id,
+      audit,
     });
   } catch (error) {
     if (error instanceof StockRuleError) {
