@@ -58,8 +58,7 @@ beforeEach(() => {
 
 describe("US 2.8: Registro de Asistencia del Paciente (RF-29)", () => {
   it("CA1: actualiza el estado a ATENDIDO, registra attendanceAt y revalida", async () => {
-    const res = await registrarAsistencia(formData({ estado: "ATENDIDO" }));
-    expect(res).toEqual({ success: true });
+    await registrarAsistencia(formData({ estado: "ATENDIDO" }));
     expect(mocks.updateMany).toHaveBeenCalledWith({
       where: {
         id: TURNO_ID,
@@ -74,8 +73,7 @@ describe("US 2.8: Registro de Asistencia del Paciente (RF-29)", () => {
   });
 
   it("CA1: actualiza el estado a AUSENTE correctamente", async () => {
-    const res = await registrarAsistencia(formData({ estado: "AUSENTE" }));
-    expect(res).toEqual({ success: true });
+    await registrarAsistencia(formData({ estado: "AUSENTE" }));
     expect(mocks.updateMany).toHaveBeenCalledWith({
       where: {
         id: TURNO_ID,
@@ -119,7 +117,6 @@ describe("US 2.8: Registro de Asistencia del Paciente (RF-29)", () => {
   });
 
   it("maneja filas demo sin error", async () => {
-    const res = await registrarAsistencia(formData({ appointmentId: "demo-1" }));
-    expect(res).toEqual({ success: true });
+    await expect(registrarAsistencia(formData({ appointmentId: "demo-1" }))).resolves.toBeUndefined();
   });
 });

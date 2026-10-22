@@ -4,6 +4,7 @@ import { UserRole } from "@/generated/prisma/enums";
 import { getCurrentActor } from "@/lib/actor";
 import { obtenerTurnos } from "@/lib/turnos";
 import { ETIQUETAS_ESTADO } from "@/lib/turnos-estados";
+import { registrarAsistencia } from "@/app/(portal)/medico/agenda/actions";
 
 type SearchParams = {
     fecha: string;
@@ -36,7 +37,7 @@ export default async function TablaTrabajo({ props }: TablaTrabajoProps) {
 
     return (
         <div className="flex-1 min-h-0 min-w-0 overflow-auto rounded-xl border border-gray-400 m-2">
-            <table className="w-full min-w-160 p-2">
+            <table className="w-full min-w-160 p-2 table-fixed">
                 <thead className="sticky top-0">
                     <tr className="text-center text-lg text-slate-500 bg-gray-200">
                         <th>Hora</th>
@@ -68,14 +69,22 @@ export default async function TablaTrabajo({ props }: TablaTrabajoProps) {
                                         {(t.status) ? ETIQUETAS_ESTADO[t.status] : "Estado no disponible"}
                                     </td>
                                     <td>
-                                        {(t.status === ETIQUETAS_ESTADO.CONFIRMADO) ? (
-                                                <div className="flex flex-row gap-1">
-                                                    <button className="text-white bg-slate-600 rounded-sm m-1 p-1">
-                                                        Atendido
-                                                    </button>
-                                                    <button className="text-white bg-slate-600 rounded-sm m-1 p-1">
-                                                        Ausente
-                                                    </button>
+                                        {(t.status === "CONFIRMADO") ? (
+                                                <div className="flex flex-row justify-center gap-1">
+                                                    <form action={registrarAsistencia}>
+                                                        <input type="hidden" name="appointmentId" value={t.id} />
+                                                        <input type="hidden" name="estado" value="ATENDIDO" />
+                                                        <button className="text-white bg-slate-600 rounded-sm m-1 p-1">
+                                                            Atendido
+                                                        </button>
+                                                    </form>
+                                                    <form action={registrarAsistencia}>
+                                                        <input type="hidden" name="appointmentId" value={t.id} />
+                                                        <input type="hidden" name="estado" value="AUSENTE" />
+                                                        <button className="text-white bg-slate-600 rounded-sm m-1 p-1">
+                                                            Ausente
+                                                        </button>
+                                                    </form>
                                                 </div>
                                         ) : (
                                         (t.status === "ATENDIDO") ? (

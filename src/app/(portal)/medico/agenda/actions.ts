@@ -1,5 +1,4 @@
 'use server';
-
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/db';
 import { getCurrentActor } from '@/lib/actor';
@@ -16,7 +15,7 @@ async function getSafeCookieStore() {
   }
 }
 
-export async function registrarAsistencia(formData: FormData) {
+export async function registrarAsistencia(formData: FormData): Promise<void> {
   const actor = await getCurrentActor();
   if (!actor) throw new Error('No autorizado.');
 
@@ -65,7 +64,7 @@ export async function registrarAsistencia(formData: FormData) {
   if (!UUID_REGEX.test(appointmentId)) {
     revalidatePath('/medico/agenda');
     revalidatePath('/medico/hoja-de-trabajo');
-    return { success: true };
+    return;
   }
 
   // CA2: Verificar que el turno pertenezca al médico asignado
@@ -92,6 +91,4 @@ export async function registrarAsistencia(formData: FormData) {
   });
 
   revalidatePath('/medico/agenda');
-  revalidatePath('/medico/hoja-de-trabajo');
-  return { success: true };
 }

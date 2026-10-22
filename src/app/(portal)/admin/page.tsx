@@ -4,6 +4,7 @@ import { UserRole } from "@/generated/prisma/enums";
 import { getActorContext } from "@/lib/actor";
 import { ROLE_LABELS } from "@/lib/permissions";
 import { iniciarEjercicio } from "./ejercer/actions";
+import { FaUser, FaUserDoctor, FaUserNurse } from "react-icons/fa6";
 
 export default async function AdminPage() {
   const context = await getActorContext();
@@ -64,22 +65,25 @@ export default async function AdminPage() {
           </p>
           <div className="grid gap-2 sm:grid-cols-3">
             <Link href="/admin/ejercer/medico"
-                  className="rounded-md border border-gray-400 bg-white p-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  className="flex flex-col items-center justify-center rounded-md border border-gray-400 bg-white p-2 text-md font-medium text-gray-700 hover:bg-gray-50"
             >
+              <FaUserDoctor className="size-10" />
               Ejercer como médico
             </Link>
             <form action={iniciarEjercicio}>
               <input type="hidden" name="role" value={UserRole.ENFERMERA} />
               <button
                 type="submit"
-                className="w-full rounded-md border border-gray-400 bg-white p-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                className="flex flex-col items-center justify-center w-full rounded-md border border-gray-400 bg-white p-2 text-md font-medium text-gray-700 hover:bg-gray-50"
               >
+                <FaUserNurse className="size-10" />
                 Ejercer como enfermería
               </button>
             </form>
             <Link href="/admin/ejercer/paciente"
-                  className="rounded-md border border-gray-400 bg-white p-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  className="flex flex-col items-center justify-center rounded-md border border-gray-400 bg-white p-2 text-md font-medium text-gray-700 hover:bg-gray-50"
             >
+              <FaUser className="size-10" />
               Ejercer como paciente
             </Link>
           </div>
