@@ -126,6 +126,7 @@ user_profile    1──1 doctor          personas del sistema (rol en Clerk)
 | `vaccine_lot` | Lotes con vencimiento y saldo disponible | RF-11 / US-3.2 |
 | `stock_movement` | Libro de movimientos inmutable: quien, cuando, que lote | RF-11 CA2 / US-3.2 |
 | `clinical_record` | Diagnostico, tratamiento e indicaciones por turno atendido | RF-17, RF-18 / US-5.2 |
+| `auditoria` | Registro append-only de las operaciones del administrador bajo el modo ejercicio | RF-26 / US-7.5 |
 
 ### Decisiones de modelado
 
@@ -146,8 +147,13 @@ user_profile    1──1 doctor          personas del sistema (rol en Clerk)
   best-effort. La identidad se enlaza por email o por `clerk_user_id`. Ver
   [`implementacion-ia/consideraciones-tecnicas.md`](implementacion-ia/consideraciones-tecnicas.md)
   seccion 1.
-- **`/admin` no hereda las areas de medico ni paciente.** Es una desviacion
-  consciente respecto de RF-26, registrada en la seccion 2 del mismo documento.
+- **El administrador puede ejercer los roles de medico, enfermera y paciente**
+  (RF-26 / US-7.5). No se reencarna: conserva su identidad y elige el contexto de
+  datos (el profesional o el paciente) al entrar. El contexto viaja en una cookie
+  firmada (`sigmed_ejercicio`) y solo se honra si el actor real es administrador.
+  Las operaciones hechas bajo el modo ejercicio quedan en `auditoria`, que es
+  append-only. Ver la seccion 2 de
+  [`implementacion-ia/consideraciones-tecnicas.md`](implementacion-ia/consideraciones-tecnicas.md).
 
 ### Reglas que viven en la base (no solo en la aplicacion)
 
@@ -201,9 +207,10 @@ Verificacion post-deploy:
 
 ## Fuera de alcance en esta fase
 
-`consultation_fee` (RF-34), obra social (RF-14), `audit_log` (RNF-04), pagos y
-facturas (RF-15/16), notificaciones por mail (RF-07/10) y la API para la app
-movil (RNF-05). Se resuelven en sus respectivos sprints.
+`consultation_fee` (RF-34), obra social (RF-14), la auditoria general de
+operaciones (`audit_log` de RNF-04, distinta de la auditoria del modo ejercicio
+de US-7.5), pagos y facturas (RF-15/16), notificaciones por mail (RF-07/10) y la
+API para la app movil (RNF-05). Se resuelven en sus respectivos sprints.
 
 ## Seguridad: exposicion de credencial aceptada
 

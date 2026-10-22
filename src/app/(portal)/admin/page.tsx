@@ -1,9 +1,14 @@
 // app/(portal)/admin/page.tsx
-import { getCurrentActor } from "@/lib/actor";
 import Link from "next/link";
+import { UserRole } from "@/generated/prisma/enums";
+import { getActorContext } from "@/lib/actor";
+import { ROLE_LABELS } from "@/lib/permissions";
+import { iniciarEjercicio } from "./ejercer/actions";
 
 export default async function AdminPage() {
-  const admin = await getCurrentActor();
+  const context = await getActorContext();
+  const admin = context?.real ?? null;
+  const acting = context?.acting ?? null;
 
   return (
     <main>
@@ -15,6 +20,14 @@ export default async function AdminPage() {
           Estas son las funciones disponibles para tu rol de administrador
         </p>
       </div>
+
+      {acting ? (
+        <p className="mb-3 rounded-md border border-amber-300 bg-amber-100 px-3 py-2 text-sm text-amber-950">
+          Estás en modo ejercicio como {ROLE_LABELS[acting.role]}. Al entrar a otra
+          función se cambia el contexto y queda registrado.
+        </p>
+      ) : null}
+
       <div className="grid grid-cols-2 gap-2">
         <section className="flex-col bg-gray-100 rounded-md p-2">
           <h2 className="text-lg text-black font-semibold">
@@ -42,18 +55,34 @@ export default async function AdminPage() {
             Ir a Horarios
           </Link>
         </section>
-        <section className="flex-col bg-gray-100 rounded-md p-2">
+        <section className="col-span-2 flex-col bg-gray-100 rounded-md p-2">
           <h2 className="text-lg text-black font-semibold">
             Ejecutar funciones
           </h2>
           <p className="text-sm text-gray-400 mb-2">
             Consulta y ejecuta las funciones disponibles para usuarios de distintos roles.
           </p>
-          <Link href="/admin"
-                className="text-gray-500 bg-gray-100 rounded-md border border-gray-400 p-1"
-          >
-            Ir a Cambiar de rol
-          </Link>
+          <div className="grid gap-2 sm:grid-cols-3">
+            <Link href="/admin/ejercer/medico"
+                  className="rounded-md border border-gray-400 bg-white p-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              Ejercer como médico
+            </Link>
+            <form action={iniciarEjercicio}>
+              <input type="hidden" name="role" value={UserRole.ENFERMERA} />
+              <button
+                type="submit"
+                className="w-full rounded-md border border-gray-400 bg-white p-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Ejercer como enfermería
+              </button>
+            </form>
+            <Link href="/admin/ejercer/paciente"
+                  className="rounded-md border border-gray-400 bg-white p-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              Ejercer como paciente
+            </Link>
+          </div>
         </section>
       </div>
     </main>

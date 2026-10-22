@@ -4,6 +4,8 @@ import { PrismaClient } from "../src/generated/prisma/client";
 import {
   AlertStatus,
   AppointmentState,
+  AuditAction,
+  AuditEntity,
   MovementType,
   ReceiptType,
   UserRole,
@@ -375,6 +377,38 @@ await expectError("historia clinica sobre turno reservado", () =>
   }),
 );
 
+console.log("--- auditoria: append-only del modo ejercicio ---");
+const actorAuditoria =
+  (await prisma.userProfile.findFirst({ where: { role: UserRole.ADMINISTRADOR } })) ??
+  (await prisma.userProfile.findFirstOrThrow());
+const asiento = await prisma.auditLog.create({
+  data: {
+    actorId: actorAuditoria.id,
+    effectiveRole: UserRole.ADMINISTRADOR,
+    action: AuditAction.EJERCER_INICIO,
+    entity: AuditEntity.EJERCICIO,
+    details: { verificacion: "db:verify" },
+  },
+});
+await expectError("UPDATE de un asiento de auditoria", () =>
+  prisma.auditLog.update({
+    where: { id: asiento.id },
+    data: { action: AuditAction.EJERCER_FIN },
+  }),
+);
+await expectError("DELETE de un asiento de auditoria", () =>
+  prisma.auditLog.delete({ where: { id: asiento.id } }),
+);
+await expectError("un asiento de auditoria sin actor real", () =>
+  prisma.auditLog.create({
+    data: {
+      actorId: "00000000-0000-0000-0000-000000000000",
+      effectiveRole: UserRole.ADMINISTRADOR,
+      action: AuditAction.EJERCER_INICIO,
+    },
+  }),
+);
+
 console.log("--- horario_atencion: maximo dos dias por medico ---");
 const horariosMedico = await prisma.doctorSchedule.findMany({
   where: { doctorId: doctor.id },
@@ -445,9 +479,14 @@ const tablas = {
   pago: await prisma.payment.count(),
   comprobante: await prisma.receipt.count(),
   registro_clinico: await prisma.clinicalRecord.count(),
+  auditoria: await prisma.auditLog.count(),
 };
 console.log(JSON.stringify(tablas, null, 2));
-console.log(Object.keys(tablas).length === 16 ? "OK     16 tablas mapeadas" : "FALLA  faltan tablas");
+console.log(
+  Object.keys(tablas).length === 17
+    ? "OK     16 tablas del modelo mas auditoria (desvio D-12 de US-7.5)"
+    : "FALLA  faltan tablas",
+);
 
 if (failures > 0) {
   console.log(`\n${failures} verificacion(es) fallaron.`);

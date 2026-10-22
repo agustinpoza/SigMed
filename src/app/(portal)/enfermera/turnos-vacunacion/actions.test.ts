@@ -5,13 +5,13 @@ import { createVaccinationAppointment, getAvailableSlots } from "./actions";
 const mocks = vi.hoisted(() => ({
   slots: vi.fn(),
   assign: vi.fn(),
-  actor: vi.fn(),
+  guard: vi.fn(),
   revalidate: vi.fn(),
 }));
 
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidate }));
 vi.mock("@/lib/db", () => ({ prisma: {} }));
-vi.mock("@/lib/actor", () => ({ getCurrentActor: mocks.actor }));
+vi.mock("@/lib/actor-guard", () => ({ requireEnfermeraOAdministrador: mocks.guard }));
 vi.mock("@/lib/vaccination", () => ({
   getFreeSlots: mocks.slots,
   assignVaccinationAppointment: mocks.assign,
@@ -43,7 +43,7 @@ function form(values: Record<string, string> = {}) {
 beforeEach(() => {
   vi.resetAllMocks();
   mocks.slots.mockResolvedValue(available);
-  mocks.actor.mockResolvedValue({ id: "operador-identificado" });
+  mocks.guard.mockResolvedValue({ actor: { id: "operador-identificado" }, context: null });
   mocks.assign.mockResolvedValue({ id: "turno" });
 });
 
@@ -102,15 +102,16 @@ describe("SIG-MEJ-04.2: validación de confirmación", () => {
       vaccineId: data.get("vaccineId"),
       scheduledAt: startsAt,
       actorId: "operador-identificado",
+      audit: null,
     });
     expect(mocks.revalidate).toHaveBeenCalledWith("/enfermera/turnos-vacunacion");
     expect(mocks.revalidate).toHaveBeenCalledWith("/enfermera/inventario");
   });
 
-  it("no asigna sin actor, aunque exista un horario válido", async () => {
-    mocks.actor.mockResolvedValue(null);
+  it("no asigna sin sesión, aunque exista un horario válido", async () => {
+    mocks.guard.mockResolvedValue({ error: "Se requiere iniciar sesión para asignar turnos." });
     const result = await createVaccinationAppointment({}, form({ scheduledAt: startsAt.toISOString() }));
-    expect(result.message).toContain("No hay una sesión activa");
+    expect(result.message).toContain("Se requiere iniciar sesión");
     expect(mocks.assign).not.toHaveBeenCalled();
   });
 

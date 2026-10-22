@@ -35,20 +35,47 @@ reemplazando el `clerk_user_id` provisorio; (3) alta JIT, tomando el rol de
 
 ---
 
-## 2. Desvío consciente: administrador sin herencia de funciones
+## 2. Matriz de permisos: el administrador ejerce otros roles (RF-26 / US-7.5)
 
-**Decisión.** `/medico` y `/paciente` quedan restringidos a sus propios roles. El
-administrador tiene su propia área `/admin` y no accede a las de médico ni
-paciente.
+**Decisión.** RF-26 se implementa con una matriz explícita de permisos por área
+(`src/lib/permissions.ts`), no con un `if` por ruta.
 
-**Desvío documentado.** RF-26 establece que el administrador puede ejercer las
-funciones de médico y de paciente. La implementación actual **no** implementa esa
-herencia. Es una decisión consciente para mantener el control de acceso simple
-durante la primera entrega.
+| Área | Rol que la habilita |
+| :--- | :--- |
+| `/admin` | Administrador (rol **real**) |
+| `/medico` | Médico |
+| `/enfermera` | Enfermera |
+| `/paciente` | Paciente |
 
-**Pendiente.** Si el cliente valida RF-26 contra la aplicación, esto falla. La
-corrección sería una matriz de permisos explícita en la capa de autorización, no
-un `if` suelto por ruta. Anotado en el README para que no se pierda de vista.
+**Modo ejercicio.** El administrador puede ejercer los roles de médico, enfermera
+y paciente desde `/admin`. **No se reencarna**: conserva su identidad y elige el
+contexto de datos (el profesional o el paciente) al que opera. El contexto viaja
+en una cookie firmada (`sigmed_ejercicio`, HMAC-SHA256 con la clave secreta de
+Clerk) y caduca a las 8 horas.
+
+- El rol **efectivo** habilita las áreas de médico, enfermera y paciente; el rol
+  **real** habilita el área de administración. `/admin` siempre se valida con el
+  rol real, así que el administrador vuelve a su panel aunque esté ejerciendo.
+- La cookie **solo se honra si el actor real es administrador** y si la firma
+  sigue siendo válida: ningún otro rol adquiere permisos administrativos
+  (CA2). La verificación es cerrada ante cualquier error.
+- Médico y paciente necesitan un objetivo (el profesional o el paciente
+  elegido), porque sus áreas leen por id de ficha; enfermería no, porque la
+  enfermera es un `user_profile` sin ficha propia.
+- Los guards (`src/lib/actor-guard.ts`) miran el rol efectivo; las funciones
+  propias del administrador (`requireAdministrador`) miran el rol real.
+
+**Auditoría (7.5.3).** La tabla `auditoria` (append-only, con triggers de
+`UPDATE`/`DELETE` rechazados) registra el inicio y el fin del modo ejercicio y
+las escrituras hechas durante él: actor real, rol efectivo, entidad, id de la
+entidad y objetivo. La fila se asienta **en la misma transacción** que la
+escritura de dominio, así que no queda registro de una operación que no ocurrió.
+La auditoría general de RNF-04 sigue fuera de alcance.
+
+**Fuera de alcance.** El médico sigue pudiendo modificar sus propios horarios
+(RF-27) y el área de paciente sigue siendo de consulta: la reserva de turnos por
+parte del paciente (US-4.x) todavía no existe, así que "ejercer como paciente"
+da acceso al historial y a la agenda pública.
 
 ---
 
@@ -61,16 +88,16 @@ un `if` suelto por ruta. Anotado en el README para que no se pierda de vista.
   matcher.
 - `src/app/(portal)/layout.tsx` llama a `auth.protect()`, así que todo el portal
   exige sesión.
-- Cada layout de rol (`enfermera`, `admin`, `medico`, `paciente`) exige su rol con
-  `requireActor(UserRole.X)`, que redirige a `/sign-in` sin sesión o al inicio de
-  su rol si el rol no corresponde.
+- Cada layout de rol (`enfermera`, `admin`, `medico`, `paciente`) exige su área con
+  `requireArea(...)`, que redirige a `/sign-in` sin sesión o al inicio de su rol
+  si el rol no corresponde. `/admin` se valida con el rol real y las demás áreas
+  con el rol efectivo (ver §2).
 - Las Server Actions que escriben siguen resolviendo el actor con
   `requireEnfermeraOAdministrador()`, que ahora **exige sesión** (ya no hay
   fallback).
 
 **Riesgo residual.** El control de rol se hace en los layouts; un recurso nuevo
-debe colgar del layout correcto para heredarlo. La matriz de permisos explícita de
-RF-26 sigue pendiente (ver §2).
+debe colgar del layout correcto para heredarlo.
 
 ---
 

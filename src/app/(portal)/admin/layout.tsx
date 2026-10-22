@@ -1,6 +1,5 @@
 import RoleShell from "../role-shell";
-import { requireActor } from "@/lib/actor";
-import { UserRole } from "@/generated/prisma/enums";
+import { requireArea } from "@/lib/actor";
 
 const items = [
   { href: "/admin", label: "Inicio" },
@@ -9,7 +8,9 @@ const items = [
 ];
 
 export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
-  await requireActor(UserRole.ADMINISTRADOR);
+  // El area de administracion se valida con el rol real: el administrador
+  // siempre vuelve a su panel, incluso mientras ejerce otro rol.
+  await requireArea("admin");
 
   return (
     <RoleShell role="Administrador" items={items}>

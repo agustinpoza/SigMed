@@ -13,6 +13,8 @@ import {
 } from "@/lib/forms";
 import { StockRuleError, createVaccineWithInitialLot } from "@/lib/stock";
 import { requireEnfermeraOAdministrador } from "@/lib/actor-guard";
+import { AuditAction, AuditEntity } from "@/generated/prisma/enums";
+import { buildExerciseAudit, insertAudit } from "@/lib/audit";
 
 export type VaccineFormState = {
   errors?: FieldErrors;
@@ -84,6 +86,12 @@ export async function createVaccine(
     return { message: guard.error, values };
   }
 
+  const audit = buildExerciseAudit(guard.context, {
+    action: AuditAction.CREAR_VACUNA,
+    entity: AuditEntity.VACUNA,
+    details: { nombre: name, lote: lotNumber, cantidad: quantity },
+  });
+
   try {
     await createVaccineWithInitialLot({
       name,
@@ -93,6 +101,7 @@ export async function createVaccine(
       expiresAt,
       quantity,
       actorId: guard.actor.id,
+      audit,
     });
   } catch (error) {
     if (error instanceof StockRuleError) {
@@ -158,10 +167,23 @@ export async function updateVaccine(
     return { errors: { vaccineId: "La vacuna ya no existe." } };
   }
 
+  const audit = buildExerciseAudit(guard.context, {
+    action: AuditAction.ACTUALIZAR_VACUNA,
+    entity: AuditEntity.VACUNA,
+    entityId: vaccine.id,
+    details: { nombre: name },
+  });
+
   try {
-    await prisma.vaccine.update({
-      where: { id: vaccineId },
-      data: { name, laboratory, criticalLevel },
+    await prisma.$transaction(async (tx) => {
+      await tx.vaccine.update({
+        where: { id: vaccineId },
+        data: { name, laboratory, criticalLevel },
+      });
+
+      if (audit) {
+        await insertAudit(tx, audit);
+      }
     });
   } catch (error) {
     if (isUniqueViolation(error)) {

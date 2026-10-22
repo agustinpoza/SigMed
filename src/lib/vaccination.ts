@@ -5,6 +5,7 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { isTransactionConflict, prisma } from "@/lib/db";
 import type { FieldErrors } from "@/lib/forms";
+import { insertAudit, type AuditEntry } from "@/lib/audit";
 import {
   MovementType,
   VaccinationAppointmentState,
@@ -230,6 +231,8 @@ export type AssignVaccinationInput = {
   vaccineId: string;
   scheduledAt: Date;
   actorId: string;
+  /** Auditoria opcional del modo ejercicio: se asienta en la misma transaccion. */
+  audit?: AuditEntry | null;
 };
 
 const MAX_ATTEMPTS = 3;
@@ -266,7 +269,7 @@ export async function assignVaccinationAppointment(input: AssignVaccinationInput
 
 async function assignInTx(
   tx: Prisma.TransactionClient,
-  { patientId, vaccineId, scheduledAt, actorId }: AssignVaccinationInput,
+  { patientId, vaccineId, scheduledAt, actorId, audit }: AssignVaccinationInput,
 ) {
   // 0. Serializa asignaciones al mismo horario. No hay indice unico sobre
   //    fecha_hora, asi que sin este lock dos enfermeras podrian tomarlo a la vez.
@@ -356,6 +359,10 @@ async function assignInTx(
     },
   });
 
+  if (audit) {
+    await insertAudit(tx, { ...audit, entityId: appointment.id });
+  }
+
   return appointment;
 }
 
@@ -367,12 +374,15 @@ export type CancelVaccinationInput = {
   appointmentId: string;
   actorId: string;
   reason?: string | null;
+  /** Auditoria opcional del modo ejercicio: se asienta en la misma transaccion. */
+  audit?: AuditEntry | null;
 };
 
 export async function cancelVaccinationAppointment({
   appointmentId,
   actorId,
   reason = null,
+  audit,
 }: CancelVaccinationInput) {
   await prisma.$transaction(async (tx) => {
     const appointment = await tx.vaccinationAppointment.findUnique({
@@ -413,6 +423,10 @@ export async function cancelVaccinationAppointment({
           actorId,
         },
       });
+    }
+
+    if (audit) {
+      await insertAudit(tx, { ...audit, entityId: appointmentId });
     }
   });
 }

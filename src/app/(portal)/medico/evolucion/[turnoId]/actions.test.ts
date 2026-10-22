@@ -5,11 +5,21 @@ const mocks = vi.hoisted(() => ({
   guard: vi.fn(),
   turno: vi.fn(),
   create: vi.fn(),
+  auditCreate: vi.fn(),
   revalidate: vi.fn(),
   redirect: vi.fn(),
 }));
 vi.mock("@/lib/db", () => ({
-  prisma: { clinicalRecord: { create: mocks.create } },
+  prisma: {
+    clinicalRecord: { create: mocks.create },
+    auditLog: { create: mocks.auditCreate },
+    // La escritura y su auditoria se asientan en la misma transaccion.
+    $transaction: async (fn: (tx: unknown) => Promise<unknown>) =>
+      fn({
+        clinicalRecord: { create: mocks.create },
+        auditLog: { create: mocks.auditCreate },
+      }),
+  },
   isUniqueViolation: (error: unknown) => (error as { code?: string })?.code === "P2002",
 }));
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidate }));
@@ -34,9 +44,9 @@ function form(overrides: Record<string, string> = {}) {
 
 beforeEach(() => {
   vi.resetAllMocks();
-  mocks.guard.mockResolvedValue({ actor: { id: "medico-1" } });
+  mocks.guard.mockResolvedValue({ actor: { id: "medico-1" }, context: null });
   mocks.turno.mockResolvedValue({ id: TURNO_ID, patientId: PACIENTE_ID, status: "ATENDIDO", clinicalRecord: null });
-  mocks.create.mockResolvedValue({});
+  mocks.create.mockResolvedValue({ id: "registro-1" });
 });
 
 describe("US-5.1: registrar evolución médica", () => {
@@ -115,5 +125,39 @@ describe("US-5.1: registrar evolución médica", () => {
     const result = await registrarEvolucion({}, form());
     expect(result.message).toBe("Este turno ya tiene una evolución registrada.");
     expect(mocks.redirect).not.toHaveBeenCalled();
+  });
+
+  it("US-7.5: sin modo ejercicio no asienta auditoría", async () => {
+    await registrarEvolucion({}, form());
+    expect(mocks.auditCreate).not.toHaveBeenCalled();
+  });
+
+  it("US-7.5: en modo ejercicio asienta la auditoría en la misma transacción", async () => {
+    mocks.guard.mockResolvedValue({
+      actor: { id: "medico-1" },
+      context: {
+        real: { id: "admin-1" },
+        effective: { id: "medico-1" },
+        acting: {
+          role: "MEDICO",
+          targetId: "medico-1",
+          actor: { id: "medico-1" },
+          adminId: "admin-1",
+        },
+      },
+    });
+
+    await registrarEvolucion({}, form());
+
+    expect(mocks.auditCreate).toHaveBeenCalledExactlyOnceWith({
+      data: expect.objectContaining({
+        actorId: "admin-1",
+        effectiveRole: "MEDICO",
+        action: "CREAR_EVOLUCION",
+        entity: "REGISTRO_CLINICO",
+        entityId: "registro-1",
+        targetId: "medico-1",
+      }),
+    });
   });
 });
