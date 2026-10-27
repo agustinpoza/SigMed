@@ -8,7 +8,7 @@ import TablaResumen from "@/app/ui/medico/disponibilidad/tabla-resumen";
 import FranjaHoraria from "@/app/ui/medico/disponibilidad/franja-horaria";
 import { guardarDisponibilidad, obtenerDisponibilidad } from "@/app/(portal)/medico/disponibilidad/actions";
 
-const WEEKDAY_BY_JS_DAY: Weekday[] = [
+const WEEKDAY: Weekday[] = [
     Weekday.DOMINGO,
     Weekday.LUNES,
     Weekday.MARTES,
@@ -26,7 +26,7 @@ export default function DisponibilidadForm() {
     const [mensaje, setMensaje] = useState("");
     const [guardando, setGuardando] = useState(false);
     const [cargando, setCargando] = useState(true);
-    const diasLaborales = [...new Set(fechas.map((fecha) => WEEKDAY_BY_JS_DAY[fecha.getDay()]))];
+    const diasLaborales = [...new Set(fechas.map((fecha) => WEEKDAY[fecha.getDay()]))];
     const error = (horaInicio >= horaFin) ? "La hora de inicio debe ser anterior a la hora de fin." :
                     (diasLaborales.length > 2) ? "Selecciona fechas que correspondan como máximo a dos días distintos de la semana." : "";
     const filas = fechas.map((dia) => ({ dia, horaInicio, horaFin, duracion }));

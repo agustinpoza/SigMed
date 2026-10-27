@@ -1,6 +1,7 @@
+// app/(portal)/medico/agenda/page.tsx
 import { prisma } from "@/lib/db";
 import { getCurrentActor } from "@/lib/actor";
-import HojaTrabajoTable, { DoctorTurnoRow } from "./hoja-trabajo-table";
+import HojaTrabajoTable, { DoctorTurnoRow } from "@/app/ui/medico/agenda/hoja-trabajo-table";
 
 const SPECIALTY_LABELS: Record<string, string> = {
   CLINICO: "Clínica médica",

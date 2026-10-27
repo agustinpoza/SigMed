@@ -1,8 +1,8 @@
+// app/ui/medico/agenda/hoja-trabajo-table.tsx
 "use client";
-
-import React, { useState, useTransition, useRef, useEffect } from "react";
+import { useState, useTransition, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { registrarAsistencia } from "./actions";
+import { registrarAsistencia } from "@/app/(portal)/medico/agenda/actions";
 
 export type DoctorTurnoRow = {
   id: string;

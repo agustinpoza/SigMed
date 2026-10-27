@@ -47,7 +47,7 @@ export default async function PortalLayout({ children }: LayoutProps<"/">) {
         <EjercicioBanner rol={ROLE_LABELS[acting.role]} contexto={contexto} />
       ) : null}
 
-      <main className="mx-auto w-full min-w-0 bg-gray-300 max-w-6xl flex-1 px-3 py-8 sm:px-6">{children}</main>
+      <main className="mx-auto w-full min-w-0 bg-slate-300 max-w-6xl flex-1 px-3 py-8 sm:px-6">{children}</main>
 
       <Footer />
     </div>

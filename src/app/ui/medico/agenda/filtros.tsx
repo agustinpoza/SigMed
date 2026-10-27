@@ -1,4 +1,4 @@
-// app/ui/medico/agenda/filtros.tsx
+// app/(portal)/medico/agenda/filtros.tsx
 'use client';
 import { ETIQUETAS_ESTADO } from "@/lib/turnos-estados";
 import { useState } from "react";
@@ -10,7 +10,7 @@ interface FiltrosProps {
     fecha: string;
 }
 
-const ESTADOS_FILTRO: AppointmentState[] = [ "RESERVADO", "CONFIRMADO", "AUSENTE", "ATENDIDO" ];
+const ESTADOS_FILTRO: AppointmentState[] = [ "CONFIRMADO", "AUSENTE", "ATENDIDO" ];
 
 const FILTROS = [{ valor: "", texto: "Todos" },
                 ...ESTADOS_FILTRO.map((e) => ({ valor: e, texto: ETIQUETAS_ESTADO[e]}))];

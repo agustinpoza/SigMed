@@ -16,41 +16,41 @@ export default async function EnfermeraPage() {
         </p>
       </div>
       <div className="grid grid-cols-2 gap-2">
-        <section className="flex-col bg-gray-100 rounded-md p-2">
+        <section className="flex-col bg-white rounded-lg p-4">
           <h2 className="text-lg text-black font-semibold">
             Catálogo de vacunas
           </h2>
-          <p className="text-sm text-gray-400 mb-2">
+          <p className="text-sm text-gray-500 mb-4">
             Consulta la gestión del catálogo de vacunas disponibles.
           </p>
           <Link href="/enfermera/vacunas"
-                className="text-gray-500 bg-gray-100 rounded-md border border-gray-400 p-1"
+                className="text-black/75 bg-white rounded-md border border-black/25 p-2"
           >
             Ir a Catálogo de vacunas
           </Link>
         </section>
-        <section className="flex-col bg-gray-100 rounded-md p-2">
+        <section className="flex-col bg-white rounded-lg p-4">
           <h2 className="text-lg text-black font-semibold">
             Turnos de vacunación
           </h2>
-          <p className="text-sm text-gray-400 mb-2">
+          <p className="text-sm text-gray-500 mb-4">
             Consulta el control de los turnos de vacunación registrados.
           </p>
           <Link href="/enfermera/turnos-vacunacion"
-                className="text-gray-500 bg-gray-100 rounded-md border border-gray-400 p-1"
+                className="text-black/75 bg-white rounded-md border border-black/25 p-2"
           >
             Ir a Turnos de vacunación
           </Link>
         </section>
-        <section className="flex-col bg-gray-100 rounded-md p-2">
+        <section className="flex-col bg-white rounded-lg p-4">
           <h2 className="text-lg text-black font-semibold">
             Stock
           </h2>
-          <p className="text-sm text-gray-400 mb-2">
+          <p className="text-sm text-gray-500 mb-4">
             Consulta el control de stock, registro e historial disponible.
           </p>
           <Link href="/enfermera/inventario"
-                className="text-gray-500 bg-gray-100 rounded-md border border-gray-400 p-1"
+                className="text-black/75 bg-white rounded-md border border-black/25 p-2"
           >
             Ir a Stock
           </Link>

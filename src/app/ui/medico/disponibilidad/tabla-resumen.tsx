@@ -27,7 +27,7 @@ export default function TablaResumen({ filas }: TablaResumenProps) {
                         <tr className="text-center text-lg text-slate-500 bg-gray-200">
                             <th className="font-semibold border-r border-gray-400 p-1">Fecha</th>
                             <th className="font-semibold border-r border-gray-400 p-1">Franja horaria</th>
-                            <th className="font-semibold p-1">Duración</th>
+                            <th className="font-semibold p-1">Duración por turno</th>
                         </tr>
                     </thead>
                     <tbody>
