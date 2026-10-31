@@ -55,6 +55,19 @@ export default async function PacientePage() {
             Ir a Mis turnos
           </Link>
         </section>
+        <section className="flex-col bg-white rounded-lg p-4">
+          <h2 className="text-lg text-black font-semibold">
+            Mi cobertura médica
+          </h2>
+          <p className="text-sm text-gray-500 mb-4">
+            Consulta y actualiza la información de tu cobertura médica.
+          </p>
+          <Link href="/paciente/cobertura-medica"
+                className="text-black/75 bg-white rounded-md border border-black/25 p-2"
+          >
+            Ir a Cobertura médica
+          </Link>
+        </section>
       </div>
     </main>
   );
