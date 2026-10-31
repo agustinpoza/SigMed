@@ -2,7 +2,7 @@ import { prisma } from "@/lib/db";
 import { AppointmentState } from "@/generated/prisma/enums";
 import type { ClinicalHistoryEntry } from "@/app/(portal)/paciente/historial/clinical-history-table";
 
-const specialtyNames: Record<string, string> = {
+const specialityNames: Record<string, string> = {
   CLINICO: "Clínica médica",
   PEDIATRA: "Pediatría",
   TRAUMATOLOGO: "Traumatología",
@@ -54,7 +54,7 @@ export async function obtenerHistorialPaciente(
           attendanceAt: true,
           doctor: {
             select: {
-              specialty: true,
+              speciality: true,
               profile: { select: { firstName: true, lastName: true } },
             },
           },
@@ -67,7 +67,7 @@ export async function obtenerHistorialPaciente(
     id: record.id,
     date: (record.appointment.attendanceAt ?? record.appointment.startsAt).toISOString(),
     doctor: `${record.appointment.doctor.profile.lastName}, ${record.appointment.doctor.profile.firstName}`,
-    specialty: specialtyNames[record.appointment.doctor.specialty],
+    speciality: specialityNames[record.appointment.doctor.speciality],
     diagnosis: record.diagnosis,
     treatment: record.treatment,
     indications: record.indications,

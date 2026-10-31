@@ -4,10 +4,10 @@ import { afterEach, describe, expect, it } from "vitest";
 import ClinicalHistoryTable, { type ClinicalHistoryEntry } from "./clinical-history-table";
 
 const records: ClinicalHistoryEntry[] = [
-  { id: "respiratoria", date: "2026-10-14T12:00:00Z", doctor: "Gómez, Martín", specialty: "Clínica médica", diagnosis: "Infección respiratoria alta", treatment: "Reposo", indications: "Control en 72 horas" },
-  { id: "dermatitis", date: "2026-10-13T12:00:00Z", doctor: "Pérez, Ana", specialty: "Dermatología", diagnosis: "Dermatitis", treatment: "Crema húmeda", indications: "Aplicar ungüento" },
-  { id: "alergia", date: "2026-10-12T12:00:00Z", doctor: "Muñoz, Lucía", specialty: "Pediatría", diagnosis: "Niño con alergia", treatment: null, indications: "Evitar exposición" },
-  { id: "localizada", date: "2026-10-11T12:00:00Z", doctor: "Ferrer, Álvaro", specialty: "Traumatología", diagnosis: "Infeccio\u0301n localizada", treatment: null, indications: null },
+  { id: "respiratoria", date: "2026-10-14T12:00:00Z", doctor: "Gómez, Martín", speciality: "Clínica médica", diagnosis: "Infección respiratoria alta", treatment: "Reposo", indications: "Control en 72 horas" },
+  { id: "dermatitis", date: "2026-10-13T12:00:00Z", doctor: "Pérez, Ana", speciality: "Dermatología", diagnosis: "Dermatitis", treatment: "Crema húmeda", indications: "Aplicar ungüento" },
+  { id: "alergia", date: "2026-10-12T12:00:00Z", doctor: "Muñoz, Lucía", speciality: "Pediatría", diagnosis: "Niño con alergia", treatment: null, indications: "Evitar exposición" },
+  { id: "localizada", date: "2026-10-11T12:00:00Z", doctor: "Ferrer, Álvaro", speciality: "Traumatología", diagnosis: "Infeccio\u0301n localizada", treatment: null, indications: null },
 ];
 const infections = [records[0].diagnosis, records[3].diagnosis];
 
