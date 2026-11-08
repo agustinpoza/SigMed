@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useTransition } from "react";
-import { confirmarTurno, cancelarTurnoPaciente } from "@/app/(portal)/paciente/turnos/actions";
+import { cancelarTurnoPaciente } from "@/app/(portal)/paciente/turnos/actions";
 
 export type MyAppointment = {
   id: string;
@@ -24,30 +24,6 @@ export default function MisTurnosClient({
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const handleConfirmar = (id: string) => {
-    setErrorMsg(null);
-    setSuccessMsg(null);
-    setPendingId(id);
-
-    startTransition(async () => {
-      try {
-        const formData = new FormData();
-        formData.set("appointmentId", id);
-        await confirmarTurno(formData);
-
-        // Actualizar en tiempo real el badge a Confirmado y reemplazar botón
-        setTurnos((prev) =>
-          prev.map((t) => (t.id === id ? { ...t, status: "CONFIRMADO" } : t))
-        );
-        setSuccessMsg("¡Turno confirmado con éxito! Tu asistencia ha sido registrada en el sistema.");
-      } catch (err: any) {
-        setErrorMsg(err.message || "No se pudo confirmar el turno.");
-      } finally {
-        setPendingId(null);
-      }
-    });
-  };
-
   const handleDarseDeBaja = (id: string) => {
     if (!window.confirm("¿Estás seguro de que deseas darte de baja de este turno? La reserva será eliminada definitivamente.")) {
       return;
@@ -64,8 +40,8 @@ export default function MisTurnosClient({
 
         setTurnos((prev) => prev.filter((t) => t.id !== id));
         setSuccessMsg("Te has dado de baja del turno correctamente. El turno ha sido eliminado.");
-      } catch (err: any) {
-        setErrorMsg(err.message || "No se pudo dar de baja el turno.");
+      } catch (err) {
+        setErrorMsg(err instanceof Error ? err.message : "No se pudo dar de baja el turno.");
       } finally {
         setPendingId(null);
       }
@@ -165,29 +141,17 @@ export default function MisTurnosClient({
                         )}
                       </td>
                       <td className="px-6 py-4 text-right">
-                        {isReservado ? (
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              type="button"
-                              onClick={() => handleConfirmar(t.id)}
-                              disabled={isPending && (pendingId === t.id || pendingId === `${t.id}-baja`)}
-                              className="inline-flex items-center rounded-md bg-zinc-900 px-3.5 py-1.5 text-xs font-semibold text-white shadow hover:bg-zinc-800 disabled:opacity-50 transition cursor-pointer"
-                            >
-                              {isPending && pendingId === t.id
-                                ? "Confirmando..."
-                                : "Confirmar asistencia"}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDarseDeBaja(t.id)}
-                              disabled={isPending && (pendingId === t.id || pendingId === `${t.id}-baja`)}
-                              className="inline-flex items-center rounded-md border border-red-300 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 shadow-xs hover:bg-red-100 disabled:opacity-50 transition cursor-pointer"
-                            >
-                              {isPending && pendingId === `${t.id}-baja`
-                                ? "Cancelando..."
-                                : "Darse de baja"}
-                            </button>
-                          </div>
+                        {isReservado || isConfirmado ? (
+                          <button
+                            type="button"
+                            onClick={() => handleDarseDeBaja(t.id)}
+                            disabled={isPending && pendingId === `${t.id}-baja`}
+                            className="inline-flex items-center rounded-md border border-red-300 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 shadow-xs hover:bg-red-100 disabled:opacity-50 transition cursor-pointer"
+                          >
+                            {isPending && pendingId === `${t.id}-baja`
+                              ? "Cancelando..."
+                              : "Darse de baja"}
+                          </button>
                         ) : (
                           <button
                             type="button"
@@ -217,7 +181,7 @@ export default function MisTurnosClient({
             <circle cx="12" cy="12" r="10" strokeWidth="2" />
             <path strokeWidth="2" strokeLinecap="round" d="M12 16v-4m0-4h.01" />
           </svg>
-          <span>Los turnos reservados pueden confirmarse para asegurar la asistencia.</span>
+          <span>Los turnos quedan confirmados automáticamente al reservarlos. Si no vas a asistir, podés darte de baja.</span>
         </div>
       </div>
 

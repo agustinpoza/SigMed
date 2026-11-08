@@ -205,7 +205,7 @@ La especificación no define una tabla de auditoría de operaciones (la de RNF-0
 | `id_medico` | Entero | FK → medico | No nulo | | Médico asignado |
 | `fecha_hora_inicio` | FechaHora | | No nulo | Debe coincidir con `horario_atencion` y no colisionar con `bloqueo_agenda` | Inicio del turno |
 | `fecha_hora_fin` | FechaHora | | No nulo | `fecha_hora_inicio + duracion_consulta` | Fin calculado del turno |
-| `estado` | Texto | | No nulo | `reservado`, `cancelado`, `atendido`, `ausente` | Ciclo de vida del turno |
+| `estado` | Texto | | No nulo | `confirmado`, `reservado`, `cancelado`, `atendido`, `ausente` | Ciclo de vida del turno (nace `confirmado` al reservar) |
 | `id_usuario_reserva` | Entero | FK → usuario | No nulo | Rol `paciente` o `administrador` | Creador de la reserva |
 | `fecha_reserva` | FechaHora | | No nulo | | Timestamp de reserva |
 | `id_usuario_cancelacion` | Entero | FK → usuario | Nulo | No nulo si `estado == 'cancelado'` | Responsable de la baja |
@@ -418,7 +418,7 @@ La especificación no define una tabla de auditoría de operaciones (la de RNF-0
 
 ### Turno Médico (`turno.estado`)
 ```text
-[Inicio] ──(Reserva)──> reservado
+[Inicio] ──(Reserva)──> confirmado
                            │
        ┌───────────────────┼───────────────────┐
        ▼                   ▼                   ▼
@@ -427,3 +427,8 @@ La especificación no define una tabla de auditoría de operaciones (la de RNF-0
                            │
                            ▼
                  [Habilita registro_clinico]
+```
+
+> **Nota:** el turno nace directamente en `confirmado` al reservarse (SIG-MEJ-05).
+> El estado `reservado` se conserva para turnos heredados y puede transicionar a
+> `confirmado`, `cancelado`, `atendido` o `ausente`.

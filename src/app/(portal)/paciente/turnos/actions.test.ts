@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { confirmarTurno, reservarTurno, cancelarTurnoPaciente } from "./actions";
+import { reservarTurno, cancelarTurnoPaciente } from "./actions";
 import { AppointmentState, Specialty } from "@/generated/prisma/client";
 import { eliminarTurnosVencidos } from "@/lib/turnos";
 
@@ -60,46 +60,6 @@ beforeEach(() => {
   mocks.createAppointment.mockResolvedValue({ id: APPOINTMENT_ID });
   mocks.updateMany.mockResolvedValue({ count: 1 });
   mocks.deleteMany.mockResolvedValue({ count: 1 });
-});
-
-describe("US 2.2: Confirmación del Turno (RF-06)", () => {
-  it("CA1: cambia el estado del turno a CONFIRMADO y revalida la ruta", async () => {
-    const res = await confirmarTurno(formData());
-    expect(res).toEqual({ success: true });
-    expect(mocks.updateMany).toHaveBeenCalledWith({
-      where: {
-        id: APPOINTMENT_ID,
-        patientId: PACIENTE_ID,
-        status: AppointmentState.RESERVADO,
-      },
-      data: {
-        status: AppointmentState.CONFIRMADO,
-      },
-    });
-    expect(mocks.revalidate).toHaveBeenCalledWith("/paciente/turnos");
-  });
-
-  it("CA2: previene confirmaciones sobre turnos ajenos o no disponibles (count === 0)", async () => {
-    mocks.updateMany.mockResolvedValue({ count: 0 });
-    await expect(confirmarTurno(formData())).rejects.toThrow(
-      "El turno no se encuentra disponible o pertenece a otro usuario."
-    );
-  });
-
-  it("rechaza si no hay usuario autenticado", async () => {
-    mocks.actor.mockResolvedValue(null);
-    await expect(confirmarTurno(formData())).rejects.toThrow("No autorizado.");
-  });
-
-  it("rechaza si no se envía appointmentId", async () => {
-    const emptyFd = new FormData();
-    await expect(confirmarTurno(emptyFd)).rejects.toThrow("Identificador de turno inválido.");
-  });
-
-  it("rechaza si el usuario no tiene perfil de paciente", async () => {
-    mocks.findPatient.mockResolvedValue(null);
-    await expect(confirmarTurno(formData())).rejects.toThrow("Solo los pacientes pueden confirmar reservas.");
-  });
 });
 
 describe("Cancelación / Baja del Turno por Paciente", () => {
@@ -164,7 +124,7 @@ describe("Reserva de Turnos: Validación de turnos vencidos y no re-selección",
       data: expect.objectContaining({
         patientId: PACIENTE_ID,
         doctorId: DOCTOR_ID,
-        status: AppointmentState.RESERVADO,
+        status: AppointmentState.CONFIRMADO,
       }),
     });
   });

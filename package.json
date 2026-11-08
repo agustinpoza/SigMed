@@ -21,6 +21,7 @@
     "test:vaccination-form": "vitest run \"src/app/(portal)/enfermera/turnos-vacunacion\"",
     "test:stock-form": "vitest run \"src/app/(portal)/enfermera/inventario\"",
     "test:history": "vitest run \"src/app/(portal)/paciente/historial\"",
+    "test:sigmej05": "vitest run \"src/app/(portal)/paciente/turnos\" && vitest run --config vitest.integration.config.ts tests/integration/sig-mej-05.test.tsx",
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "test": "vitest run"
   },

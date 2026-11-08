@@ -58,7 +58,7 @@ export default async function MisTurnosPage() {
       })
     : [];
 
-  let listTurnos: MyAppointment[] = turnosDB.map((t) => {
+  const listTurnos: MyAppointment[] = turnosDB.map((t) => {
     const d = new Date(t.startsAt);
     const day = String(d.getDate()).padStart(2, "0");
     const month = String(d.getMonth() + 1).padStart(2, "0");
@@ -93,7 +93,7 @@ export default async function MisTurnosPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-zinc-900">Mis turnos</h1>
         <p className="text-sm text-zinc-500">
-          Consultá tus turnos reservados y confirmá tu asistencia.
+          Consultá tus turnos reservados y gestioná tu asistencia.
         </p>
       </div>
 

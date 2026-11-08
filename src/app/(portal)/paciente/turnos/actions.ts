@@ -1,6 +1,5 @@
 'use server';
 
-import crypto from 'node:crypto';
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/db';
 import { getCurrentActor } from '@/lib/actor';
@@ -15,6 +14,15 @@ const SPECIALTY_LABELS: Record<string, string> = {
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+type RecentTurnoEntry = {
+  id: string;
+  doctorName: string;
+  doctorLicense: string;
+  specialty: string;
+  dateTime: string;
+  status: AppointmentState;
+};
+
 async function getSafeCookieStore() {
   try {
     const { cookies } = await import('next/headers');
@@ -22,70 +30,6 @@ async function getSafeCookieStore() {
   } catch {
     return null;
   }
-}
-
-export async function confirmarTurno(formData: FormData) {
-  const actor = await getCurrentActor();
-  if (!actor) throw new Error('No autorizado.');
-
-  const appointmentId = formData.get('appointmentId') as string;
-  if (!appointmentId) throw new Error('Identificador de turno inválido.');
-
-  // Obtener perfil del paciente
-  const paciente = await prisma.patient.findUnique({
-    where: { id: actor.id },
-  });
-
-  if (!paciente) {
-    throw new Error('Solo los pacientes pueden confirmar reservas.');
-  }
-
-  // Si el turno está en la cookie de recientes, actualizar su estado
-  const cookieStore = await getSafeCookieStore();
-  let updatedInCookie = false;
-  if (cookieStore) {
-    try {
-      const recentCookie = cookieStore.get('sigmed_recent_turnos')?.value;
-      if (recentCookie) {
-        let list = JSON.parse(recentCookie);
-        list = list.map((item: any) => {
-          if (item.id === appointmentId) {
-            updatedInCookie = true;
-            return { ...item, status: AppointmentState.CONFIRMADO };
-          }
-          return item;
-        });
-        if (updatedInCookie) {
-          cookieStore.set('sigmed_recent_turnos', JSON.stringify(list), {
-            path: '/',
-            maxAge: 86400 * 7,
-          });
-        }
-      }
-    } catch {}
-  }
-
-  // Solo invocar la base de datos si appointmentId es un UUID válido de PostgreSQL
-  if (UUID_REGEX.test(appointmentId)) {
-    const updated = await prisma.appointment.updateMany({
-      where: {
-        id: appointmentId,
-        patientId: paciente.id,
-        status: AppointmentState.RESERVADO,
-      },
-      data: {
-        status: AppointmentState.CONFIRMADO,
-      },
-    });
-
-    if (updated.count === 0 && !updatedInCookie) {
-      throw new Error('El turno no se encuentra disponible o pertenece a otro usuario.');
-    }
-  }
-
-  revalidatePath('/paciente/turnos');
-  revalidatePath('/paciente/mis-turnos');
-  return { success: true };
 }
 
 export async function cancelarTurnoPaciente(formData: FormData) {
@@ -110,9 +54,9 @@ export async function cancelarTurnoPaciente(formData: FormData) {
     try {
       const recentCookie = cookieStore.get('sigmed_recent_turnos')?.value;
       if (recentCookie) {
-        let list = JSON.parse(recentCookie);
+        let list = JSON.parse(recentCookie) as RecentTurnoEntry[];
         const prevLength = list.length;
-        list = list.filter((item: any) => item.id !== appointmentId);
+        list = list.filter((item) => item.id !== appointmentId);
         if (list.length < prevLength) {
           removedFromCookie = true;
           cookieStore.set('sigmed_recent_turnos', JSON.stringify(list), {
@@ -210,7 +154,7 @@ export async function reservarTurno(formData: FormData) {
       doctorId,
       startsAt,
       endsAt,
-      status: AppointmentState.RESERVADO,
+      status: AppointmentState.CONFIRMADO,
       reservedById: actor.id,
     },
   });
@@ -228,15 +172,15 @@ export async function reservarTurno(formData: FormData) {
   if (cookieStore) {
     try {
       const existingCookie = cookieStore.get('sigmed_recent_turnos')?.value;
-      let recentList: any[] = [];
-      if (existingCookie) recentList = JSON.parse(existingCookie);
+      let recentList: RecentTurnoEntry[] = [];
+      if (existingCookie) recentList = JSON.parse(existingCookie) as RecentTurnoEntry[];
       const newEntry = {
         id: created.id,
         doctorName: docName,
         doctorLicense: docLicense,
         specialty: specName,
         dateTime: formattedDateTime,
-        status: AppointmentState.RESERVADO,
+        status: AppointmentState.CONFIRMADO,
       };
       recentList = [newEntry, ...recentList.filter((item) => item.id !== created.id)];
       cookieStore.set('sigmed_recent_turnos', JSON.stringify(recentList), {
