@@ -1,6 +1,5 @@
-import { prisma } from '@/lib/db';
-import { Invoice, InvoiceStatus } from '@/generated/prisma/client';
-import { Prisma } from '@prisma/client';
+import { prisma } from "@/lib/db";
+import type { Invoice, Prisma } from "@/generated/prisma/client";
 
 export type InvoiceFilter = {
   page?: number;

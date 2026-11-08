@@ -1,31 +1,40 @@
-import { NextResponse } from 'next/server';
-import { getAuth } from '@clerk/nextjs/server';
-import { getInvoiceFile } from '@/services/invoiceService';
-import { createReadStream } from 'fs';
-import { join } from 'path';
+import { NextResponse } from "next/server";
+import { promises as fs } from "fs";
+import { basename, join } from "path";
+import { getCurrentActor } from "@/lib/actor";
+import { getInvoiceFile } from "@/services/invoiceService";
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
-  const { userId } = getAuth(request);
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const actor = await getCurrentActor();
+  if (!actor || actor.role !== "PACIENTE") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const invoiceId = params.id;
-  const filePath = await getInvoiceFile(userId, invoiceId);
+
+  const { id: invoiceId } = await params;
+  const filePath = await getInvoiceFile(actor.id, invoiceId);
   if (!filePath) {
-    // Either not found or not owned
-    return NextResponse.json({ error: 'Not found or access denied' }, { status: 404 });
+    return NextResponse.json({ error: "Not found or access denied" }, { status: 404 });
   }
-  // Resolve file within public/invoices directory
-  const absolutePath = join(process.cwd(), 'public', 'invoices', filePath);
+
+  const safeName = basename(filePath);
+  if (!safeName || safeName !== filePath) {
+    return NextResponse.json({ error: "Not found or access denied" }, { status: 404 });
+  }
+
+  const absolutePath = join(process.cwd(), "public", "invoices", safeName);
   try {
-    const stream = createReadStream(absolutePath);
-    const response = new NextResponse(stream);
-    // Set headers for download
-    response.headers.set('Content-Type', 'application/pdf');
-    response.headers.set('Content-Disposition', `attachment; filename="${filePath}"`);
-    return response;
+    const file = await fs.readFile(absolutePath);
+    return new NextResponse(file, {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="${safeName}"`,
+      },
+    });
   } catch (e) {
-    console.error('[download invoice] error', e);
-    return NextResponse.json({ error: 'File not found' }, { status: 404 });
+    console.error("[download invoice] error", e);
+    return NextResponse.json({ error: "File not found" }, { status: 404 });
   }
 }
