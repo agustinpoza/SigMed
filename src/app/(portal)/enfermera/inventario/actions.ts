@@ -173,6 +173,7 @@ export async function createStockMovement(
   }
 
   revalidatePath("/enfermera/inventario");
+  revalidatePath("/enfermera/umbral-critico");
 
   return {
     message:

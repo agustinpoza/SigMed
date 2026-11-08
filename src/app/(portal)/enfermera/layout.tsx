@@ -5,6 +5,7 @@ const items = [
   { href: "/enfermera", label: "Inicio" },
   { href: "/enfermera/vacunas", label: "Catálogo de vacunas" },
   { href: "/enfermera/inventario", label: "Stock" },
+  { href: "/enfermera/umbral-critico", label: "Umbral crítico" },
   { href: "/enfermera/turnos-vacunacion", label: "Turnos de vacunación" },
 ];
 
