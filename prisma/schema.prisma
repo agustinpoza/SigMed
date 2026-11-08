@@ -1,17 +1,321 @@
 generator client {
-  provider     = "prisma-client"
-  output       = "../src/generated/prisma"
-  runtime      = "nodejs"
-  moduleFormat = "esm"
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["partialIndexes"]
+  moduleFormat    = "esm"
+  runtime         = "nodejs"
 }
 
 datasource db {
   provider = "postgresql"
 }
 
-// Los nombres físicos de tablas, columnas y valores de enum replican
-// docs/BD.md. Los campos de Prisma quedan en inglés. Ver la sección
-// "Desvíos de implementación" de ese mismo documento.
+model UserProfile {
+  id                     String                   @id @default(uuid()) @db.Uuid
+  firstName              String                   @map("nombre")
+  lastName               String                   @map("apellido")
+  dni                    String                   @unique
+  email                  String                   @unique
+  role                   UserRole                 @map("rol")
+  registeredAt           DateTime                 @default(now()) @map("fecha_alta") @db.Timestamptz(3)
+  clerkUserId            String                   @unique @map("clerk_user_id")
+  auditLogs              AuditLog[]               @relation("auditoria_usuario")
+  blocksRegistered       ScheduleBlock[]          @relation("bloqueo_registrado_por")
+  scheduleModifications  DoctorSchedule[]         @relation("horario_modificado_por")
+  vaccinationSlots       VaccinationSchedule[]    @relation("vacunacion_registrado_por")
+  lotsRegistered         VaccineLot[]             @relation("lote_registrado_por")
+  doctor                 Doctor?
+  stockMovements         StockMovement[]          @relation("movimiento_usuario")
+  patient                Patient?
+  paymentsRegistered     Payment[]                @relation("pago_registrado_por")
+  appointmentsCancelled  Appointment[]            @relation("turno_cancelado_por")
+  appointmentsReserved   Appointment[]            @relation("turno_reservado_por")
+  vaccinationsApplied    VaccinationAppointment[] @relation("vacunacion_aplicacion")
+  vaccinationsRegistered VaccinationAppointment[] @relation("vacunacion_registro")
+  vaccinationsResolved   VaccinationAppointment[] @relation("vacunacion_resolucion")
+  vaccinesCreated        Vaccine[]                @relation("vacuna_alta")
+
+  @@map("usuario")
+}
+
+model InsuranceProvider {
+  id       String    @id @default(uuid()) @map("id_obra_social") @db.Uuid
+  name     String    @unique @map("nombre")
+  accepted Boolean   @map("aceptada")
+  patients Patient[]
+
+  @@map("obra_social")
+}
+
+model Patient {
+  id             String                   @id @default(uuid()) @map("id_usuario") @db.Uuid
+  insuranceId    String?                  @map("id_obra_social") @db.Uuid
+  memberNumber   String?                  @map("numero_afiliado")
+  plan           String?
+  coverageStatus CoverageStatus?          @map("estado_cobertura")
+  invoices       Invoice[]                @relation("PatientInvoices")
+  insurance      InsuranceProvider?       @relation(fields: [insuranceId], references: [id])
+  profile        UserProfile              @relation(fields: [id], references: [id], onDelete: Cascade)
+  appointments   Appointment[]
+  vaccinations   VaccinationAppointment[]
+
+  @@index([insuranceId])
+  @@map("paciente")
+}
+
+model Doctor {
+  id              String           @id @default(uuid()) @map("id_usuario") @db.Uuid
+  licenseNumber   String           @unique @map("matricula")
+  specialty       Specialty        @unique @map("especialidad")
+  consultDuration Int              @map("duracion_consulta")
+  consultFee      Decimal          @map("valor_consulta") @db.Decimal(12, 2)
+  blocks          ScheduleBlock[]
+  schedules       DoctorSchedule[]
+  profile         UserProfile      @relation(fields: [id], references: [id], onDelete: Cascade)
+  appointments    Appointment[]
+
+  @@map("medico")
+}
+
+model DoctorSchedule {
+  id           String       @id @default(uuid()) @map("id_horario") @db.Uuid
+  doctorId     String       @map("id_medico") @db.Uuid
+  weekday      Weekday      @map("dia_semana")
+  startTime    DateTime     @map("hora_inicio") @db.Time(0)
+  endTime      DateTime     @map("hora_fin") @db.Time(0)
+  modifiedById String?      @map("id_usuario_modificacion") @db.Uuid
+  modifiedAt   DateTime?    @map("fecha_modificacion") @db.Timestamptz(3)
+  doctor       Doctor       @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  modifiedBy   UserProfile? @relation("horario_modificado_por", fields: [modifiedById], references: [id])
+
+  @@unique([doctorId, weekday, startTime], map: "horario_atencion_franja_unique")
+  @@index([doctorId])
+  @@map("horario_atencion")
+}
+
+model ScheduleBlock {
+  id             String      @id @default(uuid()) @map("id_bloqueo") @db.Uuid
+  doctorId       String      @map("id_medico") @db.Uuid
+  startsAt       DateTime    @map("fecha_hora_desde") @db.Timestamptz(3)
+  endsAt         DateTime    @map("fecha_hora_hasta") @db.Timestamptz(3)
+  reason         BlockReason @map("motivo")
+  description    String?     @map("descripcion")
+  registeredById String      @map("id_usuario_registro") @db.Uuid
+  registeredAt   DateTime    @default(now()) @map("fecha_registro") @db.Timestamptz(3)
+  doctor         Doctor      @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  registeredBy   UserProfile @relation("bloqueo_registrado_por", fields: [registeredById], references: [id])
+
+  @@index([doctorId, startsAt])
+  @@map("bloqueo_agenda")
+}
+
+model Appointment {
+  id                 String           @id @default(uuid()) @map("id_turno") @db.Uuid
+  patientId          String           @map("id_paciente") @db.Uuid
+  doctorId           String           @map("id_medico") @db.Uuid
+  startsAt           DateTime         @map("fecha_hora_inicio") @db.Timestamptz(3)
+  endsAt             DateTime         @map("fecha_hora_fin") @db.Timestamptz(3)
+  status             AppointmentState @map("estado")
+  reservedById       String           @map("id_usuario_reserva") @db.Uuid
+  reservedAt         DateTime         @default(now()) @map("fecha_reserva") @db.Timestamptz(3)
+  cancelledById      String?          @map("id_usuario_cancelacion") @db.Uuid
+  cancellationReason String?          @map("motivo_cancelacion")
+  cancelledAt        DateTime?        @map("fecha_cancelacion") @db.Timestamptz(3)
+  attendanceAt       DateTime?        @map("fecha_registro_asistencia") @db.Timestamptz(3)
+  payment            Payment?
+  clinicalRecord     ClinicalRecord?
+  doctor             Doctor           @relation(fields: [doctorId], references: [id])
+  patient            Patient          @relation(fields: [patientId], references: [id])
+  cancelledBy        UserProfile?     @relation("turno_cancelado_por", fields: [cancelledById], references: [id], onDelete: Restrict)
+  reservedBy         UserProfile      @relation("turno_reservado_por", fields: [reservedById], references: [id])
+
+  @@index([doctorId, startsAt])
+  @@index([patientId, startsAt])
+  @@index([status, startsAt])
+  @@map("turno")
+}
+
+model Vaccine {
+  id            String                   @id @default(uuid()) @map("id_vacuna") @db.Uuid
+  name          String                   @unique @map("nombre")
+  criticalLevel Int?                     @map("nivel_critico")
+  createdById   String                   @map("id_usuario_alta") @db.Uuid
+  createdAt     DateTime                 @default(now()) @map("fecha_alta") @db.Timestamptz(3)
+  laboratory    String                   @default("Sin especificar") @map("laboratorio")
+  alerts        StockAlert?
+  lots          VaccineLot[]
+  vaccinations  VaccinationAppointment[]
+  createdBy     UserProfile              @relation("vacuna_alta", fields: [createdById], references: [id])
+
+  @@map("vacuna")
+}
+
+model VaccineLot {
+  id                String                   @id @default(uuid()) @map("id_lote") @db.Uuid
+  vaccineId         String                   @map("id_vacuna") @db.Uuid
+  lotNumber         String                   @map("numero_lote")
+  expiresAt         DateTime                 @map("fecha_vencimiento") @db.Date
+  registeredById    String                   @map("id_usuario_registro") @db.Uuid
+  registeredAt      DateTime                 @default(now()) @map("fecha_registro") @db.Timestamptz(3)
+  quantityAvailable Int                      @default(0) @map("quantity_available")
+  registeredBy      UserProfile              @relation("lote_registrado_por", fields: [registeredById], references: [id])
+  vaccine           Vaccine                  @relation(fields: [vaccineId], references: [id])
+  movements         StockMovement[]
+  vaccinations      VaccinationAppointment[]
+
+  @@unique([vaccineId, lotNumber], map: "lote_numero_unique")
+  @@index([vaccineId, expiresAt])
+  @@map("lote")
+}
+
+model StockMovement {
+  id                       String                  @id @default(uuid()) @map("id_movimiento") @db.Uuid
+  lotId                    String                  @map("id_lote") @db.Uuid
+  type                     MovementType            @map("tipo")
+  quantity                 Int                     @map("cantidad")
+  vaccinationAppointmentId String?                 @map("id_turno_vacunacion") @db.Uuid
+  reason                   String?                 @map("motivo")
+  actorId                  String                  @map("id_usuario") @db.Uuid
+  createdAt                DateTime                @default(now()) @map("fecha_hora") @db.Timestamptz(3)
+  lot                      VaccineLot              @relation(fields: [lotId], references: [id])
+  vaccinationAppointment   VaccinationAppointment? @relation(fields: [vaccinationAppointmentId], references: [id], onDelete: Restrict)
+  actor                    UserProfile             @relation("movimiento_usuario", fields: [actorId], references: [id])
+
+  @@index([lotId, createdAt])
+  @@index([actorId])
+  @@map("movimiento_stock")
+}
+
+model StockAlert {
+  id                         String      @id @default(uuid()) @map("id_alerta") @db.Uuid
+  vaccineId                  String      @unique(map: "alerta_stock_activa_unica", where: raw("(estado = 'activa'::estado_alerta)")) @map("id_vacuna") @db.Uuid
+  stockWhenGenerated         Int         @map("stock_al_generarse")
+  criticalLevelWhenGenerated Int         @map("nivel_critico_al_generarse")
+  status                     AlertStatus @map("estado")
+  generatedAt                DateTime    @default(now()) @map("fecha_generacion") @db.Timestamptz(3)
+  resolvedAt                 DateTime?   @map("fecha_resolucion") @db.Timestamptz(3)
+  vaccine                    Vaccine     @relation(fields: [vaccineId], references: [id], onDelete: Cascade)
+
+  @@index([vaccineId, status])
+  @@map("alerta_stock")
+}
+
+model VaccinationSchedule {
+  id             String      @id @default(uuid()) @map("id_horario_vacunacion") @db.Uuid
+  weekday        Weekday     @map("dia_semana")
+  startTime      DateTime    @map("hora_inicio") @db.Time(0)
+  endTime        DateTime    @map("hora_fin") @db.Time(0)
+  slotDuration   Int         @map("duracion_turno")
+  registeredById String      @map("id_usuario_registro") @db.Uuid
+  registeredAt   DateTime    @default(now()) @map("fecha_registro") @db.Timestamptz(3)
+  registeredBy   UserProfile @relation("vacunacion_registrado_por", fields: [registeredById], references: [id])
+
+  @@unique([weekday, startTime], map: "horario_vacunacion_franja_unique")
+  @@map("horario_vacunacion")
+}
+
+model VaccinationAppointment {
+  id                 String                      @id @default(uuid()) @map("id_turno_vacunacion") @db.Uuid
+  patientId          String                      @map("id_paciente") @db.Uuid
+  vaccineId          String                      @map("id_vacuna") @db.Uuid
+  lotId              String?                     @map("id_lote") @db.Uuid
+  scheduledAt        DateTime                    @map("fecha_hora") @db.Timestamptz(3)
+  status             VaccinationAppointmentState @map("estado")
+  registeredById     String                      @map("id_usuario_registro") @db.Uuid
+  requestedAt        DateTime                    @default(now()) @map("fecha_solicitud") @db.Timestamptz(3)
+  resolvedById       String?                     @map("id_usuario_resolucion") @db.Uuid
+  resolvedAt         DateTime?                   @map("fecha_resolucion") @db.Timestamptz(3)
+  rejectionReason    String?                     @map("motivo_rechazo")
+  cancellationReason String?                     @map("motivo_cancelacion")
+  cancelledAt        DateTime?                   @map("fecha_cancelacion") @db.Timestamptz(3)
+  appliedAt          DateTime?                   @map("fecha_aplicacion") @db.Timestamptz(3)
+  appliedById        String?                     @map("id_usuario_aplicacion") @db.Uuid
+  movements          StockMovement[]
+  lot                VaccineLot?                 @relation(fields: [lotId], references: [id], onDelete: Restrict)
+  patient            Patient                     @relation(fields: [patientId], references: [id])
+  appliedBy          UserProfile?                @relation("vacunacion_aplicacion", fields: [appliedById], references: [id], onDelete: Restrict)
+  registeredBy       UserProfile                 @relation("vacunacion_registro", fields: [registeredById], references: [id])
+  resolvedBy         UserProfile?                @relation("vacunacion_resolucion", fields: [resolvedById], references: [id], onDelete: Restrict)
+  vaccine            Vaccine                     @relation(fields: [vaccineId], references: [id])
+
+  @@index([patientId, scheduledAt])
+  @@index([status, scheduledAt])
+  @@map("turno_vacunacion")
+}
+
+model Payment {
+  id              String      @id @default(uuid()) @map("id_pago") @db.Uuid
+  appointmentId   String      @unique @map("id_turno") @db.Uuid
+  amount          Decimal     @map("monto") @db.Decimal(12, 2)
+  paymentMethod   String      @map("medio_pago")
+  transactionCode String?     @map("codigo_transaccion")
+  registeredById  String      @map("id_usuario_registro") @db.Uuid
+  registeredAt    DateTime    @default(now()) @map("fecha_hora") @db.Timestamptz(3)
+  receipt         Receipt?
+  appointment     Appointment @relation(fields: [appointmentId], references: [id])
+  registeredBy    UserProfile @relation("pago_registrado_por", fields: [registeredById], references: [id])
+
+  @@map("pago")
+}
+
+model Receipt {
+  id          String      @id @default(uuid()) @map("id_comprobante") @db.Uuid
+  paymentId   String      @unique @map("id_pago") @db.Uuid
+  number      String      @unique @map("numero")
+  type        ReceiptType @map("tipo")
+  totalAmount Decimal     @map("monto_total") @db.Decimal(12, 2)
+  issuedAt    DateTime    @default(now()) @map("fecha_emision") @db.Timestamptz(3)
+  file        String      @map("archivo")
+  payment     Payment     @relation(fields: [paymentId], references: [id])
+
+  @@map("comprobante")
+}
+
+model ClinicalRecord {
+  id            String      @id @default(uuid()) @map("id_registro") @db.Uuid
+  appointmentId String      @unique @map("id_turno") @db.Uuid
+  diagnosis     String      @map("diagnostico")
+  indications   String?     @map("indicaciones")
+  treatment     String?     @map("tratamiento")
+  recordedAt    DateTime    @default(now()) @map("fecha_registro") @db.Timestamptz(3)
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+
+  @@map("registro_clinico")
+}
+
+model Invoice {
+  id        String        @id @default(uuid()) @map("id_factura") @db.Uuid
+  patientId String        @map("id_paciente") @db.Uuid
+  date      DateTime      @map("fecha") @db.Timestamptz(3)
+  type      String        @map("tipo")
+  number    String        @unique @map("numero")
+  amount    Decimal       @map("monto") @db.Decimal(12, 2)
+  status    InvoiceStatus @map("estado")
+  filePath  String?       @map("ruta_archivo")
+  createdAt DateTime      @default(now()) @map("fecha_alta") @db.Timestamptz(3)
+  updatedAt DateTime?     @map("fecha_actualizacion") @db.Timestamptz(3)
+  patient   Patient       @relation("PatientInvoices", fields: [patientId], references: [id])
+
+  @@index([patientId])
+  @@map("factura")
+}
+
+model AuditLog {
+  id            String       @id @default(uuid()) @map("id_auditoria") @db.Uuid
+  actorId       String       @map("id_usuario") @db.Uuid
+  effectiveRole UserRole     @map("rol_efectivo")
+  action        AuditAction  @map("accion")
+  entity        AuditEntity? @map("entidad")
+  entityId      String?      @map("id_entidad") @db.Uuid
+  targetId      String?      @map("id_objetivo") @db.Uuid
+  details       Json?        @map("detalles")
+  createdAt     DateTime     @default(now()) @map("fecha_hora") @db.Timestamptz(3)
+  actor         UserProfile  @relation("auditoria_usuario", fields: [actorId], references: [id])
+
+  @@index([actorId, createdAt])
+  @@index([entity, entityId])
+  @@map("auditoria")
+}
 
 enum UserRole {
   PACIENTE      @map("paciente")
@@ -61,10 +365,10 @@ enum BlockReason {
 
 enum AppointmentState {
   CONFIRMADO @map("confirmado")
-  RESERVADO @map("reservado")
-  CANCELADO @map("cancelado")
-  ATENDIDO  @map("atendido")
-  AUSENTE   @map("ausente")
+  RESERVADO  @map("reservado")
+  CANCELADO  @map("cancelado")
+  ATENDIDO   @map("atendido")
+  AUSENTE    @map("ausente")
 
   @@map("estado_turno")
 }
@@ -104,342 +408,35 @@ enum ReceiptType {
   @@map("tipo_comprobante")
 }
 
-// US-7.5: el modo ejercicio del administrador queda registrado. Hoy la tabla
-// cubre solo ese alcance; la auditoria general (RNF-04) sigue fuera de alcance.
 enum AuditAction {
-  EJERCER_INICIO             @map("ejercicio_inicio")
-  EJERCER_FIN                @map("ejercicio_fin")
-  CREAR_EVOLUCION            @map("crear_evolucion")
-  GUARDAR_DISPONIBILIDAD     @map("guardar_disponibilidad")
-  CREAR_MOVIMIENTO_STOCK     @map("crear_movimiento_stock")
-  CREAR_VACUNA               @map("crear_vacuna")
-  ACTUALIZAR_VACUNA          @map("actualizar_vacuna")
-  CREAR_TURNO_VACUNACION     @map("crear_turno_vacunacion")
-  CANCELAR_TURNO_VACUNACION  @map("cancelar_turno_vacunacion")
+  EJERCER_INICIO            @map("ejercicio_inicio")
+  EJERCER_FIN               @map("ejercicio_fin")
+  CREAR_EVOLUCION           @map("crear_evolucion")
+  GUARDAR_DISPONIBILIDAD    @map("guardar_disponibilidad")
+  CREAR_MOVIMIENTO_STOCK    @map("crear_movimiento_stock")
+  CREAR_VACUNA              @map("crear_vacuna")
+  ACTUALIZAR_VACUNA         @map("actualizar_vacuna")
+  CREAR_TURNO_VACUNACION    @map("crear_turno_vacunacion")
+  CANCELAR_TURNO_VACUNACION @map("cancelar_turno_vacunacion")
 
   @@map("accion_auditoria")
 }
 
 enum AuditEntity {
-  EJERCICIO          @map("ejercicio")
-  REGISTRO_CLINICO   @map("registro_clinico")
-  HORARIO_ATENCION   @map("horario_atencion")
-  MOVIMIENTO_STOCK   @map("movimiento_stock")
-  VACUNA             @map("vacuna")
-  TURNO_VACUNACION   @map("turno_vacunacion")
+  EJERCICIO        @map("ejercicio")
+  REGISTRO_CLINICO @map("registro_clinico")
+  HORARIO_ATENCION @map("horario_atencion")
+  MOVIMIENTO_STOCK @map("movimiento_stock")
+  VACUNA           @map("vacuna")
+  TURNO_VACUNACION @map("turno_vacunacion")
 
   @@map("entidad_auditoria")
 }
 
-model UserProfile {
-  id          String   @id @default(uuid()) @db.Uuid
-  firstName   String   @map("nombre")
-  lastName    String   @map("apellido")
-  dni         String   @unique
-  email       String   @unique
-  role        UserRole @map("rol")
-  registeredAt DateTime @default(now()) @map("fecha_alta") @db.Timestamptz(3)
-  clerkUserId String   @unique @map("clerk_user_id")
+enum InvoiceStatus {
+  PENDIENTE @map("pendiente")
+  PAGADA    @map("pagada")
+  ANULADA   @map("anulada")
 
-  patient     Patient?
-  doctor      Doctor?
-
-  scheduleModifications DoctorSchedule[] @relation("horario_modificado_por")
-  blocksRegistered      ScheduleBlock[]   @relation("bloqueo_registrado_por")
-  appointmentsReserved  Appointment[]     @relation("turno_reservado_por")
-  appointmentsCancelled Appointment[]     @relation("turno_cancelado_por")
-  vaccinesCreated       Vaccine[]         @relation("vacuna_alta")
-  lotsRegistered        VaccineLot[]      @relation("lote_registrado_por")
-  stockMovements        StockMovement[]   @relation("movimiento_usuario")
-  vaccinationSlots      VaccinationSchedule[] @relation("vacunacion_registrado_por")
-  vaccinationsRegistered VaccinationAppointment[] @relation("vacunacion_registro")
-  vaccinationsResolved   VaccinationAppointment[] @relation("vacunacion_resolucion")
-  vaccinationsApplied    VaccinationAppointment[] @relation("vacunacion_aplicacion")
-  paymentsRegistered Payment[]        @relation("pago_registrado_por")
-
-  auditLogs      AuditLog[] @relation("auditoria_usuario")
-
-  @@map("usuario")
-}
-
-model InsuranceProvider {
-  id       String  @id @default(uuid()) @map("id_obra_social") @db.Uuid
-  name     String  @unique @map("nombre")
-  accepted Boolean @map("aceptada")
-
-  patients Patient[]
-
-  @@map("obra_social")
-}
-
-model Patient {
-  id             String          @id @default(uuid()) @map("id_usuario") @db.Uuid
-  insuranceId    String?         @map("id_obra_social") @db.Uuid
-  memberNumber   String?         @map("numero_afiliado")
-  plan           String?
-  coverageStatus CoverageStatus? @map("estado_cobertura")
-
-  profile       UserProfile          @relation(fields: [id], references: [id], onDelete: Cascade)
-  insurance     InsuranceProvider?   @relation(fields: [insuranceId], references: [id], onDelete: SetNull)
-  appointments  Appointment[]
-  vaccinations  VaccinationAppointment[]
-
-  @@index([insuranceId])
-  @@map("paciente")
-}
-
-model Doctor {
-  id              String    @id @default(uuid()) @map("id_usuario") @db.Uuid
-  licenseNumber   String    @unique @map("matricula")
-  specialty       Specialty @unique @map("especialidad")
-  consultDuration Int       @map("duracion_consulta")
-  consultFee      Decimal   @map("valor_consulta") @db.Decimal(12, 2)
-
-  profile      UserProfile      @relation(fields: [id], references: [id], onDelete: Cascade)
-  schedules    DoctorSchedule[]
-  blocks       ScheduleBlock[]
-  appointments Appointment[]
-
-  @@map("medico")
-}
-
-model DoctorSchedule {
-  id            String    @id @default(uuid()) @map("id_horario") @db.Uuid
-  doctorId      String    @map("id_medico") @db.Uuid
-  weekday       Weekday   @map("dia_semana")
-  startTime     DateTime  @map("hora_inicio") @db.Time(0)
-  endTime       DateTime  @map("hora_fin") @db.Time(0)
-  modifiedById  String?   @map("id_usuario_modificacion") @db.Uuid
-  modifiedAt    DateTime? @map("fecha_modificacion") @db.Timestamptz(3)
-
-  doctor     Doctor       @relation(fields: [doctorId], references: [id], onDelete: Cascade)
-  modifiedBy UserProfile? @relation("horario_modificado_por", fields: [modifiedById], references: [id], onDelete: SetNull)
-
-  @@unique([doctorId, weekday, startTime], map: "horario_atencion_franja_unique")
-  @@index([doctorId])
-  @@map("horario_atencion")
-}
-
-model ScheduleBlock {
-  id             String      @id @default(uuid()) @map("id_bloqueo") @db.Uuid
-  doctorId       String      @map("id_medico") @db.Uuid
-  startsAt       DateTime    @map("fecha_hora_desde") @db.Timestamptz(3)
-  endsAt         DateTime    @map("fecha_hora_hasta") @db.Timestamptz(3)
-  reason         BlockReason @map("motivo")
-  description    String?     @map("descripcion")
-  registeredById String      @map("id_usuario_registro") @db.Uuid
-  registeredAt   DateTime    @default(now()) @map("fecha_registro") @db.Timestamptz(3)
-
-  doctor       Doctor      @relation(fields: [doctorId], references: [id], onDelete: Cascade)
-  registeredBy UserProfile @relation("bloqueo_registrado_por", fields: [registeredById], references: [id], onDelete: Restrict)
-
-  @@index([doctorId, startsAt])
-  @@map("bloqueo_agenda")
-}
-
-model Appointment {
-  id                 String           @id @default(uuid()) @map("id_turno") @db.Uuid
-  patientId          String           @map("id_paciente") @db.Uuid
-  doctorId           String           @map("id_medico") @db.Uuid
-  startsAt           DateTime         @map("fecha_hora_inicio") @db.Timestamptz(3)
-  endsAt             DateTime         @map("fecha_hora_fin") @db.Timestamptz(3)
-  status             AppointmentState @map("estado")
-  reservedById       String           @map("id_usuario_reserva") @db.Uuid
-  reservedAt         DateTime         @default(now()) @map("fecha_reserva") @db.Timestamptz(3)
-  cancelledById      String?          @map("id_usuario_cancelacion") @db.Uuid
-  cancellationReason String?          @map("motivo_cancelacion")
-  cancelledAt        DateTime?        @map("fecha_cancelacion") @db.Timestamptz(3)
-  attendanceAt       DateTime?        @map("fecha_registro_asistencia") @db.Timestamptz(3)
-
-  patient     Patient      @relation(fields: [patientId], references: [id], onDelete: Restrict)
-  doctor      Doctor       @relation(fields: [doctorId], references: [id], onDelete: Restrict)
-  reservedBy  UserProfile  @relation("turno_reservado_por", fields: [reservedById], references: [id], onDelete: Restrict)
-  cancelledBy UserProfile? @relation("turno_cancelado_por", fields: [cancelledById], references: [id], onDelete: Restrict)
-
-  clinicalRecord ClinicalRecord?
-  payment        Payment?
-
-  @@index([doctorId, startsAt])
-  @@index([patientId, startsAt])
-  @@index([status, startsAt])
-  @@map("turno")
-}
-
-model Vaccine {
-  id            String   @id @default(uuid()) @map("id_vacuna") @db.Uuid
-  name          String   @unique @map("nombre")
-  laboratory    String   @default("Sin especificar") @map("laboratorio")
-  criticalLevel Int?     @map("nivel_critico")
-  createdById   String   @map("id_usuario_alta") @db.Uuid
-  createdAt     DateTime @default(now()) @map("fecha_alta") @db.Timestamptz(3)
-
-  createdBy    UserProfile               @relation("vacuna_alta", fields: [createdById], references: [id], onDelete: Restrict)
-  lots         VaccineLot[]
-  alerts       StockAlert[]
-  vaccinations VaccinationAppointment[]
-
-  @@map("vacuna")
-}
-
-model VaccineLot {
-  id                String   @id @default(uuid()) @map("id_lote") @db.Uuid
-  vaccineId         String   @map("id_vacuna") @db.Uuid
-  lotNumber         String   @map("numero_lote")
-  expiresAt         DateTime @map("fecha_vencimiento") @db.Date
-  registeredById    String   @map("id_usuario_registro") @db.Uuid
-  registeredAt      DateTime @default(now()) @map("fecha_registro") @db.Timestamptz(3)
-  quantityAvailable Int      @default(0) @map("quantity_available")
-
-  vaccine      Vaccine      @relation(fields: [vaccineId], references: [id], onDelete: Restrict)
-  registeredBy UserProfile  @relation("lote_registrado_por", fields: [registeredById], references: [id], onDelete: Restrict)
-  movements    StockMovement[]
-  vaccinations VaccinationAppointment[]
-
-  @@unique([vaccineId, lotNumber], map: "lote_numero_unique")
-  @@index([vaccineId, expiresAt])
-  @@map("lote")
-}
-
-model StockMovement {
-  id                      String       @id @default(uuid()) @map("id_movimiento") @db.Uuid
-  lotId                   String       @map("id_lote") @db.Uuid
-  type                    MovementType @map("tipo")
-  quantity                Int          @map("cantidad")
-  vaccinationAppointmentId String?     @map("id_turno_vacunacion") @db.Uuid
-  reason                  String?      @map("motivo")
-  actorId                 String       @map("id_usuario") @db.Uuid
-  createdAt               DateTime     @default(now()) @map("fecha_hora") @db.Timestamptz(3)
-
-  lot                    VaccineLot              @relation(fields: [lotId], references: [id], onDelete: Restrict)
-  actor                  UserProfile             @relation("movimiento_usuario", fields: [actorId], references: [id], onDelete: Restrict)
-  vaccinationAppointment VaccinationAppointment? @relation(fields: [vaccinationAppointmentId], references: [id], onDelete: Restrict)
-
-  @@index([lotId, createdAt])
-  @@index([actorId])
-  @@map("movimiento_stock")
-}
-
-model StockAlert {
-  id                       String      @id @default(uuid()) @map("id_alerta") @db.Uuid
-  vaccineId                String      @map("id_vacuna") @db.Uuid
-  stockWhenGenerated       Int         @map("stock_al_generarse")
-  criticalLevelWhenGenerated Int       @map("nivel_critico_al_generarse")
-  status                   AlertStatus @map("estado")
-  generatedAt              DateTime    @default(now()) @map("fecha_generacion") @db.Timestamptz(3)
-  resolvedAt               DateTime?   @map("fecha_resolucion") @db.Timestamptz(3)
-
-  vaccine Vaccine @relation(fields: [vaccineId], references: [id], onDelete: Cascade)
-
-  @@index([vaccineId, status])
-  @@map("alerta_stock")
-}
-
-model VaccinationSchedule {
-  id             String   @id @default(uuid()) @map("id_horario_vacunacion") @db.Uuid
-  weekday        Weekday  @map("dia_semana")
-  startTime      DateTime @map("hora_inicio") @db.Time(0)
-  endTime        DateTime @map("hora_fin") @db.Time(0)
-  slotDuration   Int      @map("duracion_turno")
-  registeredById String   @map("id_usuario_registro") @db.Uuid
-  registeredAt   DateTime @default(now()) @map("fecha_registro") @db.Timestamptz(3)
-
-  registeredBy UserProfile @relation("vacunacion_registrado_por", fields: [registeredById], references: [id], onDelete: Restrict)
-
-  @@unique([weekday, startTime], map: "horario_vacunacion_franja_unique")
-  @@map("horario_vacunacion")
-}
-
-model VaccinationAppointment {
-  id                 String                        @id @default(uuid()) @map("id_turno_vacunacion") @db.Uuid
-  patientId          String                        @map("id_paciente") @db.Uuid
-  vaccineId          String                        @map("id_vacuna") @db.Uuid
-  lotId              String?                       @map("id_lote") @db.Uuid
-  scheduledAt        DateTime                      @map("fecha_hora") @db.Timestamptz(3)
-  status             VaccinationAppointmentState   @map("estado")
-  registeredById     String                        @map("id_usuario_registro") @db.Uuid
-  requestedAt        DateTime                      @default(now()) @map("fecha_solicitud") @db.Timestamptz(3)
-  resolvedById       String?                       @map("id_usuario_resolucion") @db.Uuid
-  resolvedAt         DateTime?                     @map("fecha_resolucion") @db.Timestamptz(3)
-  rejectionReason    String?                       @map("motivo_rechazo")
-  cancellationReason String?                       @map("motivo_cancelacion")
-  cancelledAt        DateTime?                     @map("fecha_cancelacion") @db.Timestamptz(3)
-  appliedAt          DateTime?                     @map("fecha_aplicacion") @db.Timestamptz(3)
-  appliedById        String?                       @map("id_usuario_aplicacion") @db.Uuid
-
-  patient      Patient      @relation(fields: [patientId], references: [id], onDelete: Restrict)
-  vaccine      Vaccine      @relation(fields: [vaccineId], references: [id], onDelete: Restrict)
-  lot          VaccineLot?  @relation(fields: [lotId], references: [id], onDelete: Restrict)
-  registeredBy UserProfile  @relation("vacunacion_registro", fields: [registeredById], references: [id], onDelete: Restrict)
-  resolvedBy   UserProfile? @relation("vacunacion_resolucion", fields: [resolvedById], references: [id], onDelete: Restrict)
-  appliedBy    UserProfile? @relation("vacunacion_aplicacion", fields: [appliedById], references: [id], onDelete: Restrict)
-
-  movements StockMovement[]
-
-  @@index([patientId, scheduledAt])
-  @@index([status, scheduledAt])
-  @@map("turno_vacunacion")
-}
-
-model Payment {
-  id              String   @id @default(uuid()) @map("id_pago") @db.Uuid
-  appointmentId   String   @unique @map("id_turno") @db.Uuid
-  amount          Decimal  @map("monto") @db.Decimal(12, 2)
-  paymentMethod   String   @map("medio_pago")
-  transactionCode String?  @map("codigo_transaccion")
-  registeredById  String   @map("id_usuario_registro") @db.Uuid
-  registeredAt    DateTime @default(now()) @map("fecha_hora") @db.Timestamptz(3)
-
-  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Restrict)
-  registeredBy UserProfile @relation("pago_registrado_por", fields: [registeredById], references: [id], onDelete: Restrict)
-  receipt      Receipt?
-
-  @@map("pago")
-}
-
-model Receipt {
-  id          String      @id @default(uuid()) @map("id_comprobante") @db.Uuid
-  paymentId   String      @unique @map("id_pago") @db.Uuid
-  number      String      @unique @map("numero")
-  type        ReceiptType @map("tipo")
-  totalAmount Decimal     @map("monto_total") @db.Decimal(12, 2)
-  issuedAt    DateTime    @default(now()) @map("fecha_emision") @db.Timestamptz(3)
-  file        String      @map("archivo")
-
-  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Restrict)
-
-  @@map("comprobante")
-}
-
-model ClinicalRecord {
-  id            String   @id @default(uuid()) @map("id_registro") @db.Uuid
-  appointmentId String   @unique @map("id_turno") @db.Uuid
-  diagnosis     String   @db.Text @map("diagnostico")
-  indications   String?  @db.Text @map("indicaciones")
-  treatment     String?  @db.Text @map("tratamiento")
-  recordedAt    DateTime @default(now()) @map("fecha_registro") @db.Timestamptz(3)
-
-  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Restrict)
-
-  @@map("registro_clinico")
-}
-
-// US-7.5 / RF-26: registro append-only del modo ejercicio del administrador.
-// `id_usuario` es el actor real (el administrador) y `rol_efectivo` el rol que
-// estaba ejerciendo; `id_objetivo` es el medico o el paciente del contexto.
-model AuditLog {
-  id            String       @id @default(uuid()) @map("id_auditoria") @db.Uuid
-  actorId       String       @map("id_usuario") @db.Uuid
-  effectiveRole UserRole     @map("rol_efectivo")
-  action        AuditAction  @map("accion")
-  entity        AuditEntity? @map("entidad")
-  entityId      String?      @map("id_entidad") @db.Uuid
-  targetId      String?      @map("id_objetivo") @db.Uuid
-  details       Json?        @map("detalles")
-  createdAt     DateTime     @default(now()) @map("fecha_hora") @db.Timestamptz(3)
-
-  actor UserProfile @relation("auditoria_usuario", fields: [actorId], references: [id], onDelete: Restrict)
-
-  @@index([actorId, createdAt])
-  @@index([entity, entityId])
-  @@map("auditoria")
+  @@map("estado_factura")
 }
