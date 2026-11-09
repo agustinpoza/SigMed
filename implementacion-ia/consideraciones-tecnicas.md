@@ -297,6 +297,8 @@ compartida y **no** se debe correr `prisma migrate reset` contra ella.
       prioridad actual.
 - [ ] No hay forma de desactivar una vacuna desde la UI, aunque `vaccine.is_active`
       ya exista en el schema. Ver [§11](#11-un-alta-de-vacuna-es-irreversible).
+- [ ] RF-10: la notificación de cancelación está lista, pero falta el flujo que la
+      dispare (la baja actual borra el turno). Ver §14.
 
 ---
 
@@ -314,3 +316,44 @@ compartida y **no** se debe correr `prisma migrate reset` contra ella.
   `StockRuleError` con errores de campo. Las Server Actions se quedan con el
   `FormData`, el actor y la traducción. Así la lógica se puede probar de verdad
   contra la base, en vez de copiar la transacción en un script y probar la copia.
+
+---
+
+## 14. RF-10: notificación de cancelación sin flujo de cancelación
+
+**Decisión (US-2.7).** Se implementó la infraestructura de notificación, pero
+**no** la cancelación de turnos. El disparo queda listo para cuando exista:
+
+- `src/lib/email.ts`: transporte. Usa la API HTTP de Resend con `fetch` (sin
+  agregar dependencias) si hay `RESEND_API_KEY`; si no, escribe el mail en la
+  consola. En producción hace falta un dominio verificado en Resend y
+  `MAIL_FROM`.
+- `src/lib/email-templates.ts`: plantilla pura con fecha/hora en
+  `America/Argentina/Buenos_Aires`, médico, especialidad, motivo y link.
+- `src/lib/app-url.ts`: `APP_URL` → `VERCEL_URL` → `localhost`.
+- `src/lib/appointment-notifications.ts`:
+  `notifyAppointmentCancelled(appointmentId)`. Carga el turno, exige estado
+  `CANCELADO` y envía al email del paciente. **Nunca lanza**: devuelve
+  `{ sent, error/skipped }` y loguea, para que un fallo de mail no rompa la
+  cancelación.
+
+**Por qué no hay outbox.** El envío es directo después del commit, con log si
+falla. Se descartó una tabla `notificacion` con reintentos para no sumar modelo
+y migración en esta fase. Si más adelante hace falta garantizar la entrega, ese
+es el siguiente paso.
+
+**Qué falta para cerrar RF-10 (CA1/CA2).**
+
+1. Reemplazar el borrado de `cancelarTurnoPaciente` por una transición a
+   `CANCELADO` con `cancelledById`, `cancellationReason` y `cancelledAt`, y
+   llamar a `notifyAppointmentCancelled` después del commit.
+2. Exponer la cancelación para médico y administrador (RF-09). El trigger
+   `fn_turno_reglas` ya permite `confirmado → cancelado` y exige motivo para
+   esos roles.
+3. Que `/paciente/turnos` interprete `?reprogramar=<id>` y use
+   `getAvailableDoctorSlots` para mostrar alternativas reales.
+
+**Alcance de la prueba.** `src/lib/*.test.ts` cubre plantilla, transporte
+(consola y Resend con `fetch` mockeado) y el gancho (turno inexistente, turno no
+cancelado, envío exitoso y fallo del transporte). No hay cambios de schema ni
+migraciones.

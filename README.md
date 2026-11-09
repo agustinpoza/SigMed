@@ -54,6 +54,16 @@ NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_..."
 CLERK_SECRET_KEY="sk_test_..."
 ```
 
+El email de cancelacion de turnos (RF-10 / US-2.7) usa variables opcionales:
+
+```bash
+# Sin RESEND_API_KEY el mail se escribe en la consola.
+RESEND_API_KEY="re_..."
+MAIL_FROM="SigMed <turnos@sigmed.example>"
+# Base de los links de reprogramacion; en Vercel se usa VERCEL_URL como fallback.
+APP_URL="http://localhost:3000"
+```
+
 ### 3. Instalar dependencias y crear las tablas
 
 ```bash
@@ -182,9 +192,14 @@ nivel de motor y no de aplicacion.
    | `DATABASE_URL_UNPOOLED` | Direct connection de Neon | `prisma migrate deploy` |
    | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Publishable key de Clerk | Cliente de Clerk |
    | `CLERK_SECRET_KEY` | Secret key de Clerk | Backend de Clerk |
+   | `RESEND_API_KEY` | API key de Resend (opcional) | Envio de emails de RF-10 |
+   | `MAIL_FROM` | Remitente verificado (opcional) | Remitente de los emails |
+   | `APP_URL` | URL publica de la app (opcional) | Links de reprogramacion |
 
-   Marcar `DATABASE_URL`, `DATABASE_URL_UNPOOLED` y `CLERK_SECRET_KEY` como
-   **Sensitive** si el proyecto es publico.
+   Marcar `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `CLERK_SECRET_KEY` y
+   `RESEND_API_KEY` como **Sensitive** si el proyecto es publico. Las tres
+   variables de email son opcionales: sin `RESEND_API_KEY` el mensaje se escribe
+   en la consola.
 3. Build command: `prisma migrate deploy && next build`.
 
 `postinstall` ya corre `prisma generate`, asi que el cliente se compila solo.
@@ -226,8 +241,15 @@ Verificacion post-deploy:
 
 `consultation_fee` (RF-34), obra social (RF-14), la auditoria general de
 operaciones (`audit_log` de RNF-04, distinta de la auditoria del modo ejercicio
-de US-7.5), pagos y facturas (RF-15/16), notificaciones por mail (RF-07/10) y la
-API para la app movil (RNF-05). Se resuelven en sus respectivos sprints.
+de US-7.5), pagos y facturas (RF-15/16) y la API para la app movil (RNF-05). Se
+resuelven en sus respectivos sprints.
+
+RF-10 (US-2.7) tiene la infraestructura de envio y la funcion
+`notifyAppointmentCancelled` listas, pero **todavia no hay un flujo de
+cancelacion que las dispare**: la accion actual del paciente borra el turno en
+vez de cancelarlo. Cuando se implemente la cancelacion (paciente, medico o
+administrador), alcanza con llamar a esa funcion despues de persistir el estado
+`CANCELADO`. RF-07 (recordatorios y confirmaciones) sigue pendiente.
 
 ## Seguridad: exposicion de credencial aceptada
 
