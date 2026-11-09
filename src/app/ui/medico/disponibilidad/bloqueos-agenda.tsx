@@ -1,7 +1,6 @@
 // app/ui/medico/disponibilidad/bloqueos-agenda.tsx
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { DayPicker } from "react-day-picker";
 import { es } from "date-fns/locale";
 import { BlockReason } from "@/generated/prisma/enums";
@@ -36,7 +35,6 @@ function clinicToday(): Date {
 }
 
 export default function BloqueosAgenda({ onConfirmed }: { onConfirmed: () => void }) {
-  const router = useRouter();
   const [abierto, setAbierto] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [diasSeleccionados, setDiasSeleccionados] = useState<Date[]>([]);
@@ -44,6 +42,7 @@ export default function BloqueosAgenda({ onConfirmed }: { onConfirmed: () => voi
   const [motivo, setMotivo] = useState<BlockReason>(BlockReason.FERIADO);
   const [descripcion, setDescripcion] = useState("");
   const [mensaje, setMensaje] = useState("");
+  const [mensajeResultado, setMensajeResultado] = useState("");
   const [cargando, setCargando] = useState(false);
   const [guardando, setGuardando] = useState(false);
 
@@ -92,13 +91,14 @@ export default function BloqueosAgenda({ onConfirmed }: { onConfirmed: () => voi
         motivo,
         descripcion,
       });
-      setMensaje(resultado.message);
 
       if (resultado.status === "success") {
+        setMensajeResultado(resultado.message);
         setDiasSeleccionados([]);
         setAbierto(false);
         onConfirmed();
-        router.refresh();
+      } else {
+        setMensaje(resultado.message);
       }
     } catch (error: unknown) {
       console.error("Error al guardar los días bloqueados:", error);
@@ -116,6 +116,7 @@ export default function BloqueosAgenda({ onConfirmed }: { onConfirmed: () => voi
           if (!abierto) setCargando(true);
           setAbierto((actual) => !actual);
           setMensaje("");
+          setMensajeResultado("");
         }}
         aria-expanded={abierto}
         aria-haspopup="dialog"
@@ -247,6 +248,11 @@ export default function BloqueosAgenda({ onConfirmed }: { onConfirmed: () => voi
           {mensaje && <p role="status" className="mt-2 text-sm text-slate-700">{mensaje}</p>}
         </section>
       </dialog>
+      {mensajeResultado && (
+        <p role="status" className="mt-2 text-sm text-slate-700">
+          {mensajeResultado}
+        </p>
+      )}
     </div>
   );
 }

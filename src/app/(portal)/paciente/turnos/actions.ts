@@ -1,6 +1,5 @@
 'use server';
 
-import crypto from 'node:crypto';
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/db';
 import { getCurrentActor } from '@/lib/actor';
@@ -186,33 +185,49 @@ export async function reservarTurno(formData: FormData) {
   const endsAt = new Date(startsAt.getTime() + duration * 60_000);
 
   // RF: Una vez que se selecciona un turno, este no puede volver a seleccionarse
-  const occupied = await prisma.appointment.findFirst({
-    where: {
-      doctorId,
-      startsAt,
-      status: {
-        in: [
-          AppointmentState.CONFIRMADO,
-          AppointmentState.RESERVADO,
-          AppointmentState.ATENDIDO,
-          AppointmentState.AUSENTE,
-        ],
-      },
-    },
-  });
-  if (occupied) {
-    throw new Error('El turno seleccionado ya fue reservado por otro usuario.');
-  }
+  const created = await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT "id_usuario" FROM "medico" WHERE "id_usuario" = ${doctorId}::uuid FOR UPDATE`;
 
-  const created = await prisma.appointment.create({
-    data: {
-      patientId: paciente.id,
-      doctorId,
-      startsAt,
-      endsAt,
-      status: AppointmentState.RESERVADO,
-      reservedById: actor.id,
-    },
+    const bloqueo = await tx.scheduleBlock.findFirst({
+      where: {
+        doctorId,
+        startsAt: { lt: endsAt },
+        endsAt: { gt: startsAt },
+      },
+      select: { id: true },
+    });
+    if (bloqueo) {
+      throw new Error('El horario fue bloqueado por el profesional. Actualizá la disponibilidad y elegí otro turno.');
+    }
+
+    const occupied = await tx.appointment.findFirst({
+      where: {
+        doctorId,
+        startsAt,
+        status: {
+          in: [
+            AppointmentState.CONFIRMADO,
+            AppointmentState.RESERVADO,
+            AppointmentState.ATENDIDO,
+            AppointmentState.AUSENTE,
+          ],
+        },
+      },
+    });
+    if (occupied) {
+      throw new Error('El turno seleccionado ya fue reservado por otro usuario.');
+    }
+
+    return tx.appointment.create({
+      data: {
+        patientId: paciente.id,
+        doctorId,
+        startsAt,
+        endsAt,
+        status: AppointmentState.RESERVADO,
+        reservedById: actor.id,
+      },
+    });
   });
 
   const datePart = startsAtStr.slice(0, 10);

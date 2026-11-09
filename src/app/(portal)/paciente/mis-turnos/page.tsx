@@ -1,7 +1,6 @@
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
 import { getCurrentActor } from "@/lib/actor";
-import { AppointmentState } from "@/generated/prisma/client";
 import { eliminarTurnosVencidos } from "@/lib/turnos";
 import MisTurnosClient, { MyAppointment } from "./mis-turnos-client";
 
@@ -45,9 +44,6 @@ export default async function MisTurnosPage() {
     ? await prisma.appointment.findMany({
         where: {
           patientId: actor.id,
-          status: {
-            not: AppointmentState.CANCELADO,
-          },
         },
         include: {
           doctor: {
@@ -58,7 +54,7 @@ export default async function MisTurnosPage() {
       })
     : [];
 
-  let listTurnos: MyAppointment[] = turnosDB.map((t) => {
+  const listTurnos: MyAppointment[] = turnosDB.map((t) => {
     const d = new Date(t.startsAt);
     const day = String(d.getDate()).padStart(2, "0");
     const month = String(d.getMonth() + 1).padStart(2, "0");
@@ -76,15 +72,13 @@ export default async function MisTurnosPage() {
       speciality: SPECIALITY_LABELS[t.doctor.speciality] ?? t.doctor.speciality,
       dateTime: `${day}/${month}/${year} - ${time}`,
       status: t.status,
+      cancellationReason: t.cancellationReason ?? undefined,
     };
   });
 
   const finalTurnos: MyAppointment[] = [
     ...recentTurnos.filter((rt) => !listTurnos.some((cl) => cl.id === rt.id)),
-    ...listTurnos.map((cl) => {
-      const match = recentTurnos.find((rt) => rt.id === cl.id);
-      return match ? { ...cl, status: match.status } : cl;
-    }),
+    ...listTurnos,
   ];
 
   return (
@@ -93,7 +87,7 @@ export default async function MisTurnosPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-zinc-900">Mis turnos</h1>
         <p className="text-sm text-zinc-500">
-          Consultá tus turnos reservados y confirmá tu asistencia.
+          Consultá el estado de tus turnos y confirmá tu asistencia cuando corresponda.
         </p>
       </div>
 

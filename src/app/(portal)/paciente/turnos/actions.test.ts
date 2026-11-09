@@ -7,8 +7,11 @@ const mocks = vi.hoisted(() => ({
   actor: vi.fn(),
   findPatient: vi.fn(),
   findDoctor: vi.fn(),
+  findScheduleBlock: vi.fn(),
   findFirstAppointment: vi.fn(),
   createAppointment: vi.fn(),
+  lockDoctor: vi.fn(),
+  transaction: vi.fn(),
   updateMany: vi.fn(),
   deleteMany: vi.fn(),
   revalidate: vi.fn(),
@@ -18,12 +21,14 @@ vi.mock("@/lib/db", () => ({
   prisma: {
     patient: { findUnique: mocks.findPatient },
     doctor: { findUnique: mocks.findDoctor },
+    scheduleBlock: { findFirst: mocks.findScheduleBlock },
     appointment: {
       findFirst: mocks.findFirstAppointment,
       create: mocks.createAppointment,
       updateMany: mocks.updateMany,
       deleteMany: mocks.deleteMany,
     },
+    $transaction: mocks.transaction,
   },
 }));
 
@@ -56,10 +61,21 @@ beforeEach(() => {
     licenseNumber: "MP-12345",
     profile: { firstName: "Juan", lastName: "Pérez" },
   });
+  mocks.findScheduleBlock.mockResolvedValue(null);
   mocks.findFirstAppointment.mockResolvedValue(null);
   mocks.createAppointment.mockResolvedValue({ id: APPOINTMENT_ID });
   mocks.updateMany.mockResolvedValue({ count: 1 });
   mocks.deleteMany.mockResolvedValue({ count: 1 });
+  mocks.transaction.mockImplementation(async (callback) =>
+    callback({
+      $queryRaw: mocks.lockDoctor,
+      scheduleBlock: { findFirst: mocks.findScheduleBlock },
+      appointment: {
+        findFirst: mocks.findFirstAppointment,
+        create: mocks.createAppointment,
+      },
+    })
+  );
 });
 
 describe("US 2.2: Confirmación del Turno (RF-06)", () => {
@@ -148,6 +164,19 @@ describe("Reserva de Turnos: Validación de turnos vencidos y no re-selección",
 
     await expect(reservarTurno(fd)).rejects.toThrow(
       "El turno seleccionado ya fue reservado por otro usuario."
+    );
+    expect(mocks.createAppointment).not.toHaveBeenCalled();
+  });
+
+  it("rechaza la reserva si el horario fue bloqueado después de cargar la agenda", async () => {
+    const futureDate = new Date(Date.now() + 86400000 * 2).toISOString();
+    const fd = new FormData();
+    fd.set("doctorId", DOCTOR_ID);
+    fd.set("startsAt", futureDate);
+    mocks.findScheduleBlock.mockResolvedValue({ id: "block-id" });
+
+    await expect(reservarTurno(fd)).rejects.toThrow(
+      "El horario fue bloqueado por el profesional. Actualizá la disponibilidad y elegí otro turno."
     );
     expect(mocks.createAppointment).not.toHaveBeenCalled();
   });

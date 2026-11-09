@@ -1,7 +1,6 @@
 "use server";
-
 import { revalidatePath } from "next/cache";
-import { BlockReason, UserRole } from "@/generated/prisma/enums";
+import { AppointmentState, BlockReason, UserRole } from "@/generated/prisma/enums";
 import { prisma } from "@/lib/db";
 import { getActorContext } from "@/lib/actor";
 
@@ -135,51 +134,90 @@ export async function guardarBloqueosAgenda(input: unknown): Promise<{
     }
 
     const diasOrdenados = [...data.dias].sort();
-    const inicio = clinicDayStart(diasOrdenados[0]);
-    const fin = clinicDayStart(nextDate(diasOrdenados[diasOrdenados.length - 1]));
-    const existing = await prisma.scheduleBlock.findMany({
-      where: {
-        doctorId: medico.id,
-        startsAt: { lt: fin },
-        endsAt: { gt: inicio },
-      },
-      select: { startsAt: true, endsAt: true },
+    const resultado = await prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT "id_usuario" FROM "medico" WHERE "id_usuario" = ${medico.id}::uuid FOR UPDATE`;
+
+      const inicio = clinicDayStart(diasOrdenados[0]);
+      const fin = clinicDayStart(nextDate(diasOrdenados[diasOrdenados.length - 1]));
+      const existing = await tx.scheduleBlock.findMany({
+        where: {
+          doctorId: medico.id,
+          startsAt: { lt: fin },
+          endsAt: { gt: inicio },
+        },
+        select: { startsAt: true, endsAt: true },
+      });
+
+      const diasNuevos = diasOrdenados.filter((day) => {
+        const dayStart = clinicDayStart(day);
+        const dayEnd = clinicDayStart(nextDate(day));
+        return !existing.some(
+          (block) => block.startsAt < dayEnd && block.endsAt > dayStart,
+        );
+      });
+
+      if (diasNuevos.length === 0) return null;
+
+      const rangosBloqueados = diasNuevos.map((day) => ({
+        startsAt: { lt: clinicDayStart(nextDate(day)) },
+        endsAt: { gt: clinicDayStart(day) },
+      }));
+      const motivoLabel: Record<MotivoBloqueo, string> = {
+        [BlockReason.FERIADO]: "feriado",
+        [BlockReason.LICENCIA]: "licencia",
+        [BlockReason.IMPREVISTO]: "imprevisto",
+      };
+      const motivoCancelacion =
+        `Agenda suspendida por ${motivoLabel[data.motivo as MotivoBloqueo]}` +
+        (descripcion ? `: ${descripcion}` : ".");
+
+      await tx.scheduleBlock.createMany({
+        data: diasNuevos.map((day) => ({
+          doctorId: medico.id,
+          startsAt: clinicDayStart(day),
+          endsAt: clinicDayStart(nextDate(day)),
+          reason: data.motivo as MotivoBloqueo,
+          description: descripcion || null,
+          registeredById: context.real.id,
+        })),
+      });
+
+      const turnosCancelados = await tx.appointment.updateMany({
+        where: {
+          doctorId: medico.id,
+          status: { in: [AppointmentState.RESERVADO, AppointmentState.CONFIRMADO] },
+          OR: rangosBloqueados,
+        },
+        data: {
+          status: AppointmentState.CANCELADO,
+          cancelledById: context.real.id,
+          cancellationReason: motivoCancelacion,
+          cancelledAt: new Date(),
+        },
+      });
+
+      return { diasNuevos, turnosCancelados: turnosCancelados.count };
     });
 
-    const diasNuevos = diasOrdenados.filter((day) => {
-      const dayStart = clinicDayStart(day);
-      const dayEnd = clinicDayStart(nextDate(day));
-      return !existing.some(
-        (block) => block.startsAt < dayEnd && block.endsAt > dayStart,
-      );
-    });
-
-    if (diasNuevos.length === 0) {
+    if (!resultado) {
       return { status: "error", message: "Todos los días seleccionados ya están bloqueados." };
     }
-
-    await prisma.scheduleBlock.createMany({
-      data: diasNuevos.map((day) => ({
-        doctorId: medico.id,
-        startsAt: clinicDayStart(day),
-        endsAt: clinicDayStart(nextDate(day)),
-        reason: data.motivo as MotivoBloqueo,
-        description: descripcion || null,
-        registeredById: context.real.id,
-      })),
-    });
 
     revalidatePath("/medico/disponibilidad");
     revalidatePath("/medico/agenda");
     revalidatePath("/paciente/turnos");
+    revalidatePath("/paciente/mis-turnos");
 
-    const alreadyBlocked = diasOrdenados.length - diasNuevos.length;
-    const resultMessage = `Se bloquearon ${diasNuevos.length} ${diasNuevos.length === 1 ? "día" : "días"}.`;
+    const alreadyBlocked = diasOrdenados.length - resultado.diasNuevos.length;
+    const resultMessage = `Se bloquearon ${resultado.diasNuevos.length} ${resultado.diasNuevos.length === 1 ? "día" : "días"}.`;
+    const cancellationMessage = resultado.turnosCancelados
+      ? ` Se cancelaron ${resultado.turnosCancelados} ${resultado.turnosCancelados === 1 ? "turno" : "turnos"} previamente registrados.`
+      : "";
     return {
       status: "success",
       message: alreadyBlocked
-        ? `${resultMessage} ${alreadyBlocked} ya estaba${alreadyBlocked === 1 ? "" : "n"} bloqueado${alreadyBlocked === 1 ? "" : "s"}.`
-        : resultMessage,
+        ? `${resultMessage} ${alreadyBlocked} ya estaba${alreadyBlocked === 1 ? "" : "n"} bloqueado${alreadyBlocked === 1 ? "" : "s"}.${cancellationMessage}`
+        : `${resultMessage}${cancellationMessage}`,
     };
   } catch (error: unknown) {
     console.error("Error al guardar los bloqueos de agenda:", error);

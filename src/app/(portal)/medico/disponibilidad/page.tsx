@@ -1,12 +1,10 @@
 // app/(portal)/medico/disponibilidad/page.tsx
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import BloqueosAgenda from "@/app/ui/medico/disponibilidad/bloqueos-agenda";
 import DisponibilidadForm from "@/app/ui/medico/disponibilidad/disponibilidad-form";
 
 export default function DisponibilidadPage() {
-    const router = useRouter();
     const [refreshKey, setRefreshKey] = useState(0);
 
     return (
@@ -21,10 +19,7 @@ export default function DisponibilidadPage() {
                     </p>
                 </div>
                 <BloqueosAgenda
-                    onConfirmed={() => {
-                        router.refresh();
-                        setRefreshKey((key) => key + 1);
-                    }}
+                    onConfirmed={() => setRefreshKey((key) => key + 1)}
                 />
             </div>
             <DisponibilidadForm refreshKey={refreshKey} />

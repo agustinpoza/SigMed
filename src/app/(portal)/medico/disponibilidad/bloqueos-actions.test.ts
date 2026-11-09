@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { BlockReason, UserRole } from "@/generated/prisma/enums";
+import { AppointmentState, BlockReason, UserRole } from "@/generated/prisma/enums";
 import { guardarBloqueosAgenda, obtenerDiasBloqueados } from "./bloqueos-actions";
 
 const mocks = vi.hoisted(() => ({
@@ -7,6 +7,9 @@ const mocks = vi.hoisted(() => ({
   findDoctor: vi.fn(),
   findBlocks: vi.fn(),
   createBlocks: vi.fn(),
+  updateAppointments: vi.fn(),
+  lockDoctor: vi.fn(),
+  transaction: vi.fn(),
   revalidate: vi.fn(),
 }));
 
@@ -17,6 +20,8 @@ vi.mock("@/lib/db", () => ({
       findMany: mocks.findBlocks,
       createMany: mocks.createBlocks,
     },
+    appointment: { updateMany: mocks.updateAppointments },
+    $transaction: mocks.transaction,
   },
 }));
 
@@ -41,6 +46,17 @@ beforeEach(() => {
   mocks.findDoctor.mockResolvedValue({ id: DOCTOR_ID });
   mocks.findBlocks.mockResolvedValue([]);
   mocks.createBlocks.mockResolvedValue({ count: 1 });
+  mocks.updateAppointments.mockResolvedValue({ count: 0 });
+  mocks.transaction.mockImplementation(async (callback) =>
+    callback({
+      $queryRaw: mocks.lockDoctor,
+      scheduleBlock: {
+        findMany: mocks.findBlocks,
+        createMany: mocks.createBlocks,
+      },
+      appointment: { updateMany: mocks.updateAppointments },
+    })
+  );
 });
 
 describe("bloqueos de agenda médica", () => {
@@ -64,7 +80,39 @@ describe("bloqueos de agenda médica", () => {
         },
       ],
     });
+    expect(mocks.updateAppointments).toHaveBeenCalledWith({
+      where: {
+        doctorId: DOCTOR_ID,
+        status: { in: [AppointmentState.RESERVADO, AppointmentState.CONFIRMADO] },
+        OR: [
+          {
+            startsAt: { lt: new Date("2099-12-25T00:00:00-03:00") },
+            endsAt: { gt: new Date(`${BLOCKED_DAY}T00:00:00-03:00`) },
+          },
+        ],
+      },
+      data: {
+        status: AppointmentState.CANCELADO,
+        cancelledById: REAL_ACTOR_ID,
+        cancellationReason: "Agenda suspendida por licencia: Licencia programada",
+        cancelledAt: expect.any(Date),
+      },
+    });
     expect(mocks.revalidate).toHaveBeenCalledWith("/paciente/turnos");
+    expect(mocks.revalidate).toHaveBeenCalledWith("/paciente/mis-turnos");
+  });
+
+  it("informa cuántos turnos existentes fueron cancelados por el bloqueo", async () => {
+    mocks.updateAppointments.mockResolvedValue({ count: 2 });
+    const result = await guardarBloqueosAgenda({
+      dias: [BLOCKED_DAY],
+      motivo: BlockReason.FERIADO,
+    });
+
+    expect(result).toEqual({
+      status: "success",
+      message: "Se bloquearon 1 día. Se cancelaron 2 turnos previamente registrados.",
+    });
   });
 
   it("no duplica días que ya tienen un bloqueo", async () => {
