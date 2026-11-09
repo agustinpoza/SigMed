@@ -1,6 +1,8 @@
+// app/ui/paciente/cobertura-form.tsx
 'use client';
 import { useActionState, useEffect, useState } from "react";
 import { savePatientCoverage, type CoverageFormState } from "@/app/(portal)/paciente/cobertura-medica/actions";
+import Swal from "sweetalert2";
 
 interface CoberturaProps{
     idCobertura: string | null;
@@ -14,6 +16,33 @@ export default function CoberturaForm({ idCobertura, nAfiliado, planCobertura, p
     const [plan, setPlan] = useState<string>(planCobertura || "");
     const [numeroAfiliado, setNumeroAfiliado] = useState<string>(nAfiliado || "");
     const [state, formAction, pending] = useActionState<CoverageFormState, FormData>( savePatientCoverage, {}, );
+
+    useEffect(() => {
+        if (!state.success) {
+            void Swal.fire({
+                icon: "error",
+                title: "Ocurrió un error",
+                text: state.message,
+                confirmButtonText: "Aceptar",
+                buttonsStyling: false,
+                customClass: {
+                    confirmButton: "bg-slate-600 text-white rounded-sm p-2 px-3 m-2",
+                }
+            });
+        };
+
+        void Swal.fire({
+            icon: "success",
+            title: "Cobertura registrada",
+            text: state.message,
+            confirmButtonText: "Aceptar",
+            buttonsStyling: false,
+            customClass: {
+                confirmButton: "bg-slate-600 text-white rounded-sm p-2 px-3 m-2",
+            }
+        });
+    }, [state]);
+
     function handleDescartar() {
         setCobertura(idCobertura || "");
         setPlan(planCobertura ||"");
@@ -37,13 +66,14 @@ export default function CoberturaForm({ idCobertura, nAfiliado, planCobertura, p
                             name="insuranceId"
                             value={cobertura}
                             onChange={(e) => setCobertura(e.target.value)}
+                            className="border border-gray-400 text-lg p-1 rounded"
                             required
                             aria-invalid={Boolean(state.errors?.insuranceId)}
                             aria-describedby={state.errors?.insuranceId ? "insuranceId-error" : undefined}
                         >
-                            <option value={""}>Selecciona una cobertura</option>
+                            <option value={""} className="text-gray-600">Selecciona una cobertura</option>
                             {prestadores.map((prestador) => (
-                                <option key={prestador.id} value={prestador.id}>
+                                <option key={prestador.id} value={prestador.id} className="text-gray-600">
                                     {prestador.name}
                                 </option>
                             ))}
@@ -65,7 +95,7 @@ export default function CoberturaForm({ idCobertura, nAfiliado, planCobertura, p
                             type="text"
                             value={plan}
                             onChange={(e) => setPlan(e.target.value)}
-                            className="border border-gray-400 rounded"
+                            className="border border-gray-400 p-1 rounded"
                         />
                     </div>
                 </div>
@@ -80,7 +110,7 @@ export default function CoberturaForm({ idCobertura, nAfiliado, planCobertura, p
                         type="text"
                         value={numeroAfiliado}
                         onChange={(e) => setNumeroAfiliado(e.target.value)}
-                        className="border border-gray-400 rounded"
+                        className="border border-gray-400 p-1 rounded"
                         required
                         aria-invalid={Boolean(state.errors?.memberNumber)}
                         aria-describedby={state.errors?.memberNumber ? "memberNumber-error" : undefined}

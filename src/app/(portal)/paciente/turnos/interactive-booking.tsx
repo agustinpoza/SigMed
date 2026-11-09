@@ -4,6 +4,7 @@ import React, { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Speciality } from "@/generated/prisma/enums";
 import { reservarTurno } from "./actions";
+import Swal from "sweetalert2";
 
 export type DoctorItem = {
   id: string;
@@ -310,6 +311,16 @@ export default function InteractiveBooking({
         formData.set("startsAt", selectedSlot.startsAt);
 
         await reservarTurno(formData);
+        await Swal.fire({
+          icon: "success",
+          title: "Turno solicitado",
+          text: "El turno fue reservado correctamente.",
+          confirmButtonText: "Aceptar",
+          buttonsStyling: false,
+          customClass: {
+            confirmButton: "bg-slate-600 text-white rounded-sm p-2 px-3 m-2",
+          },
+        });
         router.push("/paciente/mis-turnos?reservado=1");
       } catch (err: any) {
         setErrorMsg(err.message || "Ocurrió un error al reservar el turno.");
