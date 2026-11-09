@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { confirmarTurno, reservarTurno, cancelarTurnoPaciente } from "./actions";
-import { AppointmentState, Specialty } from "@/generated/prisma/client";
+import { AppointmentState, Speciality } from "@/generated/prisma/client";
 import { eliminarTurnosVencidos } from "@/lib/turnos";
 
 const mocks = vi.hoisted(() => ({
@@ -52,7 +52,7 @@ beforeEach(() => {
   mocks.findDoctor.mockResolvedValue({
     id: DOCTOR_ID,
     consultDuration: 30,
-    specialty: Specialty.CLINICO,
+    speciality: Speciality.CLINICO,
     licenseNumber: "MP-12345",
     profile: { firstName: "Juan", lastName: "Pérez" },
   });

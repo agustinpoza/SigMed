@@ -1,13 +1,12 @@
 "use client";
-
-import React, { useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { confirmarTurno, cancelarTurnoPaciente } from "@/app/(portal)/paciente/turnos/actions";
 
 export type MyAppointment = {
   id: string;
   doctorName: string;
   doctorLicense?: string;
-  specialty: string;
+  speciality: string;
   dateTime: string;
   status: "RESERVADO" | "CONFIRMADO" | "ATENDIDO" | "AUSENTE" | "CANCELADO" | string;
 };
@@ -131,7 +130,7 @@ export default function MisTurnosClient({
                   return (
                     <tr key={t.id} className="hover:bg-zinc-50/70 transition">
                       <td className="px-6 py-4 font-semibold text-zinc-900">{t.doctorName}</td>
-                      <td className="px-6 py-4 text-zinc-600">{t.specialty}</td>
+                      <td className="px-6 py-4 text-zinc-600">{t.speciality}</td>
                       <td className="px-6 py-4 font-medium text-zinc-800">{t.dateTime}</td>
                       <td className="px-6 py-4">
                         {isReservado && (
@@ -247,7 +246,7 @@ export default function MisTurnosClient({
 
               <div>
                 <span className="text-xs font-semibold text-zinc-500">Especialidad</span>
-                <p className="font-medium text-zinc-900">{activeModalTurno.specialty}</p>
+                <p className="font-medium text-zinc-900">{activeModalTurno.speciality}</p>
               </div>
 
               <div>

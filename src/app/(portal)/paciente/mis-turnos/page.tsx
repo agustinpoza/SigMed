@@ -1,3 +1,4 @@
+// app/(portal)/paciente/mis-turnos/page.tsx
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
 import { getCurrentActor } from "@/lib/actor";
@@ -5,7 +6,7 @@ import { AppointmentState } from "@/generated/prisma/client";
 import { eliminarTurnosVencidos } from "@/lib/turnos";
 import MisTurnosClient, { MyAppointment } from "./mis-turnos-client";
 
-const SPECIALTY_LABELS: Record<string, string> = {
+const SPECIALITY_LABELS: Record<string, string> = {
   CLINICO: "Clínica médica",
   PEDIATRA: "Pediatría",
   TRAUMATOLOGO: "Traumatología",
@@ -73,7 +74,7 @@ export default async function MisTurnosPage() {
       id: t.id,
       doctorName: `${t.doctor.profile.firstName} ${t.doctor.profile.lastName}`,
       doctorLicense: t.doctor.licenseNumber,
-      specialty: SPECIALTY_LABELS[t.doctor.specialty] ?? t.doctor.specialty,
+      speciality: SPECIALITY_LABELS[t.doctor.speciality] ?? t.doctor.speciality,
       dateTime: `${day}/${month}/${year} - ${time}`,
       status: t.status,
     };

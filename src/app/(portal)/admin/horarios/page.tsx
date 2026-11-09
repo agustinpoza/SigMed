@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { Specialty } from "@/generated/prisma/client";
+import { Speciality } from "@/generated/prisma/client";
 import { getRealActor } from "@/lib/actor";
 import { HorariosForm } from "./horarios-form";
 
@@ -11,18 +11,18 @@ export default async function HorariosPage() {
 
   // 1. Obtenemos los médicos para poblar el selector
   const medicos = await prisma.doctor.findMany({
-    orderBy: [{ specialty: "asc" }, { licenseNumber: "asc" }],
+    orderBy: [{ speciality: "asc" }, { licenseNumber: "asc" }],
     select: {
       id: true,
-      specialty: true,
+      speciality: true,
       profile: { select: { firstName: true, lastName: true } },
     },
   });
 
-  const especialidades: Record<Specialty, string> = {
-    [Specialty.CLINICO]: "Medicina General",
-    [Specialty.PEDIATRA]: "Pediatría",
-    [Specialty.TRAUMATOLOGO]: "Traumatología",
+  const especialidades: Record<Speciality, string> = {
+    [Speciality.CLINICO]: "Medicina General",
+    [Speciality.PEDIATRA]: "Pediatría",
+    [Speciality.TRAUMATOLOGO]: "Traumatología",
   };
 
   // 2. Obtenemos la agenda real desde la base de datos
@@ -57,7 +57,7 @@ export default async function HorariosPage() {
         <HorariosForm
           doctors={medicos.map((medico) => ({
             id: medico.id,
-            label: `${medico.profile.lastName}, ${medico.profile.firstName} - ${especialidades[medico.specialty]}`,
+            label: `${medico.profile.lastName}, ${medico.profile.firstName} - ${especialidades[medico.speciality]}`,
           }))}
         />
       ) : (

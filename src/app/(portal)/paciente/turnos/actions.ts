@@ -1,13 +1,12 @@
 'use server';
 
-import crypto from 'node:crypto';
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/db';
 import { getCurrentActor } from '@/lib/actor';
 import { AppointmentState } from '@/generated/prisma/client';
 import { eliminarTurnosVencidos } from '@/lib/turnos';
 
-const SPECIALTY_LABELS: Record<string, string> = {
+const SPECIALITY_LABELS: Record<string, string> = {
   CLINICO: 'Clínica médica',
   PEDIATRA: 'Pediatría',
   TRAUMATOLOGO: 'Traumatología',
@@ -220,7 +219,7 @@ export async function reservarTurno(formData: FormData) {
   const timePart = startsAtStr.slice(11, 16);
   const formattedDateTime = `${d}/${m}/${y} - ${timePart}`;
   const docName = `Dr. ${doctor.profile.lastName}, ${doctor.profile.firstName}`;
-  const specName = SPECIALTY_LABELS[doctor.specialty] ?? doctor.specialty;
+  const specName = SPECIALITY_LABELS[doctor.speciality] ?? doctor.speciality;
   const docLicense = doctor.licenseNumber || 'MP-54210';
 
   // Guardar en la sesión/cookie para que aparezca reflejado inmediatamente en "Mis turnos"
@@ -234,7 +233,7 @@ export async function reservarTurno(formData: FormData) {
         id: created.id,
         doctorName: docName,
         doctorLicense: docLicense,
-        specialty: specName,
+        speciality: specName,
         dateTime: formattedDateTime,
         status: AppointmentState.RESERVADO,
       };

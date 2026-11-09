@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { getCurrentActor } from "@/lib/actor";
 import HojaTrabajoTable, { DoctorTurnoRow } from "@/app/ui/medico/agenda/hoja-trabajo-table";
 
-const SPECIALTY_LABELS: Record<string, string> = {
+const SPECIALITY_LABELS: Record<string, string> = {
   CLINICO: "Clínica médica",
   PEDIATRA: "Pediatría",
   TRAUMATOLOGO: "Traumatología",
@@ -114,7 +114,7 @@ export default async function HojaDeTrabajoMedicoPage({
       patientName: t.patient
         ? `${t.patient.profile.lastName}, ${t.patient.profile.firstName}`
         : "Sin asignar",
-      specialty: SPECIALTY_LABELS[t.doctor.specialty] ?? t.doctor.specialty,
+      speciality: SPECIALITY_LABELS[t.doctor.speciality] ?? t.doctor.speciality,
       status: t.status,
     };
   });
@@ -126,14 +126,14 @@ export default async function HojaDeTrabajoMedicoPage({
         id: "demo-asistencia-1",
         time: "14:00",
         patientName: "Pérez, Juan",
-        specialty: doctor ? (SPECIALTY_LABELS[doctor.specialty] ?? doctor.specialty) : "Pediatría",
+        speciality: doctor ? (SPECIALITY_LABELS[doctor.speciality] ?? doctor.speciality) : "Pediatría",
         status: "ATENDIDO",
       },
       {
         id: "demo-asistencia-2",
         time: "15:00",
         patientName: "López, Marta",
-        specialty: doctor ? (SPECIALTY_LABELS[doctor.specialty] ?? doctor.specialty) : "Pediatría",
+        speciality: doctor ? (SPECIALITY_LABELS[doctor.speciality] ?? doctor.speciality) : "Pediatría",
         status: "PENDIENTE",
       },
     ];

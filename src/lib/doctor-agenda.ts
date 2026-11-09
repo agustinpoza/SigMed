@@ -11,7 +11,7 @@
 // ejercitarla desde Server Components, Server Actions y scripts de prueba.
 
 import { prisma } from "@/lib/db";
-import { AppointmentState, Specialty, Weekday } from "@/generated/prisma/enums";
+import { AppointmentState, Speciality, Weekday } from "@/generated/prisma/enums";
 
 // ---------------------------------------------------------------------------
 // Fechas: la sala trabaja en hora de Argentina (UTC-3, sin horario de verano)
@@ -189,29 +189,29 @@ export async function getAvailableDoctorSlots(
 export type DoctorOption = {
   id: string;
   name: string;
-  specialty: Specialty;
+  speciality: Speciality;
 };
 
 /** Medicos con sus datos para el selector de la agenda publica. */
 export async function listDoctors(): Promise<DoctorOption[]> {
   const doctors = await prisma.doctor.findMany({
-    orderBy: [{ specialty: "asc" }, { profile: { lastName: "asc" } }],
+    orderBy: [{ speciality: "asc" }, { profile: { lastName: "asc" } }],
     select: {
       id: true,
-      specialty: true,
+      speciality: true,
       profile: { select: { firstName: true, lastName: true } },
     },
   });
 
   return doctors.map((doctor) => ({
     id: doctor.id,
-    specialty: doctor.specialty,
+    speciality: doctor.speciality,
     name: `${doctor.profile.lastName}, ${doctor.profile.firstName}`,
   }));
 }
 
-export const SPECIALTY_LABELS: Record<Specialty, string> = {
-  [Specialty.CLINICO]: "Medicina General",
-  [Specialty.PEDIATRA]: "Pediatría",
-  [Specialty.TRAUMATOLOGO]: "Traumatología",
+export const SPECIALITY_LABELS: Record<Speciality, string> = {
+  [Speciality.CLINICO]: "Medicina General",
+  [Speciality.PEDIATRA]: "Pediatría",
+  [Speciality.TRAUMATOLOGO]: "Traumatología",
 };

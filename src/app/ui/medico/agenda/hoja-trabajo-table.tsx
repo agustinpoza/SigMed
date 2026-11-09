@@ -8,7 +8,7 @@ export type DoctorTurnoRow = {
   id: string;
   time: string;
   patientName: string;
-  specialty: string;
+  speciality: string;
   status: "ATENDIDO" | "AUSENTE" | "CONFIRMADO" | "RESERVADO" | "PENDIENTE" | string;
 };
 
@@ -364,7 +364,7 @@ export default function HojaTrabajoTable({
                       </td>
 
                       {/* ESPECIALIDAD */}
-                      <td className="py-4 text-sm text-zinc-900 font-normal">{t.specialty}</td>
+                      <td className="py-4 text-sm text-zinc-900 font-normal">{t.speciality}</td>
 
                       {/* ESTADO */}
                       <td className="py-4">
