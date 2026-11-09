@@ -1,31 +1,58 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { confirmarTurno, reservarTurno, cancelarTurnoPaciente } from "./actions";
+import {
+  confirmarTurno,
+  reservarTurno,
+  cancelarTurno,
+  cancelarTurnoPaciente,
+  reprogramarTurno,
+} from "./actions";
 import { AppointmentState, Specialty } from "@/generated/prisma/client";
 import { eliminarTurnosVencidos } from "@/lib/turnos";
+import {
+  AgendaRuleError,
+  limpiarCacheRecordatoriosEnviados,
+  procesarRecordatoriosTurnos,
+} from "@/lib/agenda";
+import { enviarConfirmacionTurnoEmail, sendEmail } from "@/lib/email";
 
 const mocks = vi.hoisted(() => ({
   actor: vi.fn(),
   findPatient: vi.fn(),
   findDoctor: vi.fn(),
+  findUniqueAppointment: vi.fn(),
   findFirstAppointment: vi.fn(),
+  findManyAppointments: vi.fn(),
   createAppointment: vi.fn(),
+  updateAppointment: vi.fn(),
   updateMany: vi.fn(),
   deleteMany: vi.fn(),
+  findFirstBlock: vi.fn(),
+  deleteManyBlocks: vi.fn(),
+  transaction: vi.fn(),
   revalidate: vi.fn(),
 }));
 
-vi.mock("@/lib/db", () => ({
-  prisma: {
+vi.mock("@/lib/db", () => {
+  const prismaMock: Record<string, any> = {
     patient: { findUnique: mocks.findPatient },
     doctor: { findUnique: mocks.findDoctor },
     appointment: {
+      findUnique: mocks.findUniqueAppointment,
       findFirst: mocks.findFirstAppointment,
+      findMany: mocks.findManyAppointments,
       create: mocks.createAppointment,
+      update: mocks.updateAppointment,
       updateMany: mocks.updateMany,
       deleteMany: mocks.deleteMany,
     },
-  },
-}));
+    scheduleBlock: {
+      findFirst: mocks.findFirstBlock,
+      deleteMany: mocks.deleteManyBlocks,
+    },
+    $transaction: (cb: (tx: any) => Promise<any>) => mocks.transaction(cb, prismaMock),
+  };
+  return { prisma: prismaMock };
+});
 
 vi.mock("@/lib/actor", () => ({
   getCurrentActor: mocks.actor,
@@ -38,6 +65,7 @@ vi.mock("next/cache", () => ({
 const PACIENTE_ID = "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d";
 const DOCTOR_ID = "b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e";
 const APPOINTMENT_ID = "c7a843bb-5452-4fc8-9f12-0f04e76e5d59";
+const NEW_APPOINTMENT_ID = "d8b954cc-6563-4ad9-8a23-1a15f87f6e60";
 
 function formData(appointmentId: string = APPOINTMENT_ID) {
   const fd = new FormData();
@@ -47,7 +75,13 @@ function formData(appointmentId: string = APPOINTMENT_ID) {
 
 beforeEach(() => {
   vi.resetAllMocks();
-  mocks.actor.mockResolvedValue({ id: PACIENTE_ID });
+  limpiarCacheRecordatoriosEnviados();
+  mocks.actor.mockResolvedValue({
+    id: PACIENTE_ID,
+    firstName: "Lucía",
+    lastName: "Gómez",
+    email: "lucia.gomez@example.com",
+  });
   mocks.findPatient.mockResolvedValue({ id: PACIENTE_ID });
   mocks.findDoctor.mockResolvedValue({
     id: DOCTOR_ID,
@@ -56,10 +90,16 @@ beforeEach(() => {
     licenseNumber: "MP-12345",
     profile: { firstName: "Juan", lastName: "Pérez" },
   });
+  mocks.findUniqueAppointment.mockResolvedValue(null);
   mocks.findFirstAppointment.mockResolvedValue(null);
+  mocks.findManyAppointments.mockResolvedValue([]);
   mocks.createAppointment.mockResolvedValue({ id: APPOINTMENT_ID });
+  mocks.updateAppointment.mockResolvedValue({ id: APPOINTMENT_ID });
   mocks.updateMany.mockResolvedValue({ count: 1 });
   mocks.deleteMany.mockResolvedValue({ count: 1 });
+  mocks.findFirstBlock.mockResolvedValue(null);
+  mocks.deleteManyBlocks.mockResolvedValue({ count: 0 });
+  mocks.transaction.mockImplementation(async (cb, txClient) => cb(txClient));
 });
 
 describe("US 2.2: Confirmación del Turno (RF-06)", () => {
@@ -98,12 +138,137 @@ describe("US 2.2: Confirmación del Turno (RF-06)", () => {
 
   it("rechaza si el usuario no tiene perfil de paciente", async () => {
     mocks.findPatient.mockResolvedValue(null);
-    await expect(confirmarTurno(formData())).rejects.toThrow("Solo los pacientes pueden confirmar reservas.");
+    await expect(confirmarTurno(formData())).rejects.toThrow(
+      "Solo los pacientes pueden confirmar reservas."
+    );
   });
 });
 
-describe("Cancelación / Baja del Turno por Paciente", () => {
-  it("elimina el turno de la base de datos y revalida las rutas", async () => {
+describe("US 2.3: Confirmación y recordatorios por email (RF-07)", () => {
+  it("conmuta automáticamente al proveedor secundario si falla el primario", async () => {
+    const result = await sendEmail(
+      {
+        to: "paciente@sigmed.com",
+        subject: "Prueba failover",
+        text: "Contenido",
+        html: "<p>Contenido</p>",
+      },
+      { simulatePrimaryFailure: true },
+    );
+
+    expect(result.success).toBe(true);
+    expect(result.provider).toBe("SECONDARY_SMTP");
+    expect(result.fallbackUsed).toBe(true);
+  });
+
+  it("envía correo de confirmación con Profesional, Especialidad, Fecha y Hora", async () => {
+    const res = await enviarConfirmacionTurnoEmail({
+      patientEmail: "lucia.gomez@example.com",
+      patientName: "Lucía Gómez",
+      doctorName: "Sofía Duarte",
+      doctorLicense: "MP-1002",
+      specialty: "Pediatría",
+      dateTime: "30/10/2026 - 15:00",
+    });
+
+    expect(res.success).toBe(true);
+    expect(res.provider).toBe("PRIMARY_RESEND");
+  });
+
+  it("procesarRecordatoriosTurnos envía recordatorios y evita duplicados verificando recordatorio_enviado", async () => {
+    const proximoTurno = new Date(Date.now() + 3600_000 * 4);
+    mocks.findManyAppointments.mockResolvedValue([
+      {
+        id: APPOINTMENT_ID,
+        patientId: PACIENTE_ID,
+        doctorId: DOCTOR_ID,
+        startsAt: proximoTurno,
+        endsAt: new Date(proximoTurno.getTime() + 30 * 60_000),
+        status: AppointmentState.CONFIRMADO,
+        recordatorio_enviado: false,
+        doctor: {
+          specialty: Specialty.PEDIATRA,
+          licenseNumber: "MP-1002",
+          profile: { firstName: "Sofía", lastName: "Duarte" },
+        },
+        patient: {
+          profile: {
+            firstName: "Lucía",
+            lastName: "Gómez",
+            email: "lucia.gomez@example.com",
+          },
+        },
+      },
+      {
+        id: "already-sent-id",
+        patientId: PACIENTE_ID,
+        doctorId: DOCTOR_ID,
+        startsAt: proximoTurno,
+        endsAt: new Date(proximoTurno.getTime() + 30 * 60_000),
+        status: AppointmentState.CONFIRMADO,
+        recordatorio_enviado: true,
+        doctor: {
+          specialty: Specialty.PEDIATRA,
+          licenseNumber: "MP-1002",
+          profile: { firstName: "Sofía", lastName: "Duarte" },
+        },
+        patient: {
+          profile: {
+            firstName: "Lucía",
+            lastName: "Gómez",
+            email: "lucia.gomez@example.com",
+          },
+        },
+      },
+    ]);
+
+    const res = await procesarRecordatoriosTurnos(24);
+    expect(res.procesados).toBe(2);
+    expect(res.enviados).toBe(1);
+    expect(res.omitidosPorDuplicado).toBe(1);
+    expect(mocks.updateMany).toHaveBeenCalledWith({
+      where: { id: APPOINTMENT_ID },
+      data: { recordatorio_enviado: true },
+    });
+  });
+});
+
+describe("US 2.4: Cancelación de turno por el paciente (RF-08)", () => {
+  it("cambia el status a CANCELADO en una transacción, libera el bloque y revalida las rutas", async () => {
+    const startsAt = new Date(Date.now() + 86400_000 * 3);
+    const endsAt = new Date(startsAt.getTime() + 30 * 60_000);
+
+    mocks.findUniqueAppointment.mockResolvedValue({
+      id: APPOINTMENT_ID,
+      patientId: PACIENTE_ID,
+      doctorId: DOCTOR_ID,
+      startsAt,
+      endsAt,
+      status: AppointmentState.CONFIRMADO,
+    });
+
+    const res = await cancelarTurno(APPOINTMENT_ID);
+    expect(res).toEqual({ success: true });
+    expect(mocks.transaction).toHaveBeenCalledTimes(1);
+    expect(mocks.updateAppointment).toHaveBeenCalledWith({
+      where: { id: APPOINTMENT_ID },
+      data: expect.objectContaining({
+        status: AppointmentState.CANCELADO,
+        cancelledById: PACIENTE_ID,
+      }),
+    });
+    expect(mocks.deleteManyBlocks).toHaveBeenCalledWith({
+      where: expect.objectContaining({
+        doctorId: DOCTOR_ID,
+        startsAt,
+        endsAt,
+      }),
+    });
+    expect(mocks.revalidate).toHaveBeenCalledWith("/paciente/turnos");
+    expect(mocks.revalidate).toHaveBeenCalledWith("/paciente/mis-turnos");
+  });
+
+  it("elimina el turno mediante cancelarTurnoPaciente (compatibilidad baja directa)", async () => {
     const res = await cancelarTurnoPaciente(formData());
     expect(res).toEqual({ success: true });
     expect(mocks.deleteMany).toHaveBeenCalledWith({
@@ -114,12 +279,98 @@ describe("Cancelación / Baja del Turno por Paciente", () => {
     });
     expect(mocks.revalidate).toHaveBeenCalledWith("/paciente/mis-turnos");
   });
+});
 
-  it("rechaza si el turno no pertenece al paciente o no existe", async () => {
-    mocks.deleteMany.mockResolvedValue({ count: 0 });
-    await expect(cancelarTurnoPaciente(formData())).rejects.toThrow(
-      "El turno no se encuentra disponible o pertenece a otro usuario."
+describe("US 2.5: Reprogramación de turno por el paciente (RF-08)", () => {
+  it("reprograma en una transacción: verifica disponibilidad, cancela el original y confirma el nuevo", async () => {
+    const oldStartsAt = new Date(Date.now() + 86400_000 * 2);
+    const oldEndsAt = new Date(oldStartsAt.getTime() + 30 * 60_000);
+    const newScheduleIso = new Date(Date.now() + 86400_000 * 5).toISOString();
+
+    mocks.findUniqueAppointment.mockResolvedValue({
+      id: APPOINTMENT_ID,
+      patientId: PACIENTE_ID,
+      doctorId: DOCTOR_ID,
+      startsAt: oldStartsAt,
+      endsAt: oldEndsAt,
+      status: AppointmentState.CONFIRMADO,
+      doctor: {
+        id: DOCTOR_ID,
+        consultDuration: 30,
+        specialty: Specialty.PEDIATRA,
+        licenseNumber: "MP-1002",
+        profile: { firstName: "Sofía", lastName: "Duarte" },
+      },
+      patient: {
+        id: PACIENTE_ID,
+        profile: {
+          firstName: "Lucía",
+          lastName: "Gómez",
+          email: "lucia.gomez@example.com",
+        },
+      },
+    });
+    mocks.findFirstAppointment.mockResolvedValue(null);
+    mocks.createAppointment.mockResolvedValue({ id: NEW_APPOINTMENT_ID });
+
+    const res = await reprogramarTurno(APPOINTMENT_ID, newScheduleIso);
+
+    expect(res.success).toBe(true);
+    expect(res.oldAppointmentId).toBe(APPOINTMENT_ID);
+    expect(res.newAppointment.id).toBe(NEW_APPOINTMENT_ID);
+    expect(res.newAppointment.status).toBe(AppointmentState.CONFIRMADO);
+    expect(mocks.transaction).toHaveBeenCalledTimes(1);
+    expect(mocks.updateAppointment).toHaveBeenCalledWith({
+      where: { id: APPOINTMENT_ID },
+      data: expect.objectContaining({
+        status: AppointmentState.CANCELADO,
+        cancelledById: PACIENTE_ID,
+      }),
+    });
+    expect(mocks.createAppointment).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        patientId: PACIENTE_ID,
+        doctorId: DOCTOR_ID,
+        status: AppointmentState.CONFIRMADO,
+        reservedById: PACIENTE_ID,
+      }),
+    });
+    expect(mocks.revalidate).toHaveBeenCalledWith("/paciente/turnos");
+    expect(mocks.revalidate).toHaveBeenCalledWith("/paciente/mis-turnos");
+  });
+
+  it("lanza AgendaRuleError si el nuevo horario no está DISPONIBLE", async () => {
+    const oldStartsAt = new Date(Date.now() + 86400_000 * 2);
+    const oldEndsAt = new Date(oldStartsAt.getTime() + 30 * 60_000);
+    const occupiedIso = new Date(Date.now() + 86400_000 * 5).toISOString();
+
+    mocks.findUniqueAppointment.mockResolvedValue({
+      id: APPOINTMENT_ID,
+      patientId: PACIENTE_ID,
+      doctorId: DOCTOR_ID,
+      startsAt: oldStartsAt,
+      endsAt: oldEndsAt,
+      status: AppointmentState.CONFIRMADO,
+      doctor: {
+        id: DOCTOR_ID,
+        consultDuration: 30,
+        specialty: Specialty.PEDIATRA,
+        licenseNumber: "MP-1002",
+        profile: { firstName: "Sofía", lastName: "Duarte" },
+      },
+    });
+
+    // Simular que el nuevo horario ya está ocupado
+    mocks.findFirstAppointment.mockResolvedValue({
+      id: "otro-turno-id",
+      status: AppointmentState.CONFIRMADO,
+    });
+
+    await expect(reprogramarTurno(APPOINTMENT_ID, occupiedIso)).rejects.toThrow(
+      AgendaRuleError,
     );
+    expect(mocks.updateAppointment).not.toHaveBeenCalled();
+    expect(mocks.createAppointment).not.toHaveBeenCalled();
   });
 });
 
