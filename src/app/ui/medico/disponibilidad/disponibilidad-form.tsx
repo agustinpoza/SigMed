@@ -134,7 +134,7 @@ export default function DisponibilidadForm({ refreshKey }: { refreshKey: number 
                     disabled={fechasBloqueadas}
                     modifiers={{ bloqueado: fechasBloqueadas }}
                     modifiersClassNames={{
-                        bloqueado: "[&>button]:!bg-slate-600 [&>button]:!text-gray-100 [&>button]:font-semibold [&>button]:line-through",
+                        bloqueado: "[&>button]:!bg-slate-600 [&>button]:!text-gray-100 [&>button]:font-semibold",
                     }}
                     locale={es}
                     weekStartsOn={0}
