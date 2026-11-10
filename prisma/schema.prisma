@@ -30,7 +30,7 @@ enum CoverageStatus {
   @@map("estado_cobertura")
 }
 
-enum Specialty {
+enum Speciality {
   CLINICO      @map("clinico")
   PEDIATRA     @map("pediatra")
   TRAUMATOLOGO @map("traumatologo")
@@ -191,7 +191,7 @@ model Patient {
 model Doctor {
   id              String    @id @default(uuid()) @map("id_usuario") @db.Uuid
   licenseNumber   String    @unique @map("matricula")
-  specialty       Specialty @unique @map("especialidad")
+  speciality      Speciality @unique @map("especialidad")
   consultDuration Int       @map("duracion_consulta")
   consultFee      Decimal   @map("valor_consulta") @db.Decimal(12, 2)
 

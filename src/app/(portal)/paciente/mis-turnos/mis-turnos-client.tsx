@@ -14,10 +14,11 @@ export type MyAppointment = {
   doctorId?: string;
   doctorName: string;
   doctorLicense?: string;
-  specialty: string;
+  speciality: string;
   dateTime: string;
   startsAtISO?: string;
   status: "RESERVADO" | "CONFIRMADO" | "ATENDIDO" | "AUSENTE" | "CANCELADO" | string;
+  cancellationReason?: string;
 };
 
 export default function MisTurnosClient({
@@ -171,7 +172,7 @@ export default function MisTurnosClient({
                   doctorId: res.newAppointment.doctorId,
                   doctorName: res.newAppointment.doctorName,
                   doctorLicense: res.newAppointment.doctorLicense,
-                  specialty: res.newAppointment.specialty,
+                  speciality: res.newAppointment.specialty,
                   dateTime: res.newAppointment.dateTime,
                   startsAtISO: res.newAppointment.startsAtISO,
                   status: res.newAppointment.status,
@@ -258,14 +259,13 @@ export default function MisTurnosClient({
                   const isConfirmado = t.status === "CONFIRMADO";
                   const isAtendido = t.status === "ATENDIDO";
                   const isAusente = t.status === "AUSENTE";
+                  const isCancelado = t.status === "CANCELADO";
                   const puedeCancelar = isReservado || isConfirmado;
 
                   return (
                     <tr key={t.id} className="hover:bg-[#eef1f5]/50 transition">
-                      <td className="px-6 py-4 font-semibold text-slate-800">
-                        {t.doctorName}
-                      </td>
-                      <td className="px-6 py-4 text-slate-700">{t.specialty}</td>
+                      <td className="px-6 py-4 font-semibold text-slate-800">{t.doctorName}</td>
+                      <td className="px-6 py-4 text-slate-700">{t.speciality}</td>
                       <td className="px-6 py-4 font-medium text-slate-800">{t.dateTime}</td>
                       <td className="px-6 py-4">
                         {isReservado && (
@@ -296,6 +296,11 @@ export default function MisTurnosClient({
                           <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-[#eef1f5] px-2.5 py-1 text-xs font-medium text-slate-700">
                             {t.status}
                           </span>
+                        )}
+                        {isCancelado && t.cancellationReason && (
+                          <p className="mt-1 text-xs text-zinc-600">
+                            Motivo: {t.cancellationReason}
+                          </p>
                         )}
                       </td>
                       <td className="px-6 py-4 text-right">
@@ -412,7 +417,7 @@ export default function MisTurnosClient({
                 </p>
                 <p>
                   <span className="font-semibold text-slate-800">Especialidad:</span>{" "}
-                  {turnoACancelar.specialty}
+                  {turnoACancelar.speciality}
                 </p>
                 <p>
                   <span className="font-semibold text-slate-800">Fecha y Hora:</span>{" "}
@@ -492,7 +497,7 @@ export default function MisTurnosClient({
                 <span className="block text-xs font-semibold text-slate-400">
                   Especialidad
                 </span>
-                <p className="font-normal text-slate-700">{activeModalTurno.specialty}</p>
+                <p className="font-normal text-slate-700">{activeModalTurno.speciality}</p>
               </div>
 
               <div>
@@ -520,9 +525,19 @@ export default function MisTurnosClient({
                   Estado del turno
                 </span>
                 <p className="font-normal text-slate-700 capitalize">
-                  {activeModalTurno.status.toLowerCase()}
+                  
+                  {activeModalTurno.status === "CANCELADO"
+                    ? "Cancelado"
+                    : activeModalTurno.status.toLowerCase()}
+                
                 </p>
               </div>
+              {activeModalTurno.cancellationReason && (
+                <div>
+                  <span className="text-xs font-semibold text-zinc-500">Motivo de cancelación</span>
+                  <p className="font-medium text-zinc-900">{activeModalTurno.cancellationReason}</p>
+                </div>
+              )}
             </div>
 
             {/* Vista desplegable de reprogramación con horarios alternativos disponibles */}

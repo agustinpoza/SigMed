@@ -2,8 +2,9 @@
 import { prisma } from "@/lib/db";
 import { getCurrentActor } from "@/lib/actor";
 import HojaTrabajoTable, { DoctorTurnoRow } from "@/app/ui/medico/agenda/hoja-trabajo-table";
+import type { Speciality } from "@/generated/prisma/client";
 
-const SPECIALTY_LABELS: Record<string, string> = {
+const SPECIALITY_LABELS: Record<Speciality, string> = {
   CLINICO: "Clínica médica",
   PEDIATRA: "Pediatría",
   TRAUMATOLOGO: "Traumatología",
@@ -13,40 +14,53 @@ type SearchParams = {
   fecha?: string;
 };
 
-export default async function HojaDeTrabajoMedicoPage({
-  searchParams,
-}: {
-  searchParams: Promise<SearchParams>;
-}) {
-  const resolvedParams = await searchParams;
-  const rawFecha = resolvedParams.fecha?.trim() || "14/10/2026";
+const TIME_ZONE = "America/Argentina/Buenos_Aires";
 
-  // Parsear fecha en formato DD/MM/AAAA o AAAA-MM-DD
-  let d = 14;
-  let m = 10;
-  let y = 2026;
+function obtenerFechaActual() {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const values = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
 
-  if (rawFecha.includes("/")) {
-    const parts = rawFecha.split("/").map(Number);
-    if (parts.length === 3 && parts[0] && parts[1] && parts[2]) {
-      d = parts[0];
-      m = parts[1];
-      y = parts[2];
-    }
-  } else if (rawFecha.includes("-")) {
-    const parts = rawFecha.split("-").map(Number);
-    if (parts.length === 3 && parts[0] && parts[1] && parts[2]) {
-      if (parts[0] > 1000) {
-        y = parts[0];
-        m = parts[1];
-        d = parts[2];
-      } else {
-        d = parts[0];
-        m = parts[1];
-        y = parts[2];
-      }
-    }
+  return {
+    year: Number(values.year),
+    month: Number(values.month),
+    day: Number(values.day),
+  };
+}
+
+function parseDate(value: string) {
+  const slashDate = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(value);
+  const isoDate = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(value);
+  const match = slashDate ?? isoDate;
+
+  if (!match) return null;
+
+  const [, first, second, third] = match;
+  const year = Number(slashDate ? third : first);
+  const month = Number(second);
+  const day = Number(slashDate ? first : third);
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    return null;
   }
+
+  return { year, month, day };
+}
+
+export default async function HojaDeTrabajoMedicoPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
+  const resolvedParams = await searchParams;
+  const hoy = obtenerFechaActual();
+  const selectedDate = parseDate(resolvedParams.fecha?.trim() ?? "") ?? hoy;
+  const { day: d, month: m, year: y } = selectedDate;
 
   const formattedDate = `${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}/${y}`;
   const isoDate = `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
@@ -69,16 +83,17 @@ export default async function HojaDeTrabajoMedicoPage({
 
   const availableDatesSet = new Set(
     doctorAllAppointments.map((t) => {
-      const dateObj = new Date(t.startsAt);
-      const dy = dateObj.getFullYear();
-      const dm = String(dateObj.getMonth() + 1).padStart(2, "0");
-      const dd = String(dateObj.getDate()).padStart(2, "0");
-      return `${dy}-${dm}-${dd}`;
+      const parts = new Intl.DateTimeFormat("en-US", {
+        timeZone: TIME_ZONE,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).formatToParts(t.startsAt);
+      const values = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
+      return `${values.year}-${values.month}-${values.day}`;
     })
   );
 
-  // Incluir 2026-10-14 en el set si corresponde a la vista demo inicial
-  availableDatesSet.add("2026-10-14");
   const availableDates = Array.from(availableDatesSet);
 
   // Consultar turnos asignados al médico para la jornada seleccionada
@@ -101,7 +116,7 @@ export default async function HojaDeTrabajoMedicoPage({
       })
     : [];
 
-  let listTurnos: DoctorTurnoRow[] = turnosDB.map((t) => {
+  const listTurnos: DoctorTurnoRow[] = turnosDB.map((t) => {
     const time = new Date(t.startsAt).toLocaleTimeString("es-AR", {
       hour: "2-digit",
       minute: "2-digit",
@@ -114,30 +129,10 @@ export default async function HojaDeTrabajoMedicoPage({
       patientName: t.patient
         ? `${t.patient.profile.lastName}, ${t.patient.profile.firstName}`
         : "Sin asignar",
-      specialty: SPECIALTY_LABELS[t.doctor.specialty] ?? t.doctor.specialty,
+      speciality: SPECIALITY_LABELS[t.doctor.speciality],
       status: t.status,
     };
   });
-
-  // Si no hay turnos registrados en BD para esa jornada, cargar filas representativas de US-2.8
-  if (listTurnos.length === 0 && (formattedDate === "14/10/2026" || !resolvedParams.fecha)) {
-    listTurnos = [
-      {
-        id: "demo-asistencia-1",
-        time: "14:00",
-        patientName: "Pérez, Juan",
-        specialty: doctor ? (SPECIALTY_LABELS[doctor.specialty] ?? doctor.specialty) : "Pediatría",
-        status: "ATENDIDO",
-      },
-      {
-        id: "demo-asistencia-2",
-        time: "15:00",
-        patientName: "López, Marta",
-        specialty: doctor ? (SPECIALTY_LABELS[doctor.specialty] ?? doctor.specialty) : "Pediatría",
-        status: "PENDIENTE",
-      },
-    ];
-  }
 
   return (
     <div className="flex flex-col gap-6">

@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { beforeAll, describe, expect, it } from "vitest";
 import { prisma } from "@/lib/db";
 import type { UserProfile } from "@/generated/prisma/client";
-import { AuditAction, AuditEntity, MovementType, Specialty, UserRole } from "@/generated/prisma/enums";
+import { AuditAction, AuditEntity, MovementType, Speciality, UserRole } from "@/generated/prisma/enums";
 import { registerStockMovement, createVaccineWithInitialLot } from "@/lib/stock";
 import { buildExerciseAudit } from "@/lib/audit";
 import { findActingTarget } from "@/lib/acting";
@@ -36,7 +36,7 @@ beforeAll(async () => {
     data: {
       id: doctor.id,
       licenseNumber: `MAT-${randomUUID()}`,
-      specialty: Specialty.PEDIATRA,
+      speciality: Speciality.PEDIATRA,
       consultDuration: 30,
       consultFee: 100,
     },

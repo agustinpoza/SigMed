@@ -7,6 +7,7 @@ import { Weekday } from "@/generated/prisma/enums";
 import TablaResumen from "@/app/ui/medico/disponibilidad/tabla-resumen";
 import FranjaHoraria from "@/app/ui/medico/disponibilidad/franja-horaria";
 import { guardarDisponibilidad, obtenerDisponibilidad } from "@/app/(portal)/medico/disponibilidad/actions";
+import { obtenerDiasBloqueados } from "@/app/(portal)/medico/disponibilidad/bloqueos-actions";
 
 const WEEKDAY: Weekday[] = [
     Weekday.DOMINGO,
@@ -18,8 +19,21 @@ const WEEKDAY: Weekday[] = [
     Weekday.SABADO,
 ];
 
-export default function DisponibilidadForm() {
+function dateKey(fecha: Date): string {
+    const year = fecha.getFullYear();
+    const month = String(fecha.getMonth() + 1).padStart(2, "0");
+    const day = String(fecha.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+}
+
+function fromDateKey(value: string): Date {
+    const [year, month, day] = value.split("-").map(Number);
+    return new Date(year, month - 1, day);
+}
+
+export default function DisponibilidadForm({ refreshKey }: { refreshKey: number }) {
     const [fechas, setFechas] = useState<Date[]>([]);
+    const [diasBloqueados, setDiasBloqueados] = useState<string[]>([]);
     const [horaInicio, setHoraInicio] = useState<string>("00:00");
     const [horaFin, setHoraFin] = useState<string>("23:59");
     const [duracion, setDuracion] = useState(60);
@@ -55,6 +69,28 @@ export default function DisponibilidadForm() {
         };
     }, []);
 
+    useEffect(() => {
+        let vigente = true;
+
+        void obtenerDiasBloqueados().then((resultado) => {
+            if (!vigente) return;
+            setDiasBloqueados(resultado.dias);
+            const bloqueados = new Set(resultado.dias);
+            setFechas((actuales) => actuales.filter((fecha) => !bloqueados.has(dateKey(fecha))));
+            if (resultado.message) setMensaje(resultado.message);
+        }).catch((error: unknown) => {
+            console.error("Error al consultar los días bloqueados:", error);
+            if (vigente) setMensaje("No se pudieron consultar los días bloqueados.");
+        });
+
+        return () => {
+            vigente = false;
+        };
+    }, [refreshKey]);
+
+    const fechasBloqueadas = diasBloqueados.map(fromDateKey);
+    const bloqueosSet = new Set(diasBloqueados);
+
     async function guardar() {
         setGuardando(true);
         setMensaje("");
@@ -86,15 +122,20 @@ export default function DisponibilidadForm() {
 
     return (
         <>
-        <div className="flex flex-row border-y justify-around border-gray-400 m-2 py-2">
-            <div className="flex-col gap-1 m-2">
+        <div className="m-2 flex flex-col gap-6 border-y border-gray-400 py-2 md:flex-row md:items-start md:justify-around">
+            <div className="md:shrink-0">
                 <h2 className="text-xl text-black font-semibold m-1">
                     Calendario del mes
                 </h2>
                 <DayPicker
                     mode="multiple"
                     selected={fechas}
-                    onSelect={(seleccionadas) => setFechas(seleccionadas ?? [])}
+                    onSelect={(seleccionadas) => setFechas((seleccionadas ?? []).filter((fecha) => !bloqueosSet.has(dateKey(fecha))))}
+                    disabled={fechasBloqueadas}
+                    modifiers={{ bloqueado: fechasBloqueadas }}
+                    modifiersClassNames={{
+                        bloqueado: "[&>button]:!bg-slate-600 [&>button]:!text-gray-100 [&>button]:font-semibold",
+                    }}
                     locale={es}
                     weekStartsOn={0}
                     className="border border-gray-400 bg-white rounded-lg text-black p-4"
@@ -118,14 +159,20 @@ export default function DisponibilidadForm() {
                         disabled: "[&>button]:cursor-not-allowed [&>button]:text-slate-300",
                     }}
                 />
+                <p className="mt-2 text-sm text-slate-600" aria-label="Leyenda del calendario">
+                    <span className="mr-2 inline-block size-3 rounded-sm border border-slate-200 bg-slate-600 align-middle" />
+                    Día previamente bloqueado
+                </p>
             </div>
-            <FranjaHoraria
-                horaInicio={horaInicio} onChangeInicio={setHoraInicio}
-                horaFin={horaFin} onChangeFin={setHoraFin}
-                deshabilitado={!!error || fechas.length === 0 || guardando || cargando}
-                error={error}
-                onGuardar={guardar} guardando={guardando}
-            />
+            <div className="w-full min-w-0 flex-1 md:min-w-64">
+                <FranjaHoraria
+                    horaInicio={horaInicio} onChangeInicio={setHoraInicio}
+                    horaFin={horaFin} onChangeFin={setHoraFin}
+                    deshabilitado={!!error || fechas.length === 0 || guardando || cargando}
+                    error={error}
+                    onGuardar={guardar} guardando={guardando}
+                />
+            </div>
         </div>
         {mensaje && <p role="status" className="m-2 text-sm text-slate-700">{mensaje}</p>}
         <TablaResumen filas={filas} />

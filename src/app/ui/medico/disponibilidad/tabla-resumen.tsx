@@ -17,37 +17,37 @@ export default function TablaResumen({ filas }: TablaResumenProps) {
     const filasOrdenadas = [...filas].sort((a, b) => a.dia.getTime() - b.dia.getTime());
 
     return (
-        <section className="flex flex-col gap-2 m-2">
-            <h2 className="text-lg text-black font-semibold">
+        <section className="rounded-xl bg-white p-4 shadow-md">
+            <h2 className="pb-6 text-base font-bold text-zinc-900">
                 Resumen de disponibilidad cargada
             </h2>
-            <div className="rounded-xl overflow-hidden border-2 border-slate-400 m-1">
-                <table className="w-full table-fixed">
-                    <thead className="sticky top-0">
-                        <tr className="text-center text-lg text-slate-500 bg-gray-200">
-                            <th className="font-semibold border-r border-gray-400 p-1">Fecha</th>
-                            <th className="font-semibold border-r border-gray-400 p-1">Franja horaria</th>
-                            <th className="font-semibold p-1">Duración por turno</th>
+            <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm text-zinc-700">
+                    <thead className="font-semibold text-xs text-zinc-400 uppercase border-b border-zinc-200 tracking-wider">
+                        <tr>
+                            <th className="pb-2 font-semibold">Fecha</th>
+                            <th className="pb-2 font-semibold">Franja horaria</th>
+                            <th className="pb-2 font-semibold">Duración por turno</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-zinc-200">
                         {filasOrdenadas.length > 0 ? (
                             filasOrdenadas.map((fila) => (
-                                <tr key={fila.dia.toISOString()} className="text-center text-black">
-                                    <td className="border-r border-gray-400 p-1 capitalize">
+                                <tr key={fila.dia.toISOString()} className="transition hover:bg-zinc-50/50">
+                                    <td className="py-4 text-sm font-normal text-zinc-900 capitalize">
                                         {format(fila.dia, "EEEE dd/MM/yyyy", { locale: es })}
                                     </td>
-                                    <td className="border-r border-gray-400 p-1">
+                                    <td className="py-4 text-sm font-normal text-zinc-900">
                                         {fila.horaInicio} - {fila.horaFin}
                                     </td>
-                                    <td className="p-1">
+                                    <td className="py-4 text-sm font-normal text-zinc-900">
                                         {fila.duracion} min
                                     </td>
                                 </tr>
                             ))
                         ) : (
                             <tr>
-                                <td className="text-center text-lg text-black italic p-1" colSpan={3}>
+                                <td className="py-8 text-center text-sm italic text-zinc-500" colSpan={3}>
                                     No hay información para mostrar
                                 </td>
                             </tr>

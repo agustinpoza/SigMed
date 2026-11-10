@@ -7,7 +7,7 @@ import {
   CoverageStatus,
   MovementType,
   ReceiptType,
-  Specialty,
+  Speciality,
   UserRole,
   VaccinationAppointmentState,
   Weekday,
@@ -119,7 +119,7 @@ async function main() {
     data: {
       id: user.get("medico1@sigmed.dev")!,
       licenseNumber: "MP-1001",
-      specialty: Specialty.CLINICO,
+      speciality: Speciality.CLINICO,
       consultDuration: 30,
       consultFee: 45000,
     },
@@ -128,7 +128,7 @@ async function main() {
     data: {
       id: user.get("medico2@sigmed.dev")!,
       licenseNumber: "MP-1002",
-      specialty: Specialty.PEDIATRA,
+      speciality: Speciality.PEDIATRA,
       consultDuration: 30,
       consultFee: 42000,
     },

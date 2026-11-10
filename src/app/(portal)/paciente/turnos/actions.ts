@@ -133,7 +133,7 @@ export async function confirmarTurno(input: FormData | string) {
       if (turnoDB?.doctor?.profile) {
         doctorName = `${turnoDB.doctor.profile.firstName} ${turnoDB.doctor.profile.lastName}`.trim();
         doctorLicense = turnoDB.doctor.licenseNumber;
-        specialty = SPECIALTY_LABELS[turnoDB.doctor.specialty] ?? turnoDB.doctor.specialty;
+        specialty = SPECIALTY_LABELS[turnoDB.doctor.speciality] ?? turnoDB.doctor.speciality;
       }
       if (turnoDB?.startsAt) {
         dateTime = formatearFechaHoraTurno(turnoDB.startsAt);
@@ -420,33 +420,49 @@ export async function reservarTurno(formData: FormData) {
   const endsAt = new Date(startsAt.getTime() + duration * 60_000);
 
   // RF: Una vez que se selecciona un turno, este no puede volver a seleccionarse
-  const occupied = await prisma.appointment.findFirst({
-    where: {
-      doctorId,
-      startsAt,
-      status: {
-        in: [
-          AppointmentState.CONFIRMADO,
-          AppointmentState.RESERVADO,
-          AppointmentState.ATENDIDO,
-          AppointmentState.AUSENTE,
-        ],
-      },
-    },
-  });
-  if (occupied) {
-    throw new Error('El turno seleccionado ya fue reservado por otro usuario.');
-  }
+  const created = await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT "id_usuario" FROM "medico" WHERE "id_usuario" = ${doctorId}::uuid FOR UPDATE`;
 
-  const created = await prisma.appointment.create({
-    data: {
-      patientId: paciente.id,
-      doctorId,
-      startsAt,
-      endsAt,
-      status: AppointmentState.RESERVADO,
-      reservedById: actor.id,
-    },
+    const bloqueo = await tx.scheduleBlock.findFirst({
+      where: {
+        doctorId,
+        startsAt: { lt: endsAt },
+        endsAt: { gt: startsAt },
+      },
+      select: { id: true },
+    });
+    if (bloqueo) {
+      throw new Error('El horario fue bloqueado por el profesional. Actualizá la disponibilidad y elegí otro turno.');
+    }
+
+    const occupied = await tx.appointment.findFirst({
+      where: {
+        doctorId,
+        startsAt,
+        status: {
+          in: [
+            AppointmentState.CONFIRMADO,
+            AppointmentState.RESERVADO,
+            AppointmentState.ATENDIDO,
+            AppointmentState.AUSENTE,
+          ],
+        },
+      },
+    });
+    if (occupied) {
+      throw new Error('El turno seleccionado ya fue reservado por otro usuario.');
+    }
+
+    return tx.appointment.create({
+      data: {
+        patientId: paciente.id,
+        doctorId,
+        startsAt,
+        endsAt,
+        status: AppointmentState.RESERVADO,
+        reservedById: actor.id,
+      },
+    });
   });
 
   const datePart = startsAtStr.slice(0, 10);
@@ -454,7 +470,7 @@ export async function reservarTurno(formData: FormData) {
   const timePart = startsAtStr.slice(11, 16);
   const formattedDateTime = `${d}/${m}/${y} - ${timePart}`;
   const docName = `${doctor.profile.firstName} ${doctor.profile.lastName}`;
-  const specName = SPECIALTY_LABELS[doctor.specialty] ?? doctor.specialty;
+  const specName = SPECIALTY_LABELS[doctor.speciality] ?? doctor.speciality;
   const docLicense = doctor.licenseNumber || 'MP-54210';
 
   // Guardar en la sesión/cookie para que aparezca reflejado inmediatamente en "Mis turnos"
@@ -469,7 +485,7 @@ export async function reservarTurno(formData: FormData) {
         doctorId,
         doctorName: docName,
         doctorLicense: docLicense,
-        specialty: specName,
+        speciality: specName,
         dateTime: formattedDateTime,
         startsAtISO: startsAt.toISOString(),
         status: AppointmentState.RESERVADO,

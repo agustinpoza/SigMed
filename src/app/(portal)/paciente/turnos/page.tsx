@@ -1,12 +1,12 @@
 import { eliminarTurnosVencidos } from "@/lib/turnos";
 import { prisma } from "@/lib/db";
-import { Specialty, AppointmentState } from "@/generated/prisma/client";
+import { Speciality, AppointmentState } from "@/generated/prisma/client";
 import InteractiveBooking from "./interactive-booking";
 
 export default async function BusquedaTurnosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ specialty?: string; doctorId?: string; date?: string; fecha?: string }>;
+  searchParams: Promise<{ speciality?: string; doctorId?: string; date?: string; fecha?: string }>;
 }) {
   const params = await searchParams;
   const hoyStr = new Date().toLocaleDateString("en-CA", { timeZone: "America/Argentina/Buenos_Aires" });
@@ -43,8 +43,8 @@ export default async function BusquedaTurnosPage({
         ],
       },
       ...(params.doctorId ? { doctorId: params.doctorId } : {}),
-      ...(params.specialty
-        ? { doctor: { specialty: params.specialty as Specialty } }
+      ...(params.speciality
+        ? { doctor: { speciality: params.speciality as Speciality } }
         : {}),
     },
     include: {
@@ -61,7 +61,7 @@ export default async function BusquedaTurnosPage({
 
   const serializedDoctors = medicos.map((m) => ({
     id: m.id,
-    specialty: m.specialty as Specialty,
+    speciality: m.speciality as Speciality,
     name: `Dr. ${m.profile.lastName}, ${m.profile.firstName}`,
     schedules: m.schedules.map((s) => ({
       weekday: s.weekday,
@@ -77,7 +77,7 @@ export default async function BusquedaTurnosPage({
     endsAt: t.endsAt.toISOString(),
     status: t.status,
     doctor: {
-      specialty: t.doctor.specialty as Specialty,
+      speciality: t.doctor.speciality as Speciality,
       profile: {
         firstName: t.doctor.profile.firstName,
         lastName: t.doctor.profile.lastName,
@@ -89,7 +89,7 @@ export default async function BusquedaTurnosPage({
     <section>
       <InteractiveBooking
         medicos={serializedDoctors}
-        initialSpecialty={params.specialty}
+        initialSpeciality={params.speciality}
         initialDoctorId={params.doctorId}
         initialDate={dateParam}
         turnosDB={serializedTurnos}

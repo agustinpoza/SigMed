@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { buscarTurnosDisponibles } from "./turnos";
-import { AppointmentState, Specialty } from "@/generated/prisma/client";
+import { AppointmentState, Speciality } from "@/generated/prisma/client";
 
 const mocks = vi.hoisted(() => ({
   findMany: vi.fn(),
@@ -39,10 +39,10 @@ describe("US 2.1: Búsqueda de Turnos Disponibles (RF-05)", () => {
   });
 
   it("CA1: filtra por especialidad", async () => {
-    await buscarTurnosDisponibles({ specialty: Specialty.PEDIATRA });
+    await buscarTurnosDisponibles({ speciality: Speciality.PEDIATRA });
     expect(mocks.findMany).toHaveBeenCalledWith({
       where: expect.objectContaining({
-        doctor: { specialty: Specialty.PEDIATRA },
+        doctor: { speciality: Speciality.PEDIATRA },
         status: AppointmentState.RESERVADO,
       }),
       include: {
@@ -84,14 +84,14 @@ describe("US 2.1: Búsqueda de Turnos Disponibles (RF-05)", () => {
   it("CA1: combina filtros de profesional, especialidad y fecha estrictamente", async () => {
     await buscarTurnosDisponibles({
       doctorId: "doc-2",
-      specialty: Specialty.CLINICO,
+      speciality: Speciality.CLINICO,
       date: "2026-10-26",
     });
     expect(mocks.findMany).toHaveBeenCalledWith({
       where: {
         status: AppointmentState.RESERVADO,
         doctorId: "doc-2",
-        doctor: { specialty: Specialty.CLINICO },
+        doctor: { speciality: Speciality.CLINICO },
         startsAt: {
           gte: new Date("2026-10-26T00:00:00.000Z"),
           lte: new Date("2026-10-26T23:59:59.999Z"),
