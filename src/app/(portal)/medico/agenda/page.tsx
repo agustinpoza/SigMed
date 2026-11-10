@@ -2,7 +2,7 @@
 import { prisma } from "@/lib/db";
 import { getCurrentActor } from "@/lib/actor";
 import HojaTrabajoTable, { DoctorTurnoRow } from "@/app/ui/medico/agenda/hoja-trabajo-table";
-import { AppointmentState, type Speciality } from "@/generated/prisma/client";
+import { type Speciality } from "@/generated/prisma/client";
 
 const SPECIALITY_LABELS: Record<Speciality, string> = {
   CLINICO: "Clínica médica",
@@ -149,7 +149,7 @@ export default async function HojaDeTrabajoMedicoPage({ searchParams }: { search
         time: "15:00",
         patientName: "López, Marta",
         speciality: doctor ? (SPECIALITY_LABELS[doctor.speciality] ?? doctor.speciality) : "Pediatría",
-        status: AppointmentState.PENDIENTE,
+        status: "CANCELADO",
       },
     ];
   }

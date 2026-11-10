@@ -5,13 +5,13 @@ import { getCurrentActor } from "@/lib/actor";
 import { AppointmentState } from "@/generated/prisma/client";
 import { eliminarTurnosVencidos } from "@/lib/turnos";
 import {
-  AGENDA_SPECIALTY_LABELS,
+  AGENDA_SPECIALITY_LABELS,
   obtenerHorariosAlternativosProfesional,
   type HorarioAlternativo,
 } from "@/lib/agenda";
 import MisTurnosClient, { type MyAppointment } from "./mis-turnos-client";
 
-const SPECIALITY_LABELS: Record<string, string> = AGENDA_SPECIALTY_LABELS;
+const SPECIALITY_LABELS: Record<string, string> = AGENDA_SPECIALITY_LABELS;
 
 function isPastTurno(dateTimeStr: string): boolean {
   try {

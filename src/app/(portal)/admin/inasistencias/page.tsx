@@ -1,4 +1,4 @@
-import { AGENDA_SPECIALTY_LABELS } from "@/lib/agenda";
+import { AGENDA_SPECIALITY_LABELS } from "@/lib/agenda";
 import {
   PAYMENT_STATUS_LABELS,
   listarCargosInasistencia,
@@ -102,7 +102,7 @@ export default async function InasistenciasPage() {
                   <p className="mt-1 text-sm text-zinc-700">
                     {cargo.appointment.doctor.profile.firstName}{" "}
                     {cargo.appointment.doctor.profile.lastName} ·{" "}
-                    {AGENDA_SPECIALTY_LABELS[
+                    {AGENDA_SPECIALITY_LABELS[
                       cargo.appointment.doctor.specialty
                     ] ?? cargo.appointment.doctor.specialty}
                   </p>

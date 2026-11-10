@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getCurrentActor } from "@/lib/actor";
-import { AGENDA_SPECIALTY_LABELS } from "@/lib/agenda";
+import { AGENDA_SPECIALITY_LABELS } from "@/lib/agenda";
 import { COVERAGE_BADGE_CLASSES } from "@/lib/coverage";
 import {
   PAYMENT_STATUS_LABELS,
@@ -100,7 +100,7 @@ export default async function PagoDetallePage({
               Especialidad
             </dt>
             <dd className="text-zinc-900">
-              {AGENDA_SPECIALTY_LABELS[resumen.specialty] ??
+              {AGENDA_SPECIALITY_LABELS[resumen.specialty] ??
                 resumen.specialty}{" "}
               · Matrícula {resumen.licenseNumber}
             </dd>

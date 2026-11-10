@@ -9,7 +9,7 @@ import {
   PAYMENT_STATUS_LABELS,
   obtenerDeudaPaciente,
 } from "@/lib/payments";
-import { AGENDA_SPECIALTY_LABELS } from "@/lib/agenda";
+import { AGENDA_SPECIALITY_LABELS } from "@/lib/agenda";
 import { AppointmentState, PaymentConcept, PaymentStatus } from "@/generated/prisma/enums";
 
 export const metadata = {
@@ -140,7 +140,7 @@ export default async function PagosPage({
                 >
                   <span>
                     {dateFormatter.format(item.startsAt)} · {item.doctorName} ·{" "}
-                    {AGENDA_SPECIALTY_LABELS[item.specialty] ?? item.specialty}
+                    {AGENDA_SPECIALITY_LABELS[item.specialty] ?? item.specialty}
                   </span>
                   <span className="font-semibold">
                     {moneyFormatter.format(item.amount)}
@@ -186,7 +186,7 @@ export default async function PagosPage({
                         {turno.doctor.profile.lastName}
                       </h3>
                       <p className="text-xs text-zinc-500">
-                        {AGENDA_SPECIALTY_LABELS[turno.doctor.specialty] ??
+                        {AGENDA_SPECIALITY_LABELS[turno.doctor.specialty] ??
                           turno.doctor.specialty}{" "}
                         · Matrícula {turno.doctor.licenseNumber}
                       </p>

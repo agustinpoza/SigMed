@@ -10,7 +10,7 @@ export type DoctorTurnoRow = {
   id: string;
   time: string;
   patientName: string;
-  specialiity: string;
+  speciality: string;
   status: AppointmentState;
 };
 
