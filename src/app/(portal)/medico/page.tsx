@@ -1,9 +1,19 @@
 // app/(portal)/medico/page.tsx
+import { UserRole } from "@/generated/prisma/browser";
 import { getCurrentActor } from "@/lib/actor";
 import Link from "next/link";
 
 export default async function MedicoPage() {
   const medico = await getCurrentActor();
+
+  if (!medico || medico.role !== UserRole.MEDICO) {
+        return (
+            <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-red-800">
+                No tenés permiso para acceder a esta sección. Solo está disponible
+                para médicos.
+            </div>
+        );
+    }
 
   return (
     <main>
@@ -40,6 +50,19 @@ export default async function MedicoPage() {
                 className="text-black/75 bg-white rounded-md border border-black/25 p-2"
           >
             Ir a Disponibilidad
+          </Link>
+        </section>
+        <section className="flex-col bg-white rounded-lg p-4">
+          <h2 className="text-lg text-black font-semibold">
+            Mi perfil
+          </h2>
+          <p className="text-sm text-gray-500 mb-4">
+            Consulta tus datos personales y modifica el valor de tu consulta particular.
+          </p>
+          <Link href="/medico/perfil"
+                className="text-black/75 bg-white rounded-md border border-black/25 p-2"
+          >
+            Ir a Mi Perfil
           </Link>
         </section>
       </div>
