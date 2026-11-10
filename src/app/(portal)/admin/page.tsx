@@ -82,6 +82,19 @@ export default async function AdminPage() {
             Ir a Inasistencias
           </Link>
         </section>
+        <section className="col-span-2 flex-col bg-white rounded-lg p-4">
+          <h2 className="text-lg text-black font-semibold">
+            Reportes administrativos
+          </h2>
+          <p className="text-sm text-gray-500 mb-4">
+            Consulta los turnos atendidos y cancelados por especialidad en un período.
+          </p>
+          <Link href="/admin/reportes"
+                className="text-black/75 bg-white rounded-md border border-black/25 p-2"
+          >
+            Ir a Reportes
+          </Link>
+        </section>
         <section className="col-span-2 flex-col bg-gray-100 rounded-md p-2">
           <h2 className="text-lg text-black font-semibold">
             Ejecutar funciones
