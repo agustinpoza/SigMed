@@ -14,6 +14,7 @@ const items = [
   { href: "/medico", label: "Inicio" },
   { href: "/medico/agenda", label: "Hoja de trabajo" },
   { href: "/medico/disponibilidad", label: "Disponibilidad" },
+  { href: "/medico/perfil", label: "Mi Perfil" },
 ];
 
 export default async function MedicoLayout({ children }: LayoutProps<"/medico">) {
