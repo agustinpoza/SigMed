@@ -122,7 +122,7 @@ export default function DisponibilidadForm({ refreshKey }: { refreshKey: number 
 
     return (
         <>
-        <div className="m-2 flex flex-col gap-6 border-y border-gray-400 py-2 md:flex-row md:items-start md:justify-around">
+        <div className="flex flex-col gap-6 border-b border-gray-400 m-2 py-2 md:flex-row md:items-start md:justify-around">
             <div className="md:shrink-0">
                 <h2 className="text-xl text-black font-semibold m-1">
                     Calendario del mes
