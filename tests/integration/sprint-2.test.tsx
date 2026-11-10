@@ -5,7 +5,7 @@ import { act, cleanup, fireEvent, render, screen, within } from "@testing-librar
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { prisma } from "@/lib/db";
 import type { UserProfile } from "@/generated/prisma/client";
-import { AlertStatus, AppointmentState, MovementType, UserRole, Specialty } from "@/generated/prisma/enums";
+import { AlertStatus, AppointmentState, MovementType, UserRole, Speciality } from "@/generated/prisma/enums";
 import { createVaccineWithInitialLot, registerStockMovement, StockRuleError } from "@/lib/stock";
 import HistorialPage from "@/app/(portal)/paciente/historial/page";
 import ClinicalHistoryTable, { type ClinicalHistoryEntry } from "@/app/(portal)/paciente/historial/clinical-history-table";
@@ -48,7 +48,7 @@ beforeAll(async () => {
   await prisma.patient.create({ data: { id: patientA.id } });
   await prisma.patient.create({ data: { id: patientB.id } });
   await prisma.doctor.create({ data: {
-    id: doctorProfile.id, licenseNumber: "MATRICULA-FICTICIA", specialty: Specialty.CLINICO,
+    id: doctorProfile.id, licenseNumber: "MATRICULA-FICTICIA", speciality: Speciality.CLINICO,
     consultDuration: 30, consultFee: 100,
   } });
   // Duración y fechas son datos del fixture, no una definición de DU-11.
@@ -91,7 +91,7 @@ describe("SIG-MEJ-02.3: aislamiento del servidor con PostgreSQL real", () => {
     expect(entries).toHaveLength(patient === "A" ? 7 : 1);
     expect(entries.every((entry) => entry.diagnosis.includes(`EXCLUSIVO-${patient}`))).toBe(true);
     expect(JSON.stringify(entries)).not.toContain(`EXCLUSIVO-${patient === "A" ? "B" : "A"}`);
-    expect(Object.keys(entries[0]).sort()).toEqual(["date", "diagnosis", "doctor", "id", "indications", "specialty", "treatment"]);
+    expect(Object.keys(entries[0]).sort()).toEqual(["date", "diagnosis", "doctor", "id", "indications", "speciality", "treatment"]);
     render(view); search("infeccion martin");
     expect(screen.queryAllByText(/EXCLUSIVO-/).length).toBeGreaterThan(0);
     search(`EXCLUSIVO-${patient === "A" ? "B" : "A"}`);

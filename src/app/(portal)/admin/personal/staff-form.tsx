@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, type ReactNode } from "react";
+import { useActionState, useEffect, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 import { crearPersonal, type StaffFormState } from "./actions";
 import { STAFF_ROLES, STAFF_ROLE_LABELS } from "@/lib/staff-roles";
+import Swal from "sweetalert2";
 
 const initialState: StaffFormState = {};
 
@@ -62,6 +63,22 @@ export function StaffForm() {
   const [state, formAction] = useActionState(crearPersonal, initialState);
   const errors = state.errors ?? {};
   const values = state.values ?? {};
+
+  useEffect(() => {
+    const errors = Object.values(state.errors ?? {});
+    if (state.message && !state.success || errors.length > 0) {
+      void Swal.fire({
+        icon: "error",
+        title: "No se pudo crear la cuenta",
+        text: state.message ?? errors.join("\n"),
+        confirmButtonText: "Aceptar",
+        buttonsStyling: false,
+        customClass: {
+          confirmButton: "bg-slate-600 text-white rounded-sm p-2 px-3 m-2",
+        },
+      });
+    }
+  }, [state]);
 
   return (
     <form action={formAction} className="space-y-5">

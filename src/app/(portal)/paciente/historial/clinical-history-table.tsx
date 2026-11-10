@@ -6,7 +6,7 @@ export type ClinicalHistoryEntry = {
   id: string;
   date: string;
   doctor: string;
-  specialty: string;
+  speciality: string;
   diagnosis: string;
   treatment: string | null;
   indications: string | null;
@@ -51,7 +51,7 @@ export default function ClinicalHistoryTable({
         (filter === "indications" && Boolean(record.indications));
       return matchesFilter && matchesSearch([
         record.doctor,
-        record.specialty,
+        record.speciality,
         record.diagnosis,
         record.treatment,
         record.indications,
@@ -184,7 +184,7 @@ export default function ClinicalHistoryTable({
                     </td>
                     <td className="px-3 py-3 sm:px-4">
                       <p className="font-medium text-zinc-900">{record.doctor}</p>
-                      <p className="mt-0.5 text-xs text-zinc-500">{record.specialty}</p>
+                      <p className="mt-0.5 text-xs text-zinc-500">{record.speciality}</p>
                     </td>
                     <td className="whitespace-pre-wrap wrap-break-word px-3 py-3 leading-5 text-zinc-800 sm:px-4">
                       {record.diagnosis}

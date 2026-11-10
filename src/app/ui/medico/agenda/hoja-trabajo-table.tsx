@@ -3,28 +3,21 @@
 import { useState, useTransition, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { registrarAsistencia } from "@/app/(portal)/medico/agenda/actions";
+import { HiOutlineChevronLeft, HiOutlineChevronRight, HiOutlineSearch, HiOutlineX } from "react-icons/hi";
+import { AppointmentState } from "@/generated/prisma/enums";
+import Swal from "sweetalert2";
 
 export type DoctorTurnoRow = {
   id: string;
   time: string;
   patientName: string;
-  specialty: string;
-  status: "ATENDIDO" | "AUSENTE" | "CONFIRMADO" | "RESERVADO" | "PENDIENTE" | string;
+  speciality: string;
+  status: AppointmentState;
 };
 
 const MONTH_NAMES = [
-  "Enero",
-  "Febrero",
-  "Marzo",
-  "Abril",
-  "Mayo",
-  "Junio",
-  "Julio",
-  "Agosto",
-  "Septiembre",
-  "Octubre",
-  "Noviembre",
-  "Diciembre",
+  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
 ];
 
 const WEEKDAY_NAMES = ["Do", "Lu", "Ma", "Mi", "Ju", "Vi", "Sá"];
@@ -51,9 +44,9 @@ export default function HojaTrabajoTable({
   const calendarRef = useRef<HTMLDivElement>(null);
 
   // Parsear fecha actual seleccionada para inicializar vista de mes del calendario
-  const [selYear, selMonth, selDay] = isoDate.split("-").map(Number);
-  const [calYear, setCalYear] = useState<number>(selYear || 2026);
-  const [calMonth, setCalMonth] = useState<number>(selMonth ? selMonth - 1 : 9);
+  const [selYear, selMonth] = isoDate.split("-").map(Number);
+  const [calYear, setCalYear] = useState<number>(selYear);
+  const [calMonth, setCalMonth] = useState<number>(selMonth - 1);
 
   // Cerrar el popover al hacer clic afuera
   useEffect(() => {
@@ -92,17 +85,28 @@ export default function HojaTrabajoTable({
 
         await registrarAsistencia(formData);
 
+        const message = `Asistencia actualizada: el paciente fue marcado como ${nuevoEstado.toLowerCase()}.`;
         setFeedbackMsg({
           type: "success",
-          text: `Asistencia actualizada: el paciente fue marcado como ${nuevoEstado.toLowerCase()}.`,
+          text: message,
         });
-      } catch (err: any) {
-        if (!appointmentId.startsWith("demo-")) {
-          setFeedbackMsg({
-            type: "error",
-            text: err.message || "Error al registrar asistencia.",
-          });
-        }
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Error al registrar asistencia.";
+        setFeedbackMsg({
+          type: "error",
+          text: message,
+        });
+        void Swal.fire({
+          icon: "error",
+          title: "No se pudo registrar la asistencia",
+          text: message,
+          confirmButtonText: "Aceptar",
+          buttonsStyling: false,
+          customClass: {
+            confirmButton: "bg-slate-600 text-white rounded-sm p-2 px-3 m-2",
+          },
+        });
       } finally {
         setPendingId(null);
       }
@@ -128,12 +132,12 @@ export default function HojaTrabajoTable({
     }
   };
 
-  const handleSelectDay = (day: number) => {
-    const mm = String(calMonth + 1).padStart(2, "0");
+  const handleSelectDay = (day: number, month = calMonth, year = calYear) => {
+    const mm = String(month + 1).padStart(2, "0");
     const dd = String(day).padStart(2, "0");
-    const newFormattedDate = `${dd}/${mm}/${calYear}`;
+    const newFormattedDate = `${dd}/${mm}/${year}`;
     setShowCalendar(false);
-    router.push(`/medico/agenda?fecha=${newFormattedDate}`);
+    router.push(`/medico/agenda?fecha=${encodeURIComponent(newFormattedDate)}`);
   };
 
   // Generar cuadrícula de días para el mes visible
@@ -164,7 +168,7 @@ export default function HojaTrabajoTable({
             onClick={() => setFeedbackMsg(null)}
             className="font-bold hover:opacity-75 cursor-pointer ml-4"
           >
-            ✕
+            <HiOutlineX />
           </button>
         </div>
       )}
@@ -210,9 +214,9 @@ export default function HojaTrabajoTable({
 
               <button
                 type="submit"
-                className="rounded-md bg-zinc-900 px-4 py-1 text-xs font-semibold text-white shadow-xs hover:bg-zinc-800 transition cursor-pointer"
+                className="flex items-center gap-1 rounded-md bg-zinc-900 px-4 py-1 text-xs font-semibold text-white shadow-xs hover:bg-zinc-800 transition cursor-pointer"
               >
-                Buscar
+                <HiOutlineSearch className="size-4" />Buscar
               </button>
             </form>
 
@@ -231,7 +235,7 @@ export default function HojaTrabajoTable({
                       className="rounded p-1 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 transition"
                       title="Mes anterior"
                     >
-                      ‹
+                      <HiOutlineChevronLeft />
                     </button>
                     <button
                       type="button"
@@ -239,7 +243,7 @@ export default function HojaTrabajoTable({
                       className="rounded p-1 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 transition"
                       title="Mes siguiente"
                     >
-                      ›
+                      <HiOutlineChevronRight />
                     </button>
                   </div>
                 </div>
@@ -307,13 +311,21 @@ export default function HojaTrabajoTable({
                   <button
                     type="button"
                     onClick={() => {
-                      const today = new Date();
-                      const d = String(today.getDate()).padStart(2, "0");
-                      const m = String(today.getMonth() + 1).padStart(2, "0");
-                      const y = today.getFullYear();
-                      handleSelectDay(today.getDate());
-                      setCalMonth(today.getMonth());
-                      setCalYear(y);
+                      const parts = new Intl.DateTimeFormat("en-US", {
+                        timeZone: "America/Argentina/Buenos_Aires",
+                        year: "numeric",
+                        month: "2-digit",
+                        day: "2-digit",
+                      }).formatToParts(new Date());
+                      const values = Object.fromEntries(
+                        parts.map(({ type, value }) => [type, value])
+                      );
+                      const year = Number(values.year);
+                      const month = Number(values.month);
+                      const day = Number(values.day);
+                      setCalMonth(month - 1);
+                      setCalYear(year);
+                      handleSelectDay(day, month - 1, year);
                     }}
                     className="font-medium text-zinc-700 hover:text-zinc-900 underline cursor-pointer"
                   >
@@ -349,7 +361,6 @@ export default function HojaTrabajoTable({
                   const isAtendido = t.status === "ATENDIDO";
                   const isAusente = t.status === "AUSENTE";
                   const isPendiente =
-                    t.status === "PENDIENTE" ||
                     t.status === "CONFIRMADO" ||
                     t.status === "RESERVADO";
 
@@ -364,7 +375,7 @@ export default function HojaTrabajoTable({
                       </td>
 
                       {/* ESPECIALIDAD */}
-                      <td className="py-4 text-sm text-zinc-900 font-normal">{t.specialty}</td>
+                      <td className="py-4 text-sm text-zinc-900 font-normal">{t.speciality}</td>
 
                       {/* ESTADO */}
                       <td className="py-4">

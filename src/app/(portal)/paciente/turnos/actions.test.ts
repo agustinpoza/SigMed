@@ -1,12 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  confirmarTurno,
-  reservarTurno,
-  cancelarTurno,
-  cancelarTurnoPaciente,
-  reprogramarTurno,
-} from "./actions";
-import { AppointmentState, Specialty } from "@/generated/prisma/client";
+import { confirmarTurno, reservarTurno, cancelarTurno, cancelarTurnoPaciente, reprogramarTurno, } from "./actions";
+import { AppointmentState, Speciality } from "@/generated/prisma/client";
 import { eliminarTurnosVencidos } from "@/lib/turnos";
 import {
   AgendaRuleError,
@@ -23,12 +17,13 @@ const mocks = vi.hoisted(() => ({
   findFirstAppointment: vi.fn(),
   findManyAppointments: vi.fn(),
   createAppointment: vi.fn(),
+  lockDoctor: vi.fn(),
+  transaction: vi.fn(),
   updateAppointment: vi.fn(),
   updateMany: vi.fn(),
   deleteMany: vi.fn(),
   findFirstBlock: vi.fn(),
   deleteManyBlocks: vi.fn(),
-  transaction: vi.fn(),
   revalidate: vi.fn(),
 }));
 
@@ -48,7 +43,8 @@ vi.mock("@/lib/db", () => {
     scheduleBlock: {
       findFirst: mocks.findFirstBlock,
       deleteMany: mocks.deleteManyBlocks,
-    },
+      $transaction: mocks.transaction,
+  },
     $transaction: (cb: (tx: any) => Promise<any>) => mocks.transaction(cb, prismaMock),
   };
   return { prisma: prismaMock };
@@ -86,11 +82,12 @@ beforeEach(() => {
   mocks.findDoctor.mockResolvedValue({
     id: DOCTOR_ID,
     consultDuration: 30,
-    specialty: Specialty.CLINICO,
+    speciality: Speciality.CLINICO,
     licenseNumber: "MP-12345",
     profile: { firstName: "Juan", lastName: "Pérez" },
   });
   mocks.findUniqueAppointment.mockResolvedValue(null);
+  mocks.findFirstBlock.mockResolvedValue(null);
   mocks.findFirstAppointment.mockResolvedValue(null);
   mocks.findManyAppointments.mockResolvedValue([]);
   mocks.createAppointment.mockResolvedValue({ id: APPOINTMENT_ID });
@@ -100,6 +97,16 @@ beforeEach(() => {
   mocks.findFirstBlock.mockResolvedValue(null);
   mocks.deleteManyBlocks.mockResolvedValue({ count: 0 });
   mocks.transaction.mockImplementation(async (cb, txClient) => cb(txClient));
+  mocks.transaction.mockImplementation(async (callback) =>
+    callback({
+      $queryRaw: mocks.lockDoctor,
+      scheduleBlock: { findFirst: mocks.findFirstBlock },
+      appointment: {
+        findFirst: mocks.findFirstAppointment,
+        create: mocks.createAppointment,
+      },
+    })
+  );
 });
 
 describe("US 2.2: Confirmación del Turno (RF-06)", () => {
@@ -187,7 +194,7 @@ describe("US 2.3: Confirmación y recordatorios por email (RF-07)", () => {
         status: AppointmentState.CONFIRMADO,
         recordatorio_enviado: false,
         doctor: {
-          specialty: Specialty.PEDIATRA,
+          specialty: Speciality.PEDIATRA,
           licenseNumber: "MP-1002",
           profile: { firstName: "Sofía", lastName: "Duarte" },
         },
@@ -208,7 +215,7 @@ describe("US 2.3: Confirmación y recordatorios por email (RF-07)", () => {
         status: AppointmentState.CONFIRMADO,
         recordatorio_enviado: true,
         doctor: {
-          specialty: Specialty.PEDIATRA,
+          specialty: Speciality.PEDIATRA,
           licenseNumber: "MP-1002",
           profile: { firstName: "Sofía", lastName: "Duarte" },
         },
@@ -297,7 +304,7 @@ describe("US 2.5: Reprogramación de turno por el paciente (RF-08)", () => {
       doctor: {
         id: DOCTOR_ID,
         consultDuration: 30,
-        specialty: Specialty.PEDIATRA,
+        specialty: Speciality.PEDIATRA,
         licenseNumber: "MP-1002",
         profile: { firstName: "Sofía", lastName: "Duarte" },
       },
@@ -354,7 +361,7 @@ describe("US 2.5: Reprogramación de turno por el paciente (RF-08)", () => {
       doctor: {
         id: DOCTOR_ID,
         consultDuration: 30,
-        specialty: Specialty.PEDIATRA,
+        specialty: Speciality.PEDIATRA,
         licenseNumber: "MP-1002",
         profile: { firstName: "Sofía", lastName: "Duarte" },
       },
@@ -399,6 +406,19 @@ describe("Reserva de Turnos: Validación de turnos vencidos y no re-selección",
 
     await expect(reservarTurno(fd)).rejects.toThrow(
       "El turno seleccionado ya fue reservado por otro usuario."
+    );
+    expect(mocks.createAppointment).not.toHaveBeenCalled();
+  });
+
+  it("rechaza la reserva si el horario fue bloqueado después de cargar la agenda", async () => {
+    const futureDate = new Date(Date.now() + 86400000 * 2).toISOString();
+    const fd = new FormData();
+    fd.set("doctorId", DOCTOR_ID);
+    fd.set("startsAt", futureDate);
+    mocks.findFirstBlock.mockResolvedValue({ id: "block-id" });
+
+    await expect(reservarTurno(fd)).rejects.toThrow(
+      "El horario fue bloqueado por el profesional. Actualizá la disponibilidad y elegí otro turno."
     );
     expect(mocks.createAppointment).not.toHaveBeenCalled();
   });

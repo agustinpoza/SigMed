@@ -18,7 +18,7 @@ export async function listarMedicos(): Promise<EjercicioTarget[]> {
     orderBy: [{ profile: { lastName: "asc" } }, { profile: { firstName: "asc" } }],
     select: {
       id: true,
-      specialty: true,
+      speciality: true,
       licenseNumber: true,
       profile: { select: { firstName: true, lastName: true, dni: true } },
     },
@@ -29,7 +29,7 @@ export async function listarMedicos(): Promise<EjercicioTarget[]> {
     nombre: medico.profile.firstName,
     apellido: medico.profile.lastName,
     dni: medico.profile.dni,
-    detalle: `${medico.specialty} · ${medico.licenseNumber}`,
+    detalle: `${medico.speciality} · ${medico.licenseNumber}`,
   }));
 }
 

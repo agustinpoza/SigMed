@@ -1,16 +1,17 @@
+// app/(portal)/paciente/mis-turnos/page.tsx
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
-import { getCurrentActor } from "@/lib/dev-actor";
+import { getCurrentActor } from "@/lib/actor";
 import { AppointmentState } from "@/generated/prisma/client";
 import { eliminarTurnosVencidos } from "@/lib/turnos";
 import {
-  AGENDA_SPECIALTY_LABELS,
+  AGENDA_SPECIALITY_LABELS,
   obtenerHorariosAlternativosProfesional,
   type HorarioAlternativo,
 } from "@/lib/agenda";
 import MisTurnosClient, { type MyAppointment } from "./mis-turnos-client";
 
-const SPECIALTY_LABELS: Record<string, string> = AGENDA_SPECIALTY_LABELS;
+const SPECIALITY_LABELS: Record<string, string> = AGENDA_SPECIALITY_LABELS;
 
 function isPastTurno(dateTimeStr: string): boolean {
   try {
@@ -49,9 +50,6 @@ export default async function MisTurnosPage() {
     ? await prisma.appointment.findMany({
         where: {
           patientId: actor.id,
-          status: {
-            not: AppointmentState.CANCELADO,
-          },
         },
         include: {
           doctor: {
@@ -78,10 +76,11 @@ export default async function MisTurnosPage() {
       doctorId: t.doctorId,
       doctorName: `${t.doctor.profile.firstName} ${t.doctor.profile.lastName}`,
       doctorLicense: t.doctor.licenseNumber,
-      specialty: SPECIALTY_LABELS[t.doctor.specialty] ?? t.doctor.specialty,
+      speciality: SPECIALITY_LABELS[t.doctor.speciality] ?? t.doctor.speciality,
       dateTime: `${day}/${month}/${year} - ${time}`,
       startsAtISO: t.startsAt.toISOString(),
       status: t.status,
+      cancellationReason: t.cancellationReason ?? undefined,
     };
   });
 
@@ -118,7 +117,7 @@ export default async function MisTurnosPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-slate-800">Mis turnos</h1>
         <p className="text-sm text-slate-600">
-          Consultá tus turnos reservados, confirmá tu asistencia, cancelá o reprogramá tu consulta.
+          Consultá el estado de tus turnos, confirmá tu asistencia cuando corresponda, cancelá o reprogramá tu consulta.
         </p>
       </div>
 

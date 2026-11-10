@@ -2,12 +2,13 @@
 
 import React, { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Specialty } from "@/generated/prisma/enums";
+import { Speciality } from "@/generated/prisma/enums";
 import { reservarTurno } from "./actions";
+import Swal from "sweetalert2";
 
 export type DoctorItem = {
   id: string;
-  specialty: Specialty;
+  speciality: Speciality;
   name: string;
   schedules: {
     weekday: string;
@@ -23,7 +24,7 @@ export type TurnoItem = {
   endsAt: string;
   status: string;
   doctor: {
-    specialty: Specialty;
+    speciality: Speciality;
     profile: {
       firstName: string;
       lastName: string;
@@ -31,7 +32,7 @@ export type TurnoItem = {
   };
 };
 
-const SPECIALTY_LABELS: Record<string, string> = {
+const SPECIALITY_LABELS: Record<string, string> = {
   CLINICO: "Medicina General / Clínico",
   PEDIATRA: "Pediatría",
   TRAUMATOLOGO: "Traumatología",
@@ -64,13 +65,13 @@ const MONTH_NAMES = [
 
 export default function InteractiveBooking({
   medicos,
-  initialSpecialty,
+  initialSpeciality,
   initialDoctorId,
   initialDate,
   turnosDB,
 }: {
   medicos: DoctorItem[];
-  initialSpecialty?: string;
+  initialSpeciality?: string;
   initialDoctorId?: string;
   initialDate?: string;
   turnosDB: TurnoItem[];
@@ -80,7 +81,7 @@ export default function InteractiveBooking({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Filtros
-  const [selectedSpecialty, setSelectedSpecialty] = useState<string>(initialSpecialty || "");
+  const [selectedSpeciality, setSelectedSpeciality] = useState<string>(initialSpeciality || "");
   const [selectedDoctorId, setSelectedDoctorId] = useState<string>(initialDoctorId || "");
 
   // Fecha seleccionada (por defecto la fecha enviada o la fecha actual)
@@ -104,7 +105,7 @@ export default function InteractiveBooking({
 
   // Filtrado de médicos según especialidad seleccionada
   const filteredDoctors = medicos.filter(
-    (m) => !selectedSpecialty || m.specialty === selectedSpecialty
+    (m) => !selectedSpeciality || m.speciality === selectedSpeciality
   );
 
   const selectedDoctorObj = medicos.find((m) => m.id === selectedDoctorId);
@@ -195,7 +196,7 @@ export default function InteractiveBooking({
     const availableSlots: {
       doctorId: string;
       doctorName: string;
-      specialty: Specialty;
+      speciality: Speciality;
       time: string;
       startsAt: string;
     }[] = [];
@@ -230,7 +231,7 @@ export default function InteractiveBooking({
           availableSlots.push({
             doctorId: doc.id,
             doctorName: doc.name,
-            specialty: doc.specialty,
+            speciality: doc.speciality,
             time: h,
             startsAt,
           });
@@ -291,7 +292,7 @@ export default function InteractiveBooking({
   };
 
   const handleCleanFilters = () => {
-    setSelectedSpecialty("");
+    setSelectedSpeciality("");
     setSelectedDoctorId("");
     setSelectedDate(todayStr);
     setSelectedSlot(null);
@@ -310,9 +311,33 @@ export default function InteractiveBooking({
         formData.set("startsAt", selectedSlot.startsAt);
 
         await reservarTurno(formData);
+        await Swal.fire({
+          icon: "success",
+          title: "Turno solicitado",
+          text: "El turno fue reservado correctamente.",
+          confirmButtonText: "Aceptar",
+          buttonsStyling: false,
+          customClass: {
+            confirmButton: "bg-slate-600 text-white rounded-sm p-2 px-3 m-2",
+          },
+        });
         router.push("/paciente/mis-turnos?reservado=1");
-      } catch (err: any) {
-        setErrorMsg(err.message || "Ocurrió un error al reservar el turno.");
+      } catch (err: unknown) {
+        const message =
+          err instanceof Error
+            ? err.message
+            : "Ocurrió un error al reservar el turno.";
+        setErrorMsg(message);
+        await Swal.fire({
+          icon: "error",
+          title: "No se pudo reservar el turno",
+          text: message,
+          confirmButtonText: "Aceptar",
+          buttonsStyling: false,
+          customClass: {
+            confirmButton: "bg-slate-600 text-white rounded-sm p-2 px-3 m-2",
+          },
+        });
       }
     });
   };
@@ -337,32 +362,32 @@ export default function InteractiveBooking({
           className="flex flex-wrap items-end gap-4"
         >
           {/* Dropdown Especialidad */}
-          <div className="flex flex-1 min-w-[200px] flex-col gap-1.5">
-            <label htmlFor="specialty" className="text-xs font-semibold text-zinc-700">
+          <div className="flex flex-1 min-w-50 flex-col gap-1.5">
+            <label htmlFor="speciality" className="text-xs font-semibold text-zinc-700">
               Especialidad
             </label>
             <select
-              id="specialty"
-              name="specialty"
-              value={selectedSpecialty}
+              id="speciality"
+              name="speciality"
+              value={selectedSpeciality}
               onChange={(e) => {
-                setSelectedSpecialty(e.target.value);
+                setSelectedSpeciality(e.target.value);
                 setSelectedDoctorId("");
                 setSelectedSlot(null);
               }}
               className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm focus:border-zinc-900 focus:outline-none"
             >
               <option value="">Todas las especialidades</option>
-              {Object.values(Specialty).map((esp) => (
+              {Object.values(Speciality).map((esp) => (
                 <option key={esp} value={esp}>
-                  {SPECIALTY_LABELS[esp] ?? esp}
+                  {SPECIALITY_LABELS[esp] ?? esp}
                 </option>
               ))}
             </select>
           </div>
 
           {/* Dropdown Profesional */}
-          <div className="flex flex-1 min-w-[220px] flex-col gap-1.5">
+          <div className="flex flex-1 min-w-55 flex-col gap-1.5">
             <label htmlFor="doctorId" className="text-xs font-semibold text-zinc-700">
               Profesional
             </label>
@@ -379,14 +404,14 @@ export default function InteractiveBooking({
               <option value="">Todos los profesionales</option>
               {filteredDoctors.map((doc) => (
                 <option key={doc.id} value={doc.id}>
-                  {doc.name} ({SPECIALTY_LABELS[doc.specialty] ?? doc.specialty})
+                  {doc.name} ({SPECIALITY_LABELS[doc.speciality] ?? doc.speciality})
                 </option>
               ))}
             </select>
           </div>
 
           {/* Campo Fecha */}
-          <div className="flex flex-1 min-w-[170px] flex-col gap-1.5">
+          <div className="flex flex-1 min-w-42.5 flex-col gap-1.5">
             <label htmlFor="date" className="text-xs font-semibold text-zinc-700">
               Fecha
             </label>
@@ -564,7 +589,7 @@ export default function InteractiveBooking({
             {/* Resumen de contexto en tarjeta suave */}
             <div className="rounded-lg bg-zinc-50 border border-zinc-200 px-3.5 py-2.5 text-xs text-zinc-600 mb-4">
               <span className="font-semibold text-zinc-700">Especialidad:</span>{" "}
-              {selectedSpecialty ? SPECIALTY_LABELS[selectedSpecialty] : "Todas"} ·{" "}
+              {selectedSpeciality ? SPECIALITY_LABELS[selectedSpeciality] : "Todas"} ·{" "}
               <span className="font-semibold text-zinc-700">Profesional:</span>{" "}
               {selectedDoctorObj ? selectedDoctorObj.name : "Todos los profesionales"}
             </div>
@@ -600,7 +625,7 @@ export default function InteractiveBooking({
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col gap-2 max-h-[340px] overflow-y-auto pr-1">
+              <div className="flex flex-col gap-2 max-h-85 overflow-y-auto pr-1">
                 {slotsAvailable.map((slot, idx) => {
                   const isChecked =
                     selectedSlot?.time === slot.time &&
@@ -626,7 +651,7 @@ export default function InteractiveBooking({
                         <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 shrink-0" />
                         <span className="text-sm font-bold text-zinc-900">{slot.time} hs</span>
                         <span className="text-xs text-zinc-500">
-                          {slot.doctorName} ({SPECIALTY_LABELS[slot.specialty] ?? slot.specialty})
+                          {slot.doctorName} ({SPECIALITY_LABELS[slot.speciality] ?? slot.speciality})
                         </span>
                       </div>
                       <input

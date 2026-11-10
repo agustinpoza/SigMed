@@ -30,7 +30,7 @@ enum CoverageStatus {
   @@map("estado_cobertura")
 }
 
-enum Specialty {
+enum Speciality {
   CLINICO      @map("clinico")
   PEDIATRA     @map("pediatra")
   TRAUMATOLOGO @map("traumatologo")
@@ -104,6 +104,25 @@ enum ReceiptType {
   @@map("tipo_comprobante")
 }
 
+// Sprint 3 (US-4.4 / US-4.7): el pago deja de ser solo un registro de una
+// transaccion confirmada. Tambien representa intentos online y deudas por
+// inasistencia, por eso necesita estado y concepto.
+enum PaymentStatus {
+  PENDIENTE @map("pendiente")
+  APROBADO  @map("aprobado")
+  RECHAZADO @map("rechazado")
+  ANULADO   @map("anulado")
+
+  @@map("estado_pago")
+}
+
+enum PaymentConcept {
+  CONSULTA     @map("consulta")
+  INASISTENCIA @map("inasistencia")
+
+  @@map("concepto_pago")
+}
+
 // US-7.5: el modo ejercicio del administrador queda registrado. Hoy la tabla
 // cubre solo ese alcance; la auditoria general (RNF-04) sigue fuera de alcance.
 enum AuditAction {
@@ -156,6 +175,7 @@ model UserProfile {
   vaccinationsResolved   VaccinationAppointment[] @relation("vacunacion_resolucion")
   vaccinationsApplied    VaccinationAppointment[] @relation("vacunacion_aplicacion")
   paymentsRegistered Payment[]        @relation("pago_registrado_por")
+  coverageValidations Patient[]        @relation("cobertura_validada_por")
 
   auditLogs      AuditLog[] @relation("auditoria_usuario")
 
@@ -178,20 +198,26 @@ model Patient {
   memberNumber   String?         @map("numero_afiliado")
   plan           String?
   coverageStatus CoverageStatus? @map("estado_cobertura")
+  // US-4.2: trazabilidad de la ultima validacion de cobertura.
+  coverageValidatedAt    DateTime? @map("fecha_validacion_cobertura") @db.Timestamptz(3)
+  coverageValidatedById  String?   @map("id_usuario_validacion_cobertura") @db.Uuid
+  coverageValidationNote String?   @map("nota_validacion_cobertura")
 
-  profile       UserProfile          @relation(fields: [id], references: [id], onDelete: Cascade)
-  insurance     InsuranceProvider?   @relation(fields: [insuranceId], references: [id], onDelete: SetNull)
-  appointments  Appointment[]
-  vaccinations  VaccinationAppointment[]
+  profile             UserProfile          @relation(fields: [id], references: [id], onDelete: Cascade)
+  insurance           InsuranceProvider?   @relation(fields: [insuranceId], references: [id], onDelete: SetNull)
+  coverageValidatedBy UserProfile?         @relation("cobertura_validada_por", fields: [coverageValidatedById], references: [id], onDelete: SetNull)
+  appointments        Appointment[]
+  vaccinations        VaccinationAppointment[]
 
   @@index([insuranceId])
+  @@index([coverageValidatedById])
   @@map("paciente")
 }
 
 model Doctor {
   id              String    @id @default(uuid()) @map("id_usuario") @db.Uuid
   licenseNumber   String    @unique @map("matricula")
-  specialty       Specialty @unique @map("especialidad")
+  speciality      Speciality @unique @map("especialidad")
   consultDuration Int       @map("duracion_consulta")
   consultFee      Decimal   @map("valor_consulta") @db.Decimal(12, 2)
 
@@ -381,18 +407,22 @@ model VaccinationAppointment {
 }
 
 model Payment {
-  id              String   @id @default(uuid()) @map("id_pago") @db.Uuid
-  appointmentId   String   @unique @map("id_turno") @db.Uuid
-  amount          Decimal  @map("monto") @db.Decimal(12, 2)
-  paymentMethod   String   @map("medio_pago")
-  transactionCode String?  @map("codigo_transaccion")
-  registeredById  String   @map("id_usuario_registro") @db.Uuid
-  registeredAt    DateTime @default(now()) @map("fecha_hora") @db.Timestamptz(3)
+  id              String         @id @default(uuid()) @map("id_pago") @db.Uuid
+  appointmentId   String         @unique @map("id_turno") @db.Uuid
+  amount          Decimal        @map("monto") @db.Decimal(12, 2)
+  paymentMethod   String         @map("medio_pago")
+  transactionCode String?        @map("codigo_transaccion")
+  status          PaymentStatus  @default(PENDIENTE) @map("estado")
+  concept         PaymentConcept @default(CONSULTA) @map("concepto")
+  paidAt          DateTime?      @map("fecha_pago") @db.Timestamptz(3)
+  registeredById  String         @map("id_usuario_registro") @db.Uuid
+  registeredAt    DateTime       @default(now()) @map("fecha_hora") @db.Timestamptz(3)
 
   appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Restrict)
   registeredBy UserProfile @relation("pago_registrado_por", fields: [registeredById], references: [id], onDelete: Restrict)
   receipt      Receipt?
 
+  @@index([status, concept])
   @@map("pago")
 }
 

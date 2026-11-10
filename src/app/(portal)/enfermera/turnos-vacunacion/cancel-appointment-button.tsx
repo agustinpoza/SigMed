@@ -2,6 +2,8 @@
 
 import { useActionState } from "react";
 import { cancelVaccinationAppointment, type CancelState } from "./actions";
+import { useEffect } from "react";
+import Swal from "sweetalert2";
 
 const initialState: CancelState = {};
 
@@ -16,15 +18,32 @@ export function CancelAppointmentButton({
     cancelVaccinationAppointment,
     initialState,
   );
+  
+  useEffect(() => {
+    if (state.error || state.message) {
+      const success = Boolean(state.message);
+      void Swal.fire({
+        icon: success ? "success" : "error",
+        title: success ? "Turno cancelado" : "No se pudo cancelar el turno",
+        text: state.message ?? state.error,
+        confirmButtonText: "Aceptar",
+        buttonsStyling: false,
+        customClass: {
+          confirmButton: "bg-slate-600 text-white rounded-sm p-2 px-3 m-2",
+        },
+      });
+    }
+  }, [state]);
 
   return (
     <form
       action={formAction}
       onSubmit={(event) => {
-        const ok = window.confirm(
+        if (!window.confirm(
           `¿Cancelar el turno de ${description}? Si estaba confirmado, la dosis vuelve al stock.`,
-        );
-        if (!ok) event.preventDefault();
+        )) {
+          event.preventDefault();
+        }
       }}
       className="flex flex-col items-end gap-1"
     >

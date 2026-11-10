@@ -1,15 +1,16 @@
 // @vitest-environment jsdom
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AssignmentForm } from "./assignment-form";
 import type { SlotOption, VaccinationFormState } from "./actions";
 
-const mocks = vi.hoisted(() => ({ slots: vi.fn(), create: vi.fn(), patients: vi.fn() }));
+const mocks = vi.hoisted(() => ({ slots: vi.fn(), create: vi.fn(), patients: vi.fn(), alert: vi.fn() }));
 vi.mock("./actions", () => ({
   getAvailableSlots: mocks.slots,
   createVaccinationAppointment: mocks.create,
   searchPatients: mocks.patients,
 }));
+vi.mock("sweetalert2", () => ({ default: { fire: mocks.alert } }));
 
 const firstDate = "2040-10-16";
 const secondDate = "2040-10-17";
@@ -201,6 +202,11 @@ describe("SIG-MEJ-04.1/04.3: disponibilidad del formulario", () => {
     fireEvent.change(schedule(), { target: { value: slot.value } });
     submit();
     await screen.findByText("Turno confirmado para la fecha elegida.");
+    await waitFor(() => expect(mocks.alert).toHaveBeenCalledWith(expect.objectContaining({
+      icon: "success",
+      title: "Turno confirmado",
+      text: "Turno confirmado para la fecha elegida.",
+    })));
     const submitted = mocks.create.mock.calls[0][1] as FormData;
     expect(submitted.get("patientId")).toBe("paciente");
     expect(submitted.get("vaccineId")).toBe("vacuna");

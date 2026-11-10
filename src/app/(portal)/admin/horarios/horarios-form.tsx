@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { modificarHorarios, type HorariosFormState } from "./actions";
+import Swal from "sweetalert2";
 
 type DoctorOption = {
   id: string;
@@ -16,6 +17,21 @@ export function HorariosForm({ doctors }: { doctors: DoctorOption[] }) {
     modificarHorarios,
     initialState,
   );
+
+  useEffect(() => {
+    if (state.status === "error" && state.message) {
+      void Swal.fire({
+        icon: "error",
+        title: "No se pudieron guardar los horarios",
+        text: state.message,
+        confirmButtonText: "Aceptar",
+        buttonsStyling: false,
+        customClass: {
+          confirmButton: "bg-slate-600 text-white rounded-sm p-2 px-3 m-2",
+        },
+      });
+    }
+  }, [state]);
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
 
   function toggleDay(day: string, checked: boolean) {

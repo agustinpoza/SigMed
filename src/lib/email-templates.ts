@@ -3,9 +3,9 @@
 // Logica pura: recibe los datos y devuelve asunto, HTML y texto plano. No toca
 // la base ni depende de Next, asi se puede testear sin infraestructura.
 
-import type { Specialty } from "@/generated/prisma/enums";
+import type { Speciality } from "@/generated/prisma/enums";
 
-const SPECIALTY_LABELS: Record<string, string> = {
+const SPECIALITY_LABELS: Record<string, string> = {
   CLINICO: "Clínica médica",
   PEDIATRA: "Pediatría",
   TRAUMATOLOGO: "Traumatología",
@@ -17,7 +17,7 @@ const AR_TIME_ZONE = "America/Argentina/Buenos_Aires";
 export type CancellationEmailInput = {
   patientName: string;
   doctorName: string;
-  specialty: Specialty | string;
+  specialty: Speciality | string;
   startsAt: Date;
   endsAt?: Date;
   reason: string | null;
@@ -60,8 +60,8 @@ function formatTime(date: Date): string {
   }).format(date);
 }
 
-function specialtyLabel(specialty: Specialty | string): string {
-  return SPECIALTY_LABELS[specialty] ?? specialty;
+function specialtyLabel(specialty: Speciality | string): string {
+  return SPECIALITY_LABELS[specialty] ?? specialty;
 }
 
 /** "Lunes, 12 de octubre de 2026 de 15:30 a 16:00" (hora de Argentina). */

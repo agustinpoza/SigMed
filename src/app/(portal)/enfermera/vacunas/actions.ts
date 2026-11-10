@@ -19,6 +19,7 @@ import { buildExerciseAudit, insertAudit } from "@/lib/audit";
 export type VaccineFormState = {
   errors?: FieldErrors;
   message?: string;
+  success?: boolean;
   values?: Record<string, string>;
 };
 
@@ -83,7 +84,7 @@ export async function createVaccine(
   const guard = await requireEnfermeraOAdministrador();
 
   if ("error" in guard) {
-    return { message: guard.error, values };
+    return { message: guard.error, success: false, values };
   }
 
   const audit = buildExerciseAudit(guard.context, {
@@ -114,7 +115,7 @@ export async function createVaccine(
   revalidatePath("/enfermera/vacunas");
   revalidatePath("/enfermera"); // el alta puede disparar una alerta de stock
 
-  return { message: `${name} se cargo con ${quantity} unidades.` };
+  return { message: `${name} se cargo con ${quantity} unidades.`, success: true };
 }
 
 export async function updateVaccine(
@@ -156,7 +157,7 @@ export async function updateVaccine(
   const guard = await requireEnfermeraOAdministrador();
 
   if ("error" in guard) {
-    return { message: guard.error };
+    return { message: guard.error, success: false };
   }
 
   const vaccine = await prisma.vaccine.findFirst({
@@ -204,5 +205,6 @@ export async function updateVaccine(
       criticalLevel === null
         ? "Vacuna actualizada."
         : `Vacuna actualizada con nivel critico ${criticalLevel}.`,
+    success: true,
   };
 }

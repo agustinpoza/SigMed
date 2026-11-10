@@ -1,6 +1,6 @@
 // app/lib/turnos.ts
 import { prisma } from "@/lib/db";
-import { Specialty, AppointmentState, type Prisma } from "@/generated/prisma/client";
+import { Speciality, AppointmentState, type Prisma } from "@/generated/prisma/client";
 import { ESTADOS } from "@/lib/turnos-estados";
 import { createHistorySearchMatcher } from "@/lib/clinical-history-search";
 
@@ -56,7 +56,7 @@ export async function obtenerTurnos(opts: {
 }
 
 export interface FiltrosTurnos {
-  specialty?: string;
+  speciality?: string;
   doctorId?: string;
   date?: string; // Formato YYYY-MM-DD
 }
@@ -70,9 +70,9 @@ export async function buscarTurnosDisponibles(filtros: FiltrosTurnos) {
   if (filtros.doctorId) {
     whereClause.doctorId = filtros.doctorId;
   }
-  if (filtros.specialty) {
+  if (filtros.speciality) {
     whereClause.doctor = {
-      specialty: filtros.specialty as Specialty,
+      speciality: filtros.speciality as Speciality,
     };
   }
 
@@ -120,4 +120,4 @@ export async function eliminarTurnosVencidos() {
     console.error("Error al eliminar turnos vencidos:", error);
     return { count: 0 };
   }
-}
+}

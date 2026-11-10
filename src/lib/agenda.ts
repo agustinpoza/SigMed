@@ -13,7 +13,7 @@ export class AgendaRuleError extends Error {
   }
 }
 
-export const AGENDA_SPECIALTY_LABELS: Record<string, string> = {
+export const AGENDA_SPECIALITY_LABELS: Record<string, string> = {
   CLINICO: "Clínica médica",
   PEDIATRA: "Pediatría",
   TRAUMATOLOGO: "Traumatología",
@@ -237,7 +237,7 @@ export async function procesarRecordatoriosTurnos(
 
     const doctorName = `${turno.doctor.profile.firstName} ${turno.doctor.profile.lastName}`;
     const specialtyLabel =
-      AGENDA_SPECIALTY_LABELS[turno.doctor.specialty] ?? turno.doctor.specialty;
+      AGENDA_SPECIALITY_LABELS[turno.doctor.speciality] ?? turno.doctor.speciality;
     const dateTimeStr = formatearFechaHoraTurno(turno.startsAt);
 
     const emailResult = await enviarRecordatorioTurnoEmail({
@@ -683,8 +683,8 @@ export async function reprogramarTurnoDominio(
     const doctorName = `${firstName} ${lastName}`.trim();
     const doctorLicense = oldTurno.doctor?.licenseNumber ?? "MP-1000";
     const specialtyLabel =
-      AGENDA_SPECIALTY_LABELS[oldTurno.doctor?.specialty ?? ""] ??
-      String(oldTurno.doctor?.specialty ?? "Clínica médica");
+      AGENDA_SPECIALITY_LABELS[oldTurno.doctor?.speciality ?? ""] ??
+      String(oldTurno.doctor?.speciality ?? "Clínica médica");
     const dateTimeFormatted = formatearFechaHoraTurno(newStartsAt!);
     const patientEmail = oldTurno.patient?.profile?.email;
     const patientName = oldTurno.patient?.profile

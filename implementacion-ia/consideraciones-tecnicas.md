@@ -396,3 +396,36 @@ pero `alerta_stock` conserva el estado anterior. Queda para US-3.3.
 `tests/integration/sprint-2.test.tsx` se verifica con PostgreSQL real: CA1 (caída
 al umbral), CA2 (reposición y resolución), umbral nulo, panel integrado en la
 página y resumen en el inicio.
+## 15. Sprint 3: coberturas, pagos online e inasistencias
+
+**US-4.2 · Validación de cobertura.** `src/lib/coverage.ts` clasifica la
+cobertura en cinco estados: `CUBIERTA`, `NO_VALIDA`, `PENDIENTE`,
+`SIN_COBERTURA` e `INVALIDA`. Solo la primera cuenta como cubierta y solo se
+llega a ella con obra social aceptada, número de afiliado informado y estado
+`validada`. La pantalla `/admin/coberturas` registra el resultado, la fecha, el
+administrador y una nota; esos datos se guardan en `paciente` (ver D-13 de
+`docs/BD.md`). Una cobertura rechazada o inválida **nunca** se trata como
+cubierta.
+
+**US-4.4 · Pago online.** No se integra una pasarela real: el formulario permite
+elegir el resultado simulado (aprobado, rechazado o pendiente) para poder
+demostrar los tres estados sin mover dinero. `src/lib/payments.ts` concentra la
+regla: el monto sale del `doctor.consultFee`, el turno debe pertenecer al
+paciente, estar `confirmado` y no estar cubierto. El resumen se muestra antes de
+confirmar y el pago se persiste con `estado`, `concepto`, `fecha_pago` y código
+de transacción simulado. Un pago pendiente o rechazado no cuenta como abonado.
+La relación sigue siendo 1:1 con el turno (`id_turno` único), así que reintentar
+actualiza el mismo registro en lugar de duplicarlo.
+
+**US-4.7 · Inasistencia.** El cargo se genera dentro de la misma transacción que
+marca el turno como `AUSENTE` (en `registrarAsistencia`). Se imputa el arancel
+completo con `concepto = inasistencia` y estado `pendiente`; si ya hay un pago
+aprobado no se agrega deuda y, si el cargo ya existe, no se duplica. Corregir la
+ausencia a `ATENDIDO` anula la deuda impaga; si ya fue cobrada, la corrección se
+bloquea. `/admin/inasistencias` permite registrar el cobro o condonar la deuda,
+y `/paciente/pagos` muestra el total adeudado y las consultas particulares.
+
+**Límites asumidos.** La UI de registro de cobertura (US-4.1) no está mergeada;
+US-4.2 consume los datos existentes. La pasarela y la validación ante la obra
+social son simuladas, no hay integración externa. El pago online no emite
+comprobante fiscal: eso queda para US-4.5/US-4.6.
