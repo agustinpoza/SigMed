@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import { validarCobertura, type CoverageFormState } from "./actions";
 import { CoverageStatus } from "@/generated/prisma/enums";
+import Swal from "sweetalert2";
 
 const initialState: CoverageFormState = {};
 
@@ -28,6 +29,22 @@ export function CoverageForm({
     validarCobertura,
     initialState,
   );
+
+  useEffect(() => {
+    const errors = Object.values(state.errors ?? {});
+    if (state.message && !state.success || errors.length > 0) {
+      void Swal.fire({
+        icon: "error",
+        title: "No se pudo guardar la validación",
+        text: state.message ?? errors.join("\n"),
+        confirmButtonText: "Aceptar",
+        buttonsStyling: false,
+        customClass: {
+          confirmButton: "bg-slate-600 text-white rounded-sm p-2 px-3 m-2",
+        },
+      });
+    }
+  }, [state]);
   const errors = state.errors ?? {};
 
   return (

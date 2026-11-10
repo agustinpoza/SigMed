@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, type ReactNode } from "react";
+import { useActionState, useEffect, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 import { registrarEvolucion, type EvolutionFormState } from "./actions";
 import { CLINICAL_RECORD_MAX_LENGTH } from "@/lib/clinical-records-limits";
+import Swal from "sweetalert2";
 
 const initialState: EvolutionFormState = {};
 
@@ -78,6 +79,22 @@ export function EvolutionForm({
 }) {
   const [state, formAction] = useActionState(registrarEvolucion, initialState);
   const errors = state.errors ?? {};
+
+  useEffect(() => {
+    const fieldErrors = Object.values(state.errors ?? {});
+    if (state.message || fieldErrors.length > 0) {
+      void Swal.fire({
+        icon: "error",
+        title: "No se pudo guardar la evolución",
+        text: state.message ?? fieldErrors.join("\n"),
+        confirmButtonText: "Aceptar",
+        buttonsStyling: false,
+        customClass: {
+          confirmButton: "bg-slate-600 text-white rounded-sm p-2 px-3 m-2",
+        },
+      });
+    }
+  }, [state]);
 
   return (
     <form action={formAction} className="space-y-5">

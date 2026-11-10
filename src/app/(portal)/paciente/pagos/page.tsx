@@ -1,14 +1,8 @@
 import Link from "next/link";
 import { getCurrentActor } from "@/lib/actor";
 import { prisma } from "@/lib/db";
-import {
-  COVERAGE_BADGE_CLASSES,
-  evaluarCobertura,
-} from "@/lib/coverage";
-import {
-  PAYMENT_STATUS_LABELS,
-  obtenerDeudaPaciente,
-} from "@/lib/payments";
+import { COVERAGE_BADGE_CLASSES, evaluarCobertura, } from "@/lib/coverage";
+import { PAYMENT_STATUS_LABELS, obtenerDeudaPaciente, } from "@/lib/payments";
 import { AGENDA_SPECIALITY_LABELS } from "@/lib/agenda";
 import { AppointmentState, PaymentConcept, PaymentStatus } from "@/generated/prisma/enums";
 
@@ -140,7 +134,7 @@ export default async function PagosPage({
                 >
                   <span>
                     {dateFormatter.format(item.startsAt)} · {item.doctorName} ·{" "}
-                    {AGENDA_SPECIALITY_LABELS[item.specialty] ?? item.specialty}
+                    {AGENDA_SPECIALITY_LABELS[item.speciality] ?? item.speciality}
                   </span>
                   <span className="font-semibold">
                     {moneyFormatter.format(item.amount)}
@@ -186,8 +180,8 @@ export default async function PagosPage({
                         {turno.doctor.profile.lastName}
                       </h3>
                       <p className="text-xs text-zinc-500">
-                        {AGENDA_SPECIALITY_LABELS[turno.doctor.specialty] ??
-                          turno.doctor.specialty}{" "}
+                        {AGENDA_SPECIALITY_LABELS[turno.doctor.speciality] ??
+                          turno.doctor.speciality}{" "}
                         · Matrícula {turno.doctor.licenseNumber}
                       </p>
                       <p className="mt-1 text-sm text-zinc-700">

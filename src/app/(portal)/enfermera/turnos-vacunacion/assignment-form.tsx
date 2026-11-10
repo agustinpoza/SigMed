@@ -19,6 +19,7 @@ import {
   type SlotOption,
   type VaccinationFormState,
 } from "./actions";
+import Swal from "sweetalert2";
 
 type AssignmentFormState = VaccinationFormState & { slotRevision?: number };
 
@@ -220,6 +221,35 @@ export function AssignmentForm({
     },
     initialState,
   );
+
+  const alertMessage = state.message ?? state.errors?.form;
+  useEffect(() => {
+    const errors = Object.values(state.errors ?? {});
+    if (!state.values && state.message && errors.length === 0) {
+      void Swal.fire({
+        icon: "success",
+        title: "Turno confirmado",
+        text: state.message,
+        confirmButtonText: "Aceptar",
+        buttonsStyling: false,
+        customClass: {
+          confirmButton: "bg-slate-600 text-white rounded-sm p-2 px-3 m-2",
+        },
+      });
+    }
+    else if (state.values || errors.length > 0) {
+      void Swal.fire({
+        icon: "error",
+        title: "No se pudo confirmar el turno",
+        text: alertMessage ?? errors.join("\n"),
+        confirmButtonText: "Aceptar",
+        buttonsStyling: false,
+        customClass: {
+          confirmButton: "bg-slate-600 text-white rounded-sm p-2 px-3 m-2",
+        },
+      });
+    }
+  }, [alertMessage, state]);
 
   // Se despacha a mano en vez de usar <form action>, porque con action React 19
   // resetea el form al terminar y desincroniza los campos controlados.

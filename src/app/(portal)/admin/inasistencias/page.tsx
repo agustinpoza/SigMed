@@ -103,8 +103,8 @@ export default async function InasistenciasPage() {
                     {cargo.appointment.doctor.profile.firstName}{" "}
                     {cargo.appointment.doctor.profile.lastName} ·{" "}
                     {AGENDA_SPECIALITY_LABELS[
-                      cargo.appointment.doctor.specialty
-                    ] ?? cargo.appointment.doctor.specialty}
+                      cargo.appointment.doctor.speciality
+                    ] ?? cargo.appointment.doctor.speciality}
                   </p>
                 </div>
                 <div className="flex flex-col items-end gap-1">

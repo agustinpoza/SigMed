@@ -6,6 +6,7 @@ import { es } from "date-fns/locale";
 import { BlockReason } from "@/generated/prisma/enums";
 import { guardarBloqueosAgenda, obtenerDiasBloqueados } from "@/app/(portal)/medico/disponibilidad/bloqueos-actions";
 import { HiOutlineX } from "react-icons/hi";
+import Swal from "sweetalert2";
 
 const MOTIVOS: { value: BlockReason; label: string }[] = [
   { value: BlockReason.FERIADO, label: "Feriado" },
@@ -99,10 +100,30 @@ export default function BloqueosAgenda({ onConfirmed }: { onConfirmed: () => voi
         onConfirmed();
       } else {
         setMensaje(resultado.message);
+        void Swal.fire({
+          icon: "error",
+          title: "No se pudieron guardar los bloqueos",
+          text: resultado.message,
+          confirmButtonText: "Aceptar",
+          buttonsStyling: false,
+          customClass: {
+            confirmButton: "bg-slate-600 text-white rounded-sm p-2 px-3 m-2",
+          },
+        });
       }
     } catch (error: unknown) {
       console.error("Error al guardar los días bloqueados:", error);
       setMensaje("No se pudieron guardar los bloqueos de agenda.");
+      void Swal.fire({
+        icon: "error",
+        title: "No se pudieron guardar los bloqueos",
+        text: "Ocurrió un error inesperado.",
+        confirmButtonText: "Aceptar",
+        buttonsStyling: false,
+        customClass: {
+          confirmButton: "bg-slate-600 text-white rounded-sm p-2 px-3 m-2",
+        },
+      });
     } finally {
       setGuardando(false);
     }

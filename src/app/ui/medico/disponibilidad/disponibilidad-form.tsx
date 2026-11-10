@@ -8,6 +8,7 @@ import TablaResumen from "@/app/ui/medico/disponibilidad/tabla-resumen";
 import FranjaHoraria from "@/app/ui/medico/disponibilidad/franja-horaria";
 import { guardarDisponibilidad, obtenerDisponibilidad } from "@/app/(portal)/medico/disponibilidad/actions";
 import { obtenerDiasBloqueados } from "@/app/(portal)/medico/disponibilidad/bloqueos-actions";
+import Swal from "sweetalert2";
 
 const WEEKDAY: Weekday[] = [
     Weekday.DOMINGO,
@@ -103,7 +104,19 @@ export default function DisponibilidadForm({ refreshKey }: { refreshKey: number 
             });
             setMensaje(resultado.message ?? "");
 
-            if (resultado.status === "success") {
+            if (resultado.status === "error") {
+                void Swal.fire({
+                    icon: "error",
+                    title: "No se pudo guardar la disponibilidad",
+                    text: resultado.message,
+                    confirmButtonText: "Aceptar",
+                    buttonsStyling: false,
+                    customClass: {
+                        confirmButton: "bg-slate-600 text-white rounded-sm p-2 px-3 m-2",
+                    },
+                });
+            }
+            else {
                 const disponibilidad = await obtenerDisponibilidad();
                 if (disponibilidad.filas.length > 0) {
                     setDuracion(disponibilidad.filas[0].duracion);
@@ -115,6 +128,16 @@ export default function DisponibilidadForm({ refreshKey }: { refreshKey: number 
         } catch (error: unknown) {
             console.error("Error al guardar la disponibilidad médica:", error);
             setMensaje("No se pudo guardar la disponibilidad por un error inesperado.");
+            void Swal.fire({
+                icon: "error",
+                title: "No se pudo guardar la disponibilidad",
+                text: "Ocurrió un error inesperado.",
+                confirmButtonText: "Aceptar",
+                buttonsStyling: false,
+                customClass: {
+                    confirmButton: "bg-slate-600 text-white rounded-sm p-2 px-3 m-2",
+                },
+            });
         } finally {
             setGuardando(false);
         }

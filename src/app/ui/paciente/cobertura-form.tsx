@@ -18,29 +18,31 @@ export default function CoberturaForm({ idCobertura, nAfiliado, planCobertura, p
     const [state, formAction, pending] = useActionState<CoverageFormState, FormData>( savePatientCoverage, {}, );
 
     useEffect(() => {
-        if (!state.success) {
+        const errors = Object.values(state.errors ?? {});
+        if (state.success && state.message) {
             void Swal.fire({
-                icon: "error",
-                title: "Ocurrió un error",
+                icon: "success",
+                title: "Cobertura registrada",
                 text: state.message,
                 confirmButtonText: "Aceptar",
                 buttonsStyling: false,
                 customClass: {
                     confirmButton: "bg-slate-600 text-white rounded-sm p-2 px-3 m-2",
-                }
+                },
             });
-        };
-
-        void Swal.fire({
-            icon: "success",
-            title: "Cobertura registrada",
-            text: state.message,
-            confirmButtonText: "Aceptar",
-            buttonsStyling: false,
-            customClass: {
-                confirmButton: "bg-slate-600 text-white rounded-sm p-2 px-3 m-2",
-            }
-        });
+        }
+        else if (state.message || errors.length > 0) {
+            void Swal.fire({
+                icon: "error",
+                title: "No se pudo guardar la cobertura",
+                text: state.message ?? errors.join("\n"),
+                confirmButtonText: "Aceptar",
+                buttonsStyling: false,
+                customClass: {
+                    confirmButton: "bg-slate-600 text-white rounded-sm p-2 px-3 m-2",
+                },
+            });
+        }
     }, [state]);
 
     function handleDescartar() {

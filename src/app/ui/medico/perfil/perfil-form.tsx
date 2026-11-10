@@ -1,6 +1,7 @@
 'use client';
 import { actualizarValorConsulta } from "@/app/(portal)/medico/perfil/actions";
 import { useState } from "react";
+import Swal from "sweetalert2";
 
 interface PerfilProps {
     medico: {
@@ -15,17 +16,33 @@ interface PerfilProps {
 export default function PerfilForm({ medico }: PerfilProps) {
     const [valor, setValor] = useState(medico.valorConsulta);
     const [guardando, setGuardando] = useState(false);
-    const [mensaje, setMensaje] = useState('');
 
     const handleGuardar = async () => {
         setGuardando(true);
-        setMensaje('');
         try {
             await actualizarValorConsulta(valor);
-            setMensaje('Valor actualizado correctamente.');
+            await Swal.fire({
+                icon: "success",
+                title: "Valor actualizado",
+                text: "El valor de la consulta se actualizó correctamente.",
+                confirmButtonText: "Aceptar",
+                buttonsStyling: false,
+                customClass: {
+                    confirmButton: "bg-slate-600 text-white rounded-sm p-2 px-3 m-2",
+                },
+            });
         }
         catch (error) {
-            setMensaje('Error al actualizar el valor.');
+            await Swal.fire({
+                icon: "error",
+                title: "No se pudo actualizar el valor",
+                text: error instanceof Error ? error.message : "Ocurrió un error inesperado.",
+                confirmButtonText: "Aceptar",
+                buttonsStyling: false,
+                customClass: {
+                    confirmButton: "bg-slate-600 text-white rounded-sm p-2 px-3 m-2",
+                },
+            });
         }
         finally {
             setGuardando(false);

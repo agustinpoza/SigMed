@@ -118,7 +118,7 @@ function armarResumen(turno: TurnoConRelaciones): PaymentSummary {
     appointmentStatus: turno.status,
     startsAt: turno.startsAt,
     doctorName: `${turno.doctor.profile.firstName} ${turno.doctor.profile.lastName}`,
-    specialty: turno.doctor.specialty,
+    specialty: turno.doctor.speciality,
     licenseNumber: turno.doctor.licenseNumber,
     amount: Number(turno.doctor.consultFee),
     coverage,
@@ -316,7 +316,7 @@ export type PatientDebt = {
     appointmentId: string;
     startsAt: Date;
     doctorName: string;
-    specialty: string;
+    speciality: string;
     status: PaymentStatus;
   }>;
 };
@@ -351,7 +351,7 @@ export async function obtenerDeudaPaciente(
       appointmentId: payment.appointmentId,
       startsAt: payment.appointment.startsAt,
       doctorName: `${payment.appointment.doctor.profile.firstName} ${payment.appointment.doctor.profile.lastName}`,
-      specialty: payment.appointment.doctor.specialty,
+      speciality: payment.appointment.doctor.speciality,
       status: payment.status,
     }));
 

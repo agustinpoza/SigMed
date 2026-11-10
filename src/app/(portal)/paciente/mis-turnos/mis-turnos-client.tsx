@@ -3,6 +3,7 @@
 import { confirmarTurno, cancelarTurno, reprogramarTurno, obtenerHorariosAlternativosAction, } from "@/app/(portal)/paciente/turnos/actions";
 import type { HorarioAlternativo } from "@/lib/agenda";
 import { useState, useTransition } from "react";
+import Swal from "sweetalert2";
 
 export type MyAppointment = {
   id: string;
@@ -70,12 +71,22 @@ export default function MisTurnosClient({
         setTurnos((prev) =>
           prev.map((t) => (t.id === id ? { ...t, status: "CONFIRMADO" } : t)),
         );
-        setSuccessMsg(
-          "¡Turno confirmado con éxito! Se ha enviado un correo electrónico con los detalles de tu consulta.",
-        );
+        const message =
+          "¡Turno confirmado con éxito! Se ha enviado un correo electrónico con los detalles de tu consulta.";
+        setSuccessMsg(message);
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : "No se pudo confirmar el turno.";
         setErrorMsg(msg);
+        void Swal.fire({
+          icon: "error",
+          title: "No se pudo confirmar el turno",
+          text: msg,
+          confirmButtonText: "Aceptar",
+          buttonsStyling: false,
+          customClass: {
+            confirmButton: "bg-slate-600 text-white rounded-sm p-2 px-3 m-2",
+          },
+        });
       } finally {
         setPendingId(null);
       }
@@ -107,13 +118,23 @@ export default function MisTurnosClient({
         if (activeModalTurno?.id === id) {
           handleCloseModal();
         }
-        setSuccessMsg(
-          "El turno ha sido cancelado correctamente y el horario fue liberado en la agenda pública.",
-        );
+        const message =
+          "El turno ha sido cancelado correctamente y el horario fue liberado en la agenda pública.";
+        setSuccessMsg(message);
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : "No se pudo cancelar el turno.";
         setTurnoACancelar(null);
         setErrorMsg(msg);
+        void Swal.fire({
+          icon: "error",
+          title: "No se pudo cancelar el turno",
+          text: msg,
+          confirmButtonText: "Aceptar",
+          buttonsStyling: false,
+          customClass: {
+            confirmButton: "bg-slate-600 text-white rounded-sm p-2 px-3 m-2",
+          },
+        });
       } finally {
         setPendingId(null);
       }
@@ -177,13 +198,23 @@ export default function MisTurnosClient({
         );
 
         handleCloseModal();
-        setSuccessMsg(
-          "¡Turno reprogramado con éxito! El turno anterior fue liberado y tu nuevo horario quedó confirmado.",
-        );
+        const message =
+          "¡Turno reprogramado con éxito! El turno anterior fue liberado y tu nuevo horario quedó confirmado.";
+        setSuccessMsg(message);
       } catch (err: unknown) {
         const msg =
           err instanceof Error ? err.message : "No se pudo reprogramar el turno.";
         setModalError(msg);
+        void Swal.fire({
+          icon: "error",
+          title: "No se pudo reprogramar el turno",
+          text: msg,
+          confirmButtonText: "Aceptar",
+          buttonsStyling: false,
+          customClass: {
+            confirmButton: "bg-slate-600 text-white rounded-sm p-2 px-3 m-2",
+          },
+        });
       } finally {
         setPendingId(null);
       }

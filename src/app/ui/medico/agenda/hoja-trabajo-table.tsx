@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { registrarAsistencia } from "@/app/(portal)/medico/agenda/actions";
 import { HiOutlineChevronLeft, HiOutlineChevronRight, HiOutlineSearch, HiOutlineX } from "react-icons/hi";
 import { AppointmentState } from "@/generated/prisma/enums";
+import Swal from "sweetalert2";
 
 export type DoctorTurnoRow = {
   id: string;
@@ -84,14 +85,27 @@ export default function HojaTrabajoTable({
 
         await registrarAsistencia(formData);
 
+        const message = `Asistencia actualizada: el paciente fue marcado como ${nuevoEstado.toLowerCase()}.`;
         setFeedbackMsg({
           type: "success",
-          text: `Asistencia actualizada: el paciente fue marcado como ${nuevoEstado.toLowerCase()}.`,
+          text: message,
         });
       } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Error al registrar asistencia.";
         setFeedbackMsg({
           type: "error",
-          text: err instanceof Error ? err.message : "Error al registrar asistencia.",
+          text: message,
+        });
+        void Swal.fire({
+          icon: "error",
+          title: "No se pudo registrar la asistencia",
+          text: message,
+          confirmButtonText: "Aceptar",
+          buttonsStyling: false,
+          customClass: {
+            confirmButton: "bg-slate-600 text-white rounded-sm p-2 px-3 m-2",
+          },
         });
       } finally {
         setPendingId(null);

@@ -4,6 +4,7 @@ import { startTransition, useActionState, useEffect, useState, type FormEvent, t
 import { createStockMovement, getLotAvailability, type LotAvailabilityResult, type MovementFormState } from "./actions";
 import { MAX_STOCK_INPUT_QUANTITY } from "@/lib/stock-input";
 import { LOT_AVAILABILITY_ERROR } from "@/lib/stock-messages";
+import Swal from "sweetalert2";
 
 const initialState: MovementFormState = {};
 const initialValues = {
@@ -116,6 +117,36 @@ export function MovementForm({ vaccines }: { vaccines: VaccineOption[] }) {
     },
     initialState,
   );
+
+  useEffect(() => {
+    if (!feedbackVisible) return;
+    const errors = Object.values(state.errors ?? {});
+    if (!state.values && state.message && errors.length === 0) {
+      void Swal.fire({
+        icon: "success",
+        title: "Movimiento registrado correctamente",
+        text: state.message,
+        confirmButtonText: "Aceptar",
+        buttonsStyling: false,
+        customClass: {
+          confirmButton: "bg-slate-600 text-white rounded-sm p-2 px-3 m-2",
+        },
+      });
+    }
+    else if (state.values || errors.length > 0) {
+      void Swal.fire({
+        icon: "error",
+        title: "No se pudo registrar el movimiento",
+        text: state.message ?? errors.join("\n"),
+        confirmButtonText: "Aceptar",
+        buttonsStyling: false,
+        customClass: {
+          confirmButton: "bg-slate-600 text-white rounded-sm p-2 px-3 m-2",
+        },
+      });
+    }
+  }, [feedbackVisible, state]);
+
   const isAdjustment = values.movementType === "AJUSTE";
   function errorFor(field: keyof typeof initialValues) {
     return feedbackVisible && state.values?.[field] === values[field].trim()

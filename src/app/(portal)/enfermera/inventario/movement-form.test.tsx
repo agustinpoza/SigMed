@@ -5,7 +5,7 @@ import { StockRuleError } from "@/lib/stock";
 import { MovementForm } from "./movement-form";
 
 // Acción real; se simulan identidad, mutación, lectura de disponibilidad y caché.
-const mocks = vi.hoisted(() => ({ register: vi.fn(), guard: vi.fn(), revalidate: vi.fn(), lot: vi.fn() }));
+const mocks = vi.hoisted(() => ({ register: vi.fn(), guard: vi.fn(), revalidate: vi.fn(), lot: vi.fn(), alert: vi.fn() }));
 vi.mock("@/lib/db", () => ({ prisma: { vaccineLot: { findUnique: mocks.lot } } }));
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidate }));
 vi.mock("@/lib/actor-guard", () => ({ requireEnfermeraOAdministrador: mocks.guard }));
@@ -15,6 +15,7 @@ vi.mock("@/lib/stock", () => ({
     constructor(readonly fields: Record<string, string>) { super("Regla de stock"); }
   },
 }));
+vi.mock("sweetalert2", () => ({ default: { fire: mocks.alert } }));
 
 const vaccineId = "11111111-1111-4111-8111-111111111111";
 const otherVaccineId = "22222222-2222-4222-8222-222222222222";
@@ -105,6 +106,11 @@ describe("DU-07: indicador de disponibilidad", () => {
     setup(); fillAdjustment("Descontar dosis");
     await screen.findByText("37 dosis"); submit();
     await screen.findByText("Se descontaron 5 dosis del lote.");
+    await waitFor(() => expect(mocks.alert).toHaveBeenCalledWith(expect.objectContaining({
+      icon: "success",
+      title: "Movimiento registrado correctamente",
+      text: "Se descontaron 5 dosis del lote.",
+    })));
     expect(screen.queryByText("Stock disponible del lote")).toBeNull();
     fillAdjustment("Descontar dosis");
     expect(await screen.findByText("32 dosis")).toBeTruthy();

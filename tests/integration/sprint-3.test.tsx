@@ -11,7 +11,7 @@ import {
   CoverageStatus,
   PaymentConcept,
   PaymentStatus,
-  Specialty,
+  Speciality,
   UserRole,
 } from "@/generated/prisma/enums";
 import {
@@ -138,7 +138,7 @@ beforeAll(async () => {
     data: {
       id: doctorProfile.id,
       licenseNumber: `MP-${randomUUID()}`,
-      specialty: Specialty.TRAUMATOLOGO,
+      speciality: Speciality.TRAUMATOLOGO,
       consultDuration: 30,
       consultFee: FEE,
     },

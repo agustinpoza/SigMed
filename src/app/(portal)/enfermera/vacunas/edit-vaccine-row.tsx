@@ -5,6 +5,7 @@ import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { updateVaccine, type VaccineFormState } from "./actions";
 import { LABORATORIOS_SUGERIDOS } from "@/lib/laboratorios";
+import Swal from "sweetalert2";
 
 const initialState: VaccineFormState = {};
 
@@ -42,7 +43,23 @@ function VaccineEditForm({
   const listId = `laboratorios-${vaccine.id}`;
 
   useEffect(() => {
-    if (state.message && Object.keys(state.errors ?? {}).length === 0) {
+    const fieldErrors = Object.values(state.errors ?? {});
+    if (state.success === false || fieldErrors.length > 0) {
+      void Swal.fire({
+        icon: "error",
+        title: "No se pudo actualizar la vacuna",
+        text: state.message ?? fieldErrors.join("\n"),
+        confirmButtonText: "Aceptar",
+        buttonsStyling: false,
+        customClass: {
+          confirmButton: "bg-slate-600 text-white rounded-sm p-2 px-3 m-2",
+        },
+      });
+    }
+  }, [state]);
+
+  useEffect(() => {
+    if (state.success) {
       onClose();
     }
   }, [state, onClose]);

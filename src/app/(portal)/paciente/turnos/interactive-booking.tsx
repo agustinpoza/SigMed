@@ -322,8 +322,22 @@ export default function InteractiveBooking({
           },
         });
         router.push("/paciente/mis-turnos?reservado=1");
-      } catch (err: any) {
-        setErrorMsg(err.message || "Ocurrió un error al reservar el turno.");
+      } catch (err: unknown) {
+        const message =
+          err instanceof Error
+            ? err.message
+            : "Ocurrió un error al reservar el turno.";
+        setErrorMsg(message);
+        await Swal.fire({
+          icon: "error",
+          title: "No se pudo reservar el turno",
+          text: message,
+          confirmButtonText: "Aceptar",
+          buttonsStyling: false,
+          customClass: {
+            confirmButton: "bg-slate-600 text-white rounded-sm p-2 px-3 m-2",
+          },
+        });
       }
     });
   };

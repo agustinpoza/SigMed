@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import { pagarConsulta, type PaymentFormState } from "../actions";
+import Swal from "sweetalert2";
 
 const initialState: PaymentFormState = {};
 
@@ -34,6 +35,21 @@ export function PaymentForm({
     pagarConsulta,
     initialState,
   );
+
+  useEffect(() => {
+    if (state.error) {
+      void Swal.fire({
+        icon: "error",
+        title: "No se pudo procesar el pago",
+        text: state.error,
+        confirmButtonText: "Aceptar",
+        buttonsStyling: false,
+        customClass: {
+          confirmButton: "bg-slate-600 text-white rounded-sm p-2 px-3 m-2",
+        },
+      });
+    }
+  }, [state]);
 
   return (
     <form action={formAction} className="space-y-4">
