@@ -6,7 +6,11 @@ const mocks = vi.hoisted(() => ({
   actor: vi.fn(),
   findDoctor: vi.fn(),
   findAppointment: vi.fn(),
+  update: vi.fn(),
   updateMany: vi.fn(),
+  transaction: vi.fn(),
+  generarCargo: vi.fn(),
+  anularCargo: vi.fn(),
   revalidate: vi.fn(),
 }));
 
@@ -17,7 +21,13 @@ vi.mock("@/lib/db", () => ({
       findUnique: mocks.findAppointment,
       updateMany: mocks.updateMany,
     },
+    $transaction: mocks.transaction,
   },
+}));
+
+vi.mock("@/lib/payments", () => ({
+  generarCargoInasistencia: mocks.generarCargo,
+  anularCargoInasistencia: mocks.anularCargo,
 }));
 
 vi.mock("@/lib/actor", () => ({
@@ -54,36 +64,58 @@ beforeEach(() => {
     startsAt: new Date("2026-10-14T14:00:00Z"),
   });
   mocks.updateMany.mockResolvedValue({ count: 1 });
+  mocks.update.mockResolvedValue({});
+  mocks.transaction.mockImplementation(async (callback) =>
+    callback({ appointment: { update: mocks.update } }),
+  );
+  mocks.generarCargo.mockResolvedValue({ created: true });
+  mocks.anularCargo.mockResolvedValue(null);
 });
 
 describe("US 2.8: Registro de Asistencia del Paciente (RF-29)", () => {
   it("CA1: actualiza el estado a ATENDIDO, registra attendanceAt y revalida", async () => {
     await registrarAsistencia(formData({ estado: "ATENDIDO" }));
-    expect(mocks.updateMany).toHaveBeenCalledWith({
-      where: {
-        id: TURNO_ID,
-        doctorId: MEDICO_ID,
-      },
+    expect(mocks.update).toHaveBeenCalledWith({
+      where: { id: TURNO_ID },
       data: {
         status: AppointmentState.ATENDIDO,
         attendanceAt: expect.any(Date),
       },
     });
+    expect(mocks.generarCargo).not.toHaveBeenCalled();
     expect(mocks.revalidate).toHaveBeenCalledWith("/medico/agenda");
   });
 
-  it("CA1: actualiza el estado a AUSENTE correctamente", async () => {
+  it("CA1: actualiza el estado a AUSENTE y genera la deuda por inasistencia", async () => {
     await registrarAsistencia(formData({ estado: "AUSENTE" }));
-    expect(mocks.updateMany).toHaveBeenCalledWith({
-      where: {
-        id: TURNO_ID,
-        doctorId: MEDICO_ID,
-      },
+    expect(mocks.update).toHaveBeenCalledWith({
+      where: { id: TURNO_ID },
       data: {
         status: AppointmentState.AUSENTE,
         attendanceAt: expect.any(Date),
       },
     });
+    expect(mocks.generarCargo).toHaveBeenCalledWith(
+      expect.objectContaining({ appointment: expect.anything() }),
+      TURNO_ID,
+      MEDICO_ID,
+    );
+  });
+
+  it("al corregir una ausencia a atendido anula la deuda impaga", async () => {
+    mocks.findAppointment.mockResolvedValue({
+      id: TURNO_ID,
+      doctorId: MEDICO_ID,
+      status: AppointmentState.AUSENTE,
+      startsAt: new Date("2026-10-14T14:00:00Z"),
+    });
+
+    await registrarAsistencia(formData({ estado: "ATENDIDO" }));
+    expect(mocks.anularCargo).toHaveBeenCalledWith(
+      expect.objectContaining({ appointment: expect.anything() }),
+      TURNO_ID,
+    );
+    expect(mocks.generarCargo).not.toHaveBeenCalled();
   });
 
   it("CA2: rechaza si el turno pertenece a otro profesional", async () => {

@@ -1,7 +1,7 @@
 ---
 system: Sistema de Gestión de Sala Médica PSS 2026 - Comisión 10
 version: 1.0.0
-last_updated: 2026-10-05
+last_updated: 2026-11-10
 target_audience: AI_Agents / LLM_Context / Code_Generation
 entities_count: 16
 modules_count: 6
@@ -79,6 +79,33 @@ La especificación no define una tabla de auditoría de operaciones (la de RNF-0
 | `fecha_hora` | FechaHora | | No nulo | Momento del asiento |
 
 `UPDATE` y `DELETE` están rechazados por trigger, igual que en `movimiento_stock` y `registro_clinico`. El asiento se escribe **en la misma transacción** que la escritura de dominio: si la operación falla, no queda rastro.
+
+### D-13 · Trazabilidad de la validación de cobertura (US-4.2)
+`paciente` conserva `estado_cobertura`, pero se agregan tres columnas para saber **quién** validó, **cuándo** y **con qué nota**:
+
+| Campo | Tipo | Clave | Nulidad | Descripción |
+| :--- | :--- | :--- | :--- | :--- |
+| `fecha_validacion_cobertura` | FechaHora | | Nulo | Última validación registrada |
+| `id_usuario_validacion_cobertura` | Uuid | FK → usuario | Nulo | Administrador que validó |
+| `nota_validacion_cobertura` | Texto | | Nulo | Observación de la validación |
+
+La aplicación distingue cuatro resultados: **válida** (`validada` + obra social aceptada + afiliado informado), **no válida** (`rechazada` u obra social no aceptada), **pendiente** y **sin cobertura**. Solo la primera cuenta como cubierta; las demás se abonan como consulta particular. La base ya exige afiliado y estado cuando hay obra social, así que los casos "inválidos" que dependen de datos incompletos se validan además en la capa de dominio.
+
+### D-14 · `pago` deja de ser solo una transacción confirmada (US-4.4 / US-4.7)
+El spec original asume que un pago solo existe cuando la pasarela confirmó el cobro. Para poder representar intentos online y deudas por inasistencia se agregan:
+
+| Campo | Tipo | Clave | Nulidad | Descripción |
+| :--- | :--- | :--- | :--- | :--- |
+| `estado` | Texto | | No nulo | `pendiente`, `aprobado`, `rechazado`, `anulado`. Por defecto `pendiente` |
+| `concepto` | Texto | | No nulo | `consulta`, `inasistencia`. Por defecto `consulta` |
+| `fecha_pago` | FechaHora | | Nulo | Momento en que el cobro quedó aprobado |
+
+Se mantiene `id_turno` **único**: sigue existiendo como máximo un registro financiero por turno, lo que evita cargos duplicados. Las reglas de negocio quedan así:
+
+- Un pago de consulta se crea únicamente sobre un turno `confirmado`, particular (cobertura no válida) y con el monto congelado del `medico.valor_consulta`. Los estados `pendiente` y `rechazado` **no** cuentan como pago.
+- Al pasar un turno a `ausente`, si no existe un pago aprobado, se crea o reutiliza el registro del turno con `concepto = inasistencia`, estado `pendiente` y el arancel completo del médico. Volver a registrar la ausencia no duplica el cargo.
+- Si la ausencia se corrige a `atendido`, la deuda impaga se anula (`anulado`). Si la deuda ya fue cobrada, la corrección se rechaza.
+- Los pagos existentes antes de la migración `20261110120000_pagos_y_coberturas` se migran a `aprobado` con `fecha_pago = fecha_hora`, preservando su significado original.
 
 ---
 

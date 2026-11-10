@@ -3,6 +3,10 @@ import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/db';
 import { getCurrentActor } from '@/lib/actor';
 import { AppointmentState } from '@/generated/prisma/enums';
+import {
+  anularCargoInasistencia,
+  generarCargoInasistencia,
+} from '@/lib/payments';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -43,7 +47,7 @@ export async function registrarAsistencia(formData: FormData): Promise<void> {
       if (recentCookie) {
         let list = JSON.parse(recentCookie);
         let updatedInCookie = false;
-        list = list.map((item: any) => {
+        list = list.map((item: { id?: string; status?: string }) => {
           if (item.id === appointmentId) {
             updatedInCookie = true;
             return { ...item, status: nuevoEstado };
@@ -83,17 +87,39 @@ export async function registrarAsistencia(formData: FormData): Promise<void> {
 
   const attendanceDate = turno && turno.startsAt > new Date() ? turno.startsAt : new Date();
 
-  // CA1: Actualizar estado y registrar asistencia persistente en DB
-  await prisma.appointment.updateMany({
-    where: {
-      id: appointmentId,
-      doctorId: medico.id,
-    },
-    data: {
-      status: nuevoEstado as AppointmentState,
-      attendanceAt: attendanceDate,
-    },
-  });
+  if (turno) {
+    // CA1: estado y asistencia se actualizan junto con la deuda por
+    // inasistencia (US-4.7). Si la corrección no es válida, nada se persiste.
+    await prisma.$transaction(async (tx) => {
+      await tx.appointment.update({
+        where: { id: turno.id },
+        data: {
+          status: nuevoEstado as AppointmentState,
+          attendanceAt: attendanceDate,
+        },
+      });
+
+      if (nuevoEstado === 'AUSENTE') {
+        await generarCargoInasistencia(tx, turno.id, actor.id);
+      } else if (turno.status === AppointmentState.AUSENTE) {
+        // Volver a "atendido" retira la deuda mientras siga impaga.
+        await anularCargoInasistencia(tx, turno.id);
+      }
+    });
+  } else {
+    await prisma.appointment.updateMany({
+      where: {
+        id: appointmentId,
+        doctorId: medico.id,
+      },
+      data: {
+        status: nuevoEstado as AppointmentState,
+        attendanceAt: attendanceDate,
+      },
+    });
+  }
 
   revalidatePath('/medico/agenda');
+  revalidatePath('/admin/inasistencias');
+  revalidatePath('/paciente/pagos');
 }
