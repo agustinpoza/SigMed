@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/db";
+import { listLowStockVaccines } from "@/lib/stock-alerts";
 import { MovementForm } from "./movement-form";
+import { StockAlertsPanel } from "./stock-alerts-panel";
 
 export const metadata = {
   title: "Actualizacion de stock | SigMed",
@@ -11,11 +13,12 @@ const dateFormatter = new Intl.DateTimeFormat("es-AR", {
 });
 
 export default async function InventarioPage() {
-  const [vaccines, movements] = await Promise.all([
+  const [vaccines, alerts, movements] = await Promise.all([
     prisma.vaccine.findMany({
       orderBy: { name: "asc" },
       select: { id: true, name: true },
     }),
+    listLowStockVaccines(),
     prisma.stockMovement.findMany({
       orderBy: { createdAt: "desc" },
       take: 50,
@@ -39,6 +42,8 @@ export default async function InventarioPage() {
           con su responsable.
         </p>
       </header>
+
+      <StockAlertsPanel alerts={alerts} />
 
       <section className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
         <h2 className="mb-4 text-base font-semibold text-zinc-900">

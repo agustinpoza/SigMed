@@ -1,9 +1,14 @@
 // app/(portal)/enfermera/page.tsx
 import { getCurrentActor } from "@/lib/actor";
+import { listLowStockVaccines } from "@/lib/stock-alerts";
 import Link from "next/link";
+import { StockAlertBanner } from "./stock-alert-banner";
 
 export default async function EnfermeraPage() {
-  const enfermera = await getCurrentActor();
+  const [enfermera, alerts] = await Promise.all([
+    getCurrentActor(),
+    listLowStockVaccines(),
+  ]);
 
   return (
     <main>
@@ -15,6 +20,7 @@ export default async function EnfermeraPage() {
           Estas son las funciones disponibles para tu rol de enfermera
         </p>
       </div>
+      <StockAlertBanner alerts={alerts} />
       <div className="grid grid-cols-2 gap-2">
         <section className="flex-col bg-white rounded-lg p-4">
           <h2 className="text-lg text-black font-semibold">

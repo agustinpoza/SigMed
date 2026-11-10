@@ -106,6 +106,7 @@ describe("SIG-MEJ-04.2: validación de confirmación", () => {
     });
     expect(mocks.revalidate).toHaveBeenCalledWith("/enfermera/turnos-vacunacion");
     expect(mocks.revalidate).toHaveBeenCalledWith("/enfermera/inventario");
+    expect(mocks.revalidate).toHaveBeenCalledWith("/enfermera");
   });
 
   it("no asigna sin sesión, aunque exista un horario válido", async () => {

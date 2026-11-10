@@ -299,6 +299,8 @@ compartida y **no** se debe correr `prisma migrate reset` contra ella.
       ya exista en el schema. Ver [§11](#11-un-alta-de-vacuna-es-irreversible).
 - [ ] RF-10: la notificación de cancelación está lista, pero falta el flujo que la
       dispare (la baja actual borra el turno). Ver §14.
+- [ ] RF-32: editar `nivel_critico` no re-evalúa la alerta activa hasta el próximo
+      movimiento de stock. Ver §15.
 
 ---
 
@@ -357,3 +359,40 @@ es el siguiente paso.
 (consola y Resend con `fetch` mockeado) y el gancho (turno inexistente, turno no
 cancelado, envío exitoso y fallo del transporte). No hay cambios de schema ni
 migraciones.
+
+---
+
+## 15. RF-13: alertas de stock crítico visibles
+
+**Decisión (US-3.4).** La emisión y la resolución de `alerta_stock` ya las hacía
+`fn_stock_movimiento_post` desde US-3.2. Esta US no agrega migraciones ni cambia
+el trigger: expone esa señal en la interfaz.
+
+- `src/lib/stock-alerts.ts`: `listLowStockVaccines()` consulta en vivo el stock
+  materializado de los lotes y lo compara con el umbral vigente. Usa la misma
+  regla que el trigger: solo lotes no vencidos (`fecha_vencimiento >=
+  CURRENT_DATE`) y `stock <= nivel_critico`. El `LEFT JOIN` con la alerta activa
+  solo aporta `alertGeneratedAt`; la fila aparece aunque el umbral se haya
+  editado después del último movimiento.
+- `stock-alerts-panel.tsx`: panel completo en `/enfermera/inventario#alertas`.
+  Muestra stock actual, umbral y "Activa desde …" cuando hay alerta activa.
+- `stock-alert-banner.tsx`: resumen en `/enfermera`. Solo se renderiza si hay al
+  menos una vacuna comprometida; enlaza al panel.
+- Las acciones que mueven stock (`inventario`, `turnos-vacunacion`) y las que
+  crean o editan vacunas (`vacunas`) revalidan `/enfermera` además de su ruta,
+  para que el resumen no quede viejo.
+
+**Umbral nulo.** `nivel_critico` sigue siendo nullable: `NULL` significa "sin
+alerta configurada" y la vacuna no aparece en el panel ni genera filas en
+`alerta_stock`. Un umbral `0` sí es válido y alerta cuando el stock llega a cero.
+
+**Limitación conocida (RF-32 / US-3.3).** Editar `nivel_critico` en
+`/enfermera/vacunas` no re-evalúa la alerta activa hasta el próximo movimiento.
+El panel sí refleja el stock contra el umbral nuevo porque se calcula en vivo,
+pero `alerta_stock` conserva el estado anterior. Queda para US-3.3.
+
+**Alcance de la prueba.** `stock-alerts-panel.test.tsx` y
+`stock-alert-banner.test.tsx` cubren los estados con y sin alertas. En
+`tests/integration/sprint-2.test.tsx` se verifica con PostgreSQL real: CA1 (caída
+al umbral), CA2 (reposición y resolución), umbral nulo, panel integrado en la
+página y resumen en el inicio.

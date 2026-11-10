@@ -290,7 +290,10 @@ La especificación no define una tabla de auditoría de operaciones (la de RNF-0
 
 **Reglas de Negocio:**
 - **Unicidad activa:** Se permite únicamente una alerta en estado `activa` por cada `id_vacuna`.
-- **Transición automática:** Pasa a `resuelta` tan pronto un ingreso o ajuste sitúe el stock total calculado de la vacuna por encima de su `nivel_critico`.
+- **Stock evaluado:** Es la suma de `lote.quantity_available` de los lotes no vencidos (`fecha_vencimiento >= CURRENT_DATE`).
+- **Transición automática:** Pasa a `resuelta` tan pronto un ingreso o ajuste sitúe el stock total calculado de la vacuna por encima de su `nivel_critico`. Se activa cuando el stock queda en o por debajo del umbral (`stock <= nivel_critico`).
+- **Umbral nulo:** Una vacuna sin `nivel_critico` configurado no genera alertas.
+- **Visualización:** El panel de `/enfermera/inventario#alertas` y el resumen de `/enfermera` comparan el stock actual con el umbral vigente y muestran la alerta activa cuando existe.
 
 ---
 

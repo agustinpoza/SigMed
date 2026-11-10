@@ -31,6 +31,7 @@ export type SlotOption = { time: string; value: string };
 
 const PAGE_PATH = "/enfermera/turnos-vacunacion";
 const INVENTORY_PATH = "/enfermera/inventario";
+const DASHBOARD_PATH = "/enfermera";
 
 const dateTimeFormat = new Intl.DateTimeFormat("es-AR", {
   timeZone: "America/Argentina/Buenos_Aires",
@@ -154,6 +155,7 @@ export async function createVaccinationAppointment(
 
   revalidatePath(PAGE_PATH);
   revalidatePath(INVENTORY_PATH); // el stock del lote cambio
+  revalidatePath(DASHBOARD_PATH); // el panel de alertas del inicio
 
   return {
     message: `Turno confirmado para el ${dateTimeFormat.format(scheduledAt)}. Se reservo una dosis.`,
@@ -200,6 +202,7 @@ export async function cancelVaccinationAppointment(
 
   revalidatePath(PAGE_PATH);
   revalidatePath(INVENTORY_PATH);
+  revalidatePath(DASHBOARD_PATH);
 
   return { message: "Turno cancelado." };
 }

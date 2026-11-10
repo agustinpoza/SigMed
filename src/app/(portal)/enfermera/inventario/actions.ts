@@ -173,6 +173,7 @@ export async function createStockMovement(
   }
 
   revalidatePath("/enfermera/inventario");
+  revalidatePath("/enfermera"); // el panel de alertas del inicio
 
   return {
     message:
