@@ -6,6 +6,8 @@ import {
   BlockReason,
   CoverageStatus,
   MovementType,
+  PaymentConcept,
+  PaymentStatus,
   ReceiptType,
   Speciality,
   UserRole,
@@ -292,6 +294,20 @@ async function main() {
     },
   });
 
+  // Turno confirmado de una paciente particular (sin obra social), listo para
+  // demostrar el pago online de US-4.4 desde /paciente/pagos.
+  await prisma.appointment.create({
+    data: {
+      id: crypto.randomUUID(),
+      patientId: pacMarta.id,
+      doctorId: sofia.id,
+      startsAt: nextDay(Weekday.JUEVES, 0, 11),
+      endsAt: nextDay(Weekday.JUEVES, 0, 11, 30),
+      status: AppointmentState.CONFIRMADO,
+      reservedById: marta,
+    },
+  });
+
   // Un turno no puede nacer 'atendido': se reserva y recien ahi se cierra.
   const turnoAtendido = await prisma.appointment.create({
     data: {
@@ -320,6 +336,9 @@ async function main() {
       amount: martin.consultFee,
       paymentMethod: "transferencia",
       transactionCode: "TX-0001",
+      status: PaymentStatus.APROBADO,
+      concept: PaymentConcept.CONSULTA,
+      paidAt: new Date(),
       registeredById: juan,
     },
   });
@@ -341,6 +360,9 @@ async function main() {
       amount: martin.consultFee,
       paymentMethod: "tarjeta",
       transactionCode: "TX-0002",
+      status: PaymentStatus.APROBADO,
+      concept: PaymentConcept.CONSULTA,
+      paidAt: new Date(),
       registeredById: admin,
     },
   });

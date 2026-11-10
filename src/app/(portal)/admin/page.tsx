@@ -56,6 +56,32 @@ export default async function AdminPage() {
             Ir a Horarios
           </Link>
         </section>
+        <section className="flex-col bg-white rounded-lg p-4">
+          <h2 className="text-lg text-black font-semibold">
+            Validar coberturas
+          </h2>
+          <p className="text-sm text-gray-500 mb-4">
+            Registra el resultado de la validación de la obra social de cada paciente.
+          </p>
+          <Link href="/admin/coberturas"
+                className="text-black/75 bg-white rounded-md border border-black/25 p-2"
+          >
+            Ir a Coberturas
+          </Link>
+        </section>
+        <section className="flex-col bg-white rounded-lg p-4">
+          <h2 className="text-lg text-black font-semibold">
+            Deudas por inasistencia
+          </h2>
+          <p className="text-sm text-gray-500 mb-4">
+            Consulta los cargos generados por ausencias y registra su cobro o condonación.
+          </p>
+          <Link href="/admin/inasistencias"
+                className="text-black/75 bg-white rounded-md border border-black/25 p-2"
+          >
+            Ir a Inasistencias
+          </Link>
+        </section>
         <section className="col-span-2 flex-col bg-gray-100 rounded-md p-2">
           <h2 className="text-lg text-black font-semibold">
             Ejecutar funciones
