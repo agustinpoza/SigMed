@@ -5,6 +5,8 @@ const items = [
   { href: "/admin", label: "Inicio" },
   { href: "/admin/horarios", label: "Horarios" },
   { href: "/admin/personal", label: "Alta de personal" },
+  { href: "/admin/coberturas", label: "Coberturas" },
+  { href: "/admin/inasistencias", label: "Inasistencias" },
 ];
 
 export default async function AdminLayout({ children }: LayoutProps<"/admin">) {

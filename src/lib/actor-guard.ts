@@ -53,6 +53,26 @@ export async function requireAdministrador(): Promise<ActorGuardResult> {
 }
 
 /**
+ * Pagos del paciente: el rol efectivo. Mientras el administrador ejerce como
+ * paciente opera con la identidad del paciente de contexto.
+ */
+export async function requirePaciente(): Promise<ActorGuardResult> {
+  const context = await getActorContext();
+
+  if (!context) {
+    return { error: "Se requiere iniciar sesión para abonar consultas." };
+  }
+
+  const actor = context.effective;
+
+  if (actor.role !== UserRole.PACIENTE) {
+    return { error: "Solo los pacientes pueden abonar consultas." };
+  }
+
+  return { actor, context };
+}
+
+/**
  * Evolucion medica: el rol efectivo. En modo ejercicio el administrador opera
  * sobre la agenda del profesional que eligio como contexto.
  */
