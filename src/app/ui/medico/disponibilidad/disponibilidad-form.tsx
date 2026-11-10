@@ -86,7 +86,7 @@ export default function DisponibilidadForm() {
 
     return (
         <>
-        <div className="flex flex-row border-y justify-around border-gray-400 m-2 py-2">
+        <div className="flex flex-row border-b justify-around border-gray-400 m-2 py-2">
             <div className="flex-col gap-1 m-2">
                 <h2 className="text-xl text-black font-semibold m-1">
                     Calendario del mes
