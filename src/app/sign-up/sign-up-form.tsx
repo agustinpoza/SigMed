@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useSignUp } from "@clerk/nextjs";
+import Swal from "sweetalert2";
 
 type Step = "form" | "verify";
 
@@ -32,85 +33,139 @@ export function SignUpForm() {
   const isFetching = fetchStatus === "fetching";
   const fieldErrors = errors.fields;
 
+  async function showError(message: string, title = "No se pudo completar el registro") {
+    setError(message);
+    await Swal.fire({
+      icon: "error",
+      title,
+      text: message,
+      confirmButtonText: "Aceptar",
+      buttonsStyling: false,
+      customClass: {
+        confirmButton: "bg-slate-600 text-white rounded-sm p-2 px-3 m-2",
+      },
+    });
+  }
+
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
 
     if (!/^\d{7,9}$/.test(dni)) {
-      setError("Ingresá un DNI válido (solo números, 7 a 9 dígitos).");
+      await showError("Ingresá un DNI válido (solo números, 7 a 9 dígitos).");
       return;
     }
 
     if (password !== confirmPassword) {
-      setError("Las contraseñas no coinciden.");
+      await showError("Las contraseñas no coinciden.");
       return;
     }
 
-    const { error: createError } = await signUp.password({
-      emailAddress,
-      password,
-      firstName,
-      lastName,
-      unsafeMetadata: { dni },
-    });
+    try {
+      const { error: createError } = await signUp.password({
+        emailAddress,
+        password,
+        firstName,
+        lastName,
+        unsafeMetadata: { dni },
+      });
 
-    if (createError) {
-      setError(createError.longMessage ?? createError.message);
-      return;
+      if (createError) {
+        await showError(createError.longMessage ?? createError.message);
+        return;
+      }
+
+      const { error: sendError } = await signUp.verifications.sendEmailCode();
+
+      if (sendError) {
+        await showError(sendError.longMessage ?? sendError.message);
+        return;
+      }
+
+      setStep("verify");
+    } catch (caughtError) {
+      await showError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Ocurrió un error inesperado al crear la cuenta."
+      );
     }
-
-    const { error: sendError } = await signUp.verifications.sendEmailCode();
-
-    if (sendError) {
-      setError(sendError.longMessage ?? sendError.message);
-      return;
-    }
-
-    setStep("verify");
   }
 
   async function handleVerify(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
 
-    const { error: verifyError } = await signUp.verifications.verifyEmailCode({
-      code,
-    });
+    try {
+      const { error: verifyError } = await signUp.verifications.verifyEmailCode({
+        code,
+      });
 
-    if (verifyError) {
-      setError(verifyError.longMessage ?? verifyError.message);
-      return;
+      if (verifyError) {
+        await showError(verifyError.longMessage ?? verifyError.message);
+        return;
+      }
+
+      if (signUp.status !== "complete") {
+        await showError("Volvé a intentarlo.");
+        return;
+      }
+
+      const { error: finalizeError } = await signUp.finalize({
+        navigate: async ({ session, decorateUrl }) => {
+          if (session?.currentTask) {
+            return;
+          }
+
+          await Swal.fire({
+            icon: "success",
+            title: "Registro completado",
+            text: "Tu cuenta fue creada correctamente.",
+            confirmButtonText: "Aceptar",
+            buttonsStyling: false,
+            customClass: {
+              confirmButton: "bg-slate-600 text-white rounded-sm p-2 px-3 m-2",
+            },
+          });
+
+          const url = decorateUrl("/");
+
+          if (url.startsWith("http")) {
+            window.location.href = url;
+          } else {
+            router.push(url);
+          }
+        },
+      });
+
+      if (finalizeError) {
+        await showError(finalizeError.longMessage ?? finalizeError.message);
+      }
+    } catch (caughtError) {
+      await showError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Ocurrió un error inesperado al verificar la cuenta."
+      );
     }
-
-    if (signUp.status !== "complete") {
-      setError("No se pudo completar el registro. Volvé a intentar.");
-      return;
-    }
-
-    await signUp.finalize({
-      navigate: ({ session, decorateUrl }) => {
-        if (session?.currentTask) {
-          return;
-        }
-
-        const url = decorateUrl("/");
-
-        if (url.startsWith("http")) {
-          window.location.href = url;
-        } else {
-          router.push(url);
-        }
-      },
-    });
   }
 
   async function handleResend() {
     setError(null);
 
-    const { error: sendError } = await signUp.verifications.sendEmailCode();
+    try {
+      const { error: sendError } = await signUp.verifications.sendEmailCode();
 
-    if (sendError) {
-      setError(sendError.longMessage ?? sendError.message);
+      if (sendError) {
+        await showError(sendError.longMessage ?? sendError.message, "No se pudo reenviar el código");
+      }
+    } catch (caughtError) {
+      await showError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Ocurrió un error inesperado al reenviar el código.",
+        "No se pudo reenviar el código"
+      );
     }
   }
 

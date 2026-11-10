@@ -1,3 +1,4 @@
+// app/(portal)/paciente/mis-turnos/page.tsx
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
 import { getCurrentActor } from "@/lib/actor";
@@ -10,7 +11,7 @@ import {
 } from "@/lib/agenda";
 import MisTurnosClient, { type MyAppointment } from "./mis-turnos-client";
 
-const SPECIALTY_LABELS: Record<string, string> = AGENDA_SPECIALTY_LABELS;
+const SPECIALITY_LABELS: Record<string, string> = AGENDA_SPECIALTY_LABELS;
 
 function isPastTurno(dateTimeStr: string): boolean {
   try {
@@ -75,7 +76,7 @@ export default async function MisTurnosPage() {
       doctorId: t.doctorId,
       doctorName: `${t.doctor.profile.firstName} ${t.doctor.profile.lastName}`,
       doctorLicense: t.doctor.licenseNumber,
-      speciality: SPECIALTY_LABELS[t.doctor.speciality] ?? t.doctor.speciality,
+      speciality: SPECIALITY_LABELS[t.doctor.speciality] ?? t.doctor.speciality,
       dateTime: `${day}/${month}/${year} - ${time}`,
       startsAtISO: t.startsAt.toISOString(),
       status: t.status,

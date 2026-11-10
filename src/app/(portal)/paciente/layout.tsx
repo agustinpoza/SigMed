@@ -6,6 +6,7 @@ const items = [
   { href: "/paciente/turnos", label: "Buscar turnos" },
   { href: "/paciente/mis-turnos", label: "Mis turnos" },
   { href: "/paciente/historial", label: "Mi historial" },
+  { href: "/paciente/cobertura-medica", label: "Cobertura médica" },
   { href: "/paciente/pagos", label: "Pagos y deudas" },
 ];
 

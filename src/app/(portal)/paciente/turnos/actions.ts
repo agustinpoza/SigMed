@@ -5,18 +5,10 @@ import { prisma } from '@/lib/db';
 import { getCurrentActor } from '@/lib/dev-actor';
 import { AppointmentState } from '@/generated/prisma/client';
 import { eliminarTurnosVencidos } from '@/lib/turnos';
-import {
-  AgendaRuleError,
-  AGENDA_SPECIALTY_LABELS,
-  cancelarTurnoDominio,
-  formatearFechaHoraTurno,
-  obtenerHorariosAlternativosProfesional,
-  reprogramarTurnoDominio,
-  type HorarioAlternativo,
-} from '@/lib/agenda';
+import { AgendaRuleError, AGENDA_SPECIALITY_LABELS, cancelarTurnoDominio, formatearFechaHoraTurno, obtenerHorariosAlternativosProfesional, reprogramarTurnoDominio, type HorarioAlternativo, } from '@/lib/agenda';
 import { enviarConfirmacionTurnoEmail } from '@/lib/email';
 
-const SPECIALTY_LABELS: Record<string, string> = AGENDA_SPECIALTY_LABELS;
+const SPECIALITY_LABELS: Record<string, string> = AGENDA_SPECIALITY_LABELS;
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -133,7 +125,7 @@ export async function confirmarTurno(input: FormData | string) {
       if (turnoDB?.doctor?.profile) {
         doctorName = `${turnoDB.doctor.profile.firstName} ${turnoDB.doctor.profile.lastName}`.trim();
         doctorLicense = turnoDB.doctor.licenseNumber;
-        specialty = SPECIALTY_LABELS[turnoDB.doctor.speciality] ?? turnoDB.doctor.speciality;
+        specialty = SPECIALITY_LABELS[turnoDB.doctor.speciality] ?? turnoDB.doctor.speciality;
       }
       if (turnoDB?.startsAt) {
         dateTime = formatearFechaHoraTurno(turnoDB.startsAt);
@@ -469,8 +461,8 @@ export async function reservarTurno(formData: FormData) {
   const [y, m, d] = datePart.split('-');
   const timePart = startsAtStr.slice(11, 16);
   const formattedDateTime = `${d}/${m}/${y} - ${timePart}`;
-  const docName = `${doctor.profile.firstName} ${doctor.profile.lastName}`;
-  const specName = SPECIALTY_LABELS[doctor.speciality] ?? doctor.speciality;
+  const docName = `Dr. ${doctor.profile.lastName}, ${doctor.profile.firstName}`;
+  const specName = SPECIALITY_LABELS[doctor.speciality] ?? doctor.speciality;
   const docLicense = doctor.licenseNumber || 'MP-54210';
 
   // Guardar en la sesión/cookie para que aparezca reflejado inmediatamente en "Mis turnos"

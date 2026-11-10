@@ -1,13 +1,8 @@
 "use client";
 
-import React, { useState, useTransition } from "react";
-import {
-  confirmarTurno,
-  cancelarTurno,
-  reprogramarTurno,
-  obtenerHorariosAlternativosAction,
-} from "@/app/(portal)/paciente/turnos/actions";
+import { confirmarTurno, cancelarTurno, reprogramarTurno, obtenerHorariosAlternativosAction, } from "@/app/(portal)/paciente/turnos/actions";
 import type { HorarioAlternativo } from "@/lib/agenda";
+import { useState, useTransition } from "react";
 
 export type MyAppointment = {
   id: string;

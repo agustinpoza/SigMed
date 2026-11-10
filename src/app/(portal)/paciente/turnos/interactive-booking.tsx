@@ -4,6 +4,7 @@ import React, { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Speciality } from "@/generated/prisma/enums";
 import { reservarTurno } from "./actions";
+import Swal from "sweetalert2";
 
 export type DoctorItem = {
   id: string;
@@ -310,6 +311,16 @@ export default function InteractiveBooking({
         formData.set("startsAt", selectedSlot.startsAt);
 
         await reservarTurno(formData);
+        await Swal.fire({
+          icon: "success",
+          title: "Turno solicitado",
+          text: "El turno fue reservado correctamente.",
+          confirmButtonText: "Aceptar",
+          buttonsStyling: false,
+          customClass: {
+            confirmButton: "bg-slate-600 text-white rounded-sm p-2 px-3 m-2",
+          },
+        });
         router.push("/paciente/mis-turnos?reservado=1");
       } catch (err: any) {
         setErrorMsg(err.message || "Ocurrió un error al reservar el turno.");
@@ -337,7 +348,7 @@ export default function InteractiveBooking({
           className="flex flex-wrap items-end gap-4"
         >
           {/* Dropdown Especialidad */}
-          <div className="flex flex-1 min-w-[200px] flex-col gap-1.5">
+          <div className="flex flex-1 min-w-50 flex-col gap-1.5">
             <label htmlFor="speciality" className="text-xs font-semibold text-zinc-700">
               Especialidad
             </label>
@@ -362,7 +373,7 @@ export default function InteractiveBooking({
           </div>
 
           {/* Dropdown Profesional */}
-          <div className="flex flex-1 min-w-[220px] flex-col gap-1.5">
+          <div className="flex flex-1 min-w-55 flex-col gap-1.5">
             <label htmlFor="doctorId" className="text-xs font-semibold text-zinc-700">
               Profesional
             </label>
@@ -386,7 +397,7 @@ export default function InteractiveBooking({
           </div>
 
           {/* Campo Fecha */}
-          <div className="flex flex-1 min-w-[170px] flex-col gap-1.5">
+          <div className="flex flex-1 min-w-42.5 flex-col gap-1.5">
             <label htmlFor="date" className="text-xs font-semibold text-zinc-700">
               Fecha
             </label>
@@ -600,7 +611,7 @@ export default function InteractiveBooking({
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col gap-2 max-h-[340px] overflow-y-auto pr-1">
+              <div className="flex flex-col gap-2 max-h-85 overflow-y-auto pr-1">
                 {slotsAvailable.map((slot, idx) => {
                   const isChecked =
                     selectedSlot?.time === slot.time &&
