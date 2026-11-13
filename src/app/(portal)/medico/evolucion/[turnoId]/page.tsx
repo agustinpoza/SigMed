@@ -56,10 +56,10 @@ export default async function EvolucionPage({
   const doctor = `${turno.doctor.profile.lastName}, ${turno.doctor.profile.firstName}`;
 
   return (
-    <section className="flex flex-col gap-4">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">Evolución médica</h1>
-        <p className="text-sm text-zinc-600">
+    <section className="flex flex-col">
+      <header className="flex flex-col justify-start bg-linear-to-l from-slate-300 to-slate-200 rounded-xl px-3 py-2 mb-2">
+        <h1 className="text-2xl font-semibold tracking-tight text-black">Evolución médica</h1>
+        <p className="text-sm text-gray-500">
           Cargá el diagnóstico, el tratamiento y las indicaciones en la ficha del paciente.
         </p>
       </header>

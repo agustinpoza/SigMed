@@ -104,10 +104,10 @@ export default function PerfilForm({ medico }: PerfilProps) {
                 </div>
                 <div className="flex flex-row gap-2 my-2">
                     <button type="button" disabled={guardando} onClick={handleGuardar}
-                            className="text-white bg-slate-800 rounded px-2 py-1">
+                            className="text-gray-200 hover:text-white bg-slate-600 hover:bg-slate-800 rounded px-2 py-1">
                         {guardando ? 'Guardando...' : 'Guardar valor'}
                     </button>
-                    <button type="button" className="text-slate-800 border border-gray-400 rounded px-2 py-1"
+                    <button type="button" className="text-slate-800 hover:bg-gray-200 border border-gray-400 rounded px-2 py-1"
                             onClick={handleCancelar}>
                         Cancelar
                     </button>

@@ -37,12 +37,12 @@ export default async function PerfilPage() {
     }
 
     return (
-        <div className="flex flex-col gap-6">
-            <div>
-                <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
+        <div className="flex flex-col">
+            <div className="flex flex-col justify-start bg-linear-to-l from-slate-300 to-slate-200 rounded-xl px-3 py-2 my-4">
+                <h1 className="text-2xl font-bold tracking-tight text-black">
                     Mi perfil
                 </h1>
-                <p className="text-sm text-zinc-500">
+                <p className="text-sm text-gray-500">
                     Consulta y modifica el valor de tu consulta particular. Los turnos particulares se calculan con tu valor ingresado, no con una tarifa general.
                 </p>
             </div>

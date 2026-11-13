@@ -58,7 +58,7 @@ export default function FranjaHoraria({ horaInicio, onChangeInicio, horaFin, onC
             <button
                 onClick={onGuardar}
                 disabled={deshabilitado}
-                className="justify-center rounded-lg text-gray-200 bg-slate-600 w-full m-1 p-2"
+                className="justify-center rounded-lg text-gray-200 hover:text-white bg-slate-600 hover:bg-slate-800 w-full m-1 p-2"
             >
                 {guardando ? "Guardando..." : "Guardar disponibilidad"}
             </button>

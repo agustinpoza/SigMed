@@ -155,10 +155,12 @@ export default async function HojaDeTrabajoMedicoPage({ searchParams }: { search
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col">
       {/* Título de pantalla y bajada informativa */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-zinc-900">Hoja de trabajo</h1>
+      <div className="flex flex-col bg-linear-to-l from-slate-300 to-slate-200 rounded-xl justify-between px-3 py-2 my-4">
+        <h1 className="text-2xl text-black font-bold tracking-tight">
+          Hoja de trabajo
+        </h1>
         <p className="text-sm text-zinc-500">
           Registrá la asistencia de los pacientes a tus turnos.
         </p>

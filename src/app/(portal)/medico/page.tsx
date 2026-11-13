@@ -17,15 +17,15 @@ export default async function MedicoPage() {
 
   return (
     <main>
-      <div className="flex flex-col justify-start mb-2">
+      <div className="flex flex-col justify-start bg-linear-to-l from-slate-300 to-slate-200 rounded-xl px-3 py-2 mb-2">
         <h1 className="text-2xl text-black font-bold">
-          Bienvenido/a, Doctor/a {medico?.firstName} {medico?.lastName}
+          Bienvenido, Doctor/a {medico?.firstName} {medico?.lastName}
         </h1>
         <p className="text-sm text-gray-500">
           Estas son las funciones disponibles para tu rol de médico
         </p>
       </div>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
         <section className="flex-col bg-white rounded-lg p-4">
           <h2 className="text-lg text-black font-semibold">
             Hoja de trabajo
@@ -34,7 +34,7 @@ export default async function MedicoPage() {
             Consulta su hoja de trabajo diaria disponibles por fecha.
           </p>
           <Link href="/medico/agenda"
-                className="text-black/75 bg-white rounded-md border border-black/25 p-2"
+                className="text-black/75 hover:text-gray-200 bg-white hover:bg-slate-600 rounded-md border border-black/25 p-2"
           >
             Ir a Hoja de trabajo
           </Link>
@@ -47,12 +47,12 @@ export default async function MedicoPage() {
             Consulte, establezca y edite su disponibilidad mensual para la reserva de turnos.
           </p>
           <Link href="/medico/disponibilidad"
-                className="text-black/75 bg-white rounded-md border border-black/25 p-2"
+                className="text-black/75 hover:text-gray-200 bg-white hover:bg-slate-600 rounded-md border border-black/25 p-2"
           >
             Ir a Disponibilidad
           </Link>
         </section>
-        <section className="flex-col bg-white rounded-lg p-4">
+        <section className="col-span-1 md:col-span-2 flex-col bg-white rounded-lg p-4">
           <h2 className="text-lg text-black font-semibold">
             Mi perfil
           </h2>
@@ -60,7 +60,7 @@ export default async function MedicoPage() {
             Consulta tus datos personales y modifica el valor de tu consulta particular.
           </p>
           <Link href="/medico/perfil"
-                className="text-black/75 bg-white rounded-md border border-black/25 p-2"
+                className="block w-full text-black/75 hover:text-gray-200 bg-white hover:bg-slate-600 rounded-md border border-black/25 p-2"
           >
             Ir a Mi Perfil
           </Link>

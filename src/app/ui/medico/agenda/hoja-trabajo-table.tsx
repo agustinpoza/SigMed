@@ -214,7 +214,7 @@ export default function HojaTrabajoTable({
 
               <button
                 type="submit"
-                className="flex items-center gap-1 rounded-md bg-zinc-900 px-4 py-1 text-xs font-semibold text-white shadow-xs hover:bg-zinc-800 transition cursor-pointer"
+                className="flex items-center gap-1 text-gray-200 hover:text-white bg-slate-600 hover:bg-slate-800 rounded-md px-4 py-1 text-xs font-semibold shadow-xs transition cursor-pointer"
               >
                 <HiOutlineSearch className="size-4" />Buscar
               </button>
@@ -367,35 +367,35 @@ export default function HojaTrabajoTable({
                   return (
                     <tr key={t.id} className="hover:bg-zinc-50/50 transition">
                       {/* HORA */}
-                      <td className="py-4 text-sm text-zinc-900 font-normal">{t.time}</td>
+                      <td className="py-4 text-sm text-black font-normal">{t.time}</td>
 
                       {/* PACIENTE */}
-                      <td className="py-4 text-sm text-zinc-900 font-normal">
+                      <td className="py-4 text-sm text-black font-normal">
                         {t.patientName}
                       </td>
 
                       {/* ESPECIALIDAD */}
-                      <td className="py-4 text-sm text-zinc-900 font-normal">{t.speciality}</td>
+                      <td className="py-4 text-sm text-black font-normal">{t.speciality}</td>
 
                       {/* ESTADO */}
                       <td className="py-4">
                         {isAtendido && (
-                          <span className="inline-flex items-center rounded-full bg-zinc-900 px-3.5 py-1 text-xs font-semibold text-white">
+                          <span className="inline-flex items-center rounded-full text-gray-200 bg-slate-600 px-3.5 py-1 text-xs font-semibold">
                             Atendido
                           </span>
                         )}
                         {isAusente && (
-                          <span className="inline-flex items-center rounded-full border border-zinc-300 bg-white px-3.5 py-1 text-xs font-medium text-zinc-600">
+                          <span className="inline-flex items-center rounded-full text-gray-200 bg-slate-600 px-3.5 py-1 text-xs font-medium">
                             Ausente
                           </span>
                         )}
                         {isPendiente && (
-                          <span className="inline-flex items-center rounded-full border border-zinc-300 bg-white px-3.5 py-1 text-xs font-medium text-zinc-600">
+                          <span className="inline-flex items-center rounded-full text-gray-200 bg-slate-600 px-3.5 py-1 text-xs font-medium">
                             Pendiente
                           </span>
                         )}
                         {!isAtendido && !isAusente && !isPendiente && (
-                          <span className="inline-flex items-center rounded-full border border-zinc-300 bg-white px-3.5 py-1 text-xs font-medium text-zinc-600">
+                          <span className="inline-flex items-center rounded-full text-gray-200 bg-slate-600 px-3.5 py-1 text-xs font-medium">
                             {t.status}
                           </span>
                         )}
@@ -410,8 +410,8 @@ export default function HojaTrabajoTable({
                             disabled={isPending && pendingId === `${t.id}-ATENDIDO`}
                             className={`rounded-md px-4 py-1 text-xs font-medium transition cursor-pointer ${
                               isAtendido
-                                ? "bg-zinc-900 text-white shadow-xs"
-                                : "border border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50"
+                                ? "text-white bg-slate-600 shadow-xs"
+                                : "border border-gray-300 text-black"
                             }`}
                           >
                             Atendido
@@ -423,8 +423,8 @@ export default function HojaTrabajoTable({
                             disabled={isPending && pendingId === `${t.id}-AUSENTE`}
                             className={`rounded-md px-4 py-1 text-xs font-medium transition cursor-pointer ${
                               isAusente
-                                ? "bg-zinc-900 text-white shadow-xs"
-                                : "border border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50"
+                                ? "text-white bg-slate-600 shadow-xs"
+                                : "border border-gray-300 text-black"
                             }`}
                           >
                             Ausente

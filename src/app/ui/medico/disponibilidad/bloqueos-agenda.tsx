@@ -141,7 +141,7 @@ export default function BloqueosAgenda({ onConfirmed }: { onConfirmed: () => voi
         }}
         aria-expanded={abierto}
         aria-haspopup="dialog"
-        className="rounded-lg text-gray-200 bg-slate-600 p-2"
+        className="rounded-lg text-gray-200 hover:text-white bg-slate-600 hover:bg-slate-800 p-2"
       >
         Modificar agenda
       </button>
@@ -256,7 +256,7 @@ export default function BloqueosAgenda({ onConfirmed }: { onConfirmed: () => voi
                 type="button"
                 onClick={guardar}
                 disabled={cargando || guardando || diasSeleccionados.length === 0}
-                className="mt-3 w-full rounded-lg bg-slate-700 p-2 text-white disabled:cursor-not-allowed disabled:opacity-50"
+                className="mt-3 w-full rounded-lg text-gray-200 hover:text-white bg-slate-600 hover:bg-slate-800 p-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {guardando ? "Guardando..." : "Confirmar bloqueo"}
               </button>
