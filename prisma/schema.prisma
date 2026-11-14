@@ -150,6 +150,14 @@ enum AuditEntity {
   @@map("entidad_auditoria")
 }
 
+enum InvoiceStatus {
+  PENDIENTE @map("pendiente")
+  PAGADA    @map("pagada")
+  ANULADA   @map("anulada")
+
+  @@map("estado_factura")
+}
+
 model UserProfile {
   id          String   @id @default(uuid()) @db.Uuid
   firstName   String   @map("nombre")
@@ -208,6 +216,7 @@ model Patient {
   coverageValidatedBy UserProfile?         @relation("cobertura_validada_por", fields: [coverageValidatedById], references: [id], onDelete: SetNull)
   appointments        Appointment[]
   vaccinations        VaccinationAppointment[]
+  invoices            Invoice[]            @relation("PatientInvoices")
 
   @@index([insuranceId])
   @@index([coverageValidatedById])
@@ -451,6 +460,24 @@ model ClinicalRecord {
   appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Restrict)
 
   @@map("registro_clinico")
+}
+
+model Invoice {
+  id        String        @id @default(uuid()) @map("id_factura") @db.Uuid
+  patientId String        @map("id_paciente") @db.Uuid
+  date      DateTime      @map("fecha") @db.Timestamptz(3)
+  type      String        @map("tipo")
+  number    String        @unique @map("numero")
+  amount    Decimal       @map("monto") @db.Decimal(12, 2)
+  status    InvoiceStatus @map("estado")
+  filePath  String?       @map("ruta_archivo")
+  createdAt DateTime      @default(now()) @map("fecha_alta") @db.Timestamptz(3)
+  updatedAt DateTime?     @map("fecha_actualizacion") @db.Timestamptz(3)
+
+  patient Patient @relation("PatientInvoices", fields: [patientId], references: [id], onDelete: Restrict)
+
+  @@index([patientId])
+  @@map("factura")
 }
 
 // US-7.5 / RF-26: registro append-only del modo ejercicio del administrador.

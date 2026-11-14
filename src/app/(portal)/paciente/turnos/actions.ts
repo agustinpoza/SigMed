@@ -12,6 +12,18 @@ const SPECIALITY_LABELS: Record<string, string> = AGENDA_SPECIALITY_LABELS;
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+type RecentTurnoEntry = {
+  id: string;
+  doctorId?: string;
+  doctorName: string;
+  doctorLicense: string;
+  specialty: string;
+  speciality?: string;
+  dateTime: string;
+  startsAtISO?: string;
+  status: AppointmentState;
+};
+
 async function getSafeCookieStore() {
   try {
     const { cookies } = await import('next/headers');
@@ -336,9 +348,9 @@ export async function cancelarTurnoPaciente(formData: FormData) {
     try {
       const recentCookie = cookieStore.get('sigmed_recent_turnos')?.value;
       if (recentCookie) {
-        let list = JSON.parse(recentCookie);
+        let list = JSON.parse(recentCookie) as RecentTurnoEntry[];
         const prevLength = list.length;
-        list = list.filter((item: any) => item.id !== appointmentId);
+        list = list.filter((item) => item.id !== appointmentId);
         if (list.length < prevLength) {
           removedFromCookie = true;
           cookieStore.set('sigmed_recent_turnos', JSON.stringify(list), {
@@ -451,7 +463,7 @@ export async function reservarTurno(formData: FormData) {
         doctorId,
         startsAt,
         endsAt,
-        status: AppointmentState.RESERVADO,
+        status: AppointmentState.CONFIRMADO,
         reservedById: actor.id,
       },
     });
@@ -470,17 +482,18 @@ export async function reservarTurno(formData: FormData) {
   if (cookieStore) {
     try {
       const existingCookie = cookieStore.get('sigmed_recent_turnos')?.value;
-      let recentList: any[] = [];
-      if (existingCookie) recentList = JSON.parse(existingCookie);
+      let recentList: RecentTurnoEntry[] = [];
+      if (existingCookie) recentList = JSON.parse(existingCookie) as RecentTurnoEntry[];
       const newEntry = {
         id: created.id,
         doctorId,
         doctorName: docName,
         doctorLicense: docLicense,
+        specialty: specName,
         speciality: specName,
         dateTime: formattedDateTime,
         startsAtISO: startsAt.toISOString(),
-        status: AppointmentState.RESERVADO,
+        status: AppointmentState.CONFIRMADO,
       };
       recentList = [newEntry, ...recentList.filter((item) => item.id !== created.id)];
       cookieStore.set('sigmed_recent_turnos', JSON.stringify(recentList), {

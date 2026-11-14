@@ -358,6 +358,7 @@ export default function MisTurnosClient({
                           {puedeCancelar && (
                             <button
                               type="button"
+                              aria-label="Darse de baja"
                               onClick={() => handleSolicitarCancelacion(t)}
                               disabled={
                                 isPending &&
@@ -367,7 +368,7 @@ export default function MisTurnosClient({
                             >
                               {isPending && pendingId === `${t.id}-cancelar`
                                 ? "Cancelando..."
-                                : "Cancelar turno"}
+                                : "Darse de baja"}
                             </button>
                           )}
                         </div>

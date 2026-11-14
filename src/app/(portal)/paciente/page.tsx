@@ -68,7 +68,7 @@ export default async function PacientePage() {
             Ir a Cobertura médica
           </Link>
         </section>
-        <section className="col-span-1 md:col-span-2 flex-col bg-white rounded-lg p-4">
+        <section className="flex-col bg-white rounded-lg p-4">
           <h2 className="text-lg text-black font-semibold">
             Pagos y coberturas
           </h2>
@@ -79,6 +79,19 @@ export default async function PacientePage() {
                 className="text-black/75 hover:text-gray-200 bg-white hover:bg-slate-600 rounded-md border border-black/25 p-2"
           >
             Ir a Pagos y deudas
+          </Link>
+        </section>
+        <section className="flex-col bg-white rounded-lg p-4">
+          <h2 className="text-lg text-black font-semibold">
+            Mis facturas
+          </h2>
+          <p className="text-sm text-gray-500 mb-4">
+            Consulta y descarga tus facturas o comprobantes digitales.
+          </p>
+          <Link href="/paciente/facturas"
+                className="text-black/75 hover:text-gray-200 bg-white hover:bg-slate-600 rounded-md border border-black/25 p-2"
+          >
+            Ir a Mis facturas
           </Link>
         </section>
       </div>

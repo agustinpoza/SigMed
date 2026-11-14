@@ -114,6 +114,7 @@ export async function createVaccine(
 
   revalidatePath("/enfermera/vacunas");
   revalidatePath("/enfermera"); // el alta puede disparar una alerta de stock
+  revalidatePath("/enfermera/umbral-critico");
 
   return { message: `${name} se cargo con ${quantity} unidades.`, success: true };
 }
@@ -199,6 +200,7 @@ export async function updateVaccine(
 
   revalidatePath("/enfermera/vacunas");
   revalidatePath("/enfermera"); // el panel compara stock contra el umbral vigente
+  revalidatePath("/enfermera/umbral-critico");
 
   return {
     message:

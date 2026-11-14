@@ -33,6 +33,7 @@ function cancelledAppointment(overrides: Record<string, unknown> = {}) {
       },
     },
     doctor: {
+      speciality: "CLINICO",
       specialty: "CLINICO",
       profile: { firstName: "Juan", lastName: "Pérez" },
     },

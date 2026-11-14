@@ -8,6 +8,7 @@ const items = [
   { href: "/paciente/historial", label: "Mi historial" },
   { href: "/paciente/cobertura-medica", label: "Cobertura médica" },
   { href: "/paciente/pagos", label: "Pagos y deudas" },
+  { href: "/paciente/facturas", label: "Mis facturas" },
 ];
 
 export default async function PacienteLayout({ children }: LayoutProps<"/paciente">) {

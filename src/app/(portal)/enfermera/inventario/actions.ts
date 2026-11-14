@@ -1,4 +1,4 @@
-﻿"use server";
+"use server";
 
 import { revalidatePath } from "next/cache";
 import {
@@ -174,6 +174,7 @@ export async function createStockMovement(
 
   revalidatePath("/enfermera/inventario");
   revalidatePath("/enfermera"); // el panel de alertas del inicio
+  revalidatePath("/enfermera/umbral-critico");
 
   return {
     message:

@@ -55,7 +55,10 @@ export async function notifyAppointmentCancelled(
     const email = buildCancellationEmail({
       patientName: patient.firstName,
       doctorName: `Dr. ${doctor.lastName}, ${doctor.firstName}`,
-      specialty: appointment.doctor.speciality,
+      specialty:
+        (appointment.doctor as any).speciality ??
+        (appointment.doctor as any).specialty ??
+        "",
       startsAt: appointment.startsAt,
       endsAt: appointment.endsAt,
       reason: appointment.cancellationReason,

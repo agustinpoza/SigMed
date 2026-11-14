@@ -96,14 +96,20 @@ beforeEach(() => {
   mocks.deleteMany.mockResolvedValue({ count: 1 });
   mocks.findFirstBlock.mockResolvedValue(null);
   mocks.deleteManyBlocks.mockResolvedValue({ count: 0 });
-  mocks.transaction.mockImplementation(async (cb, txClient) => cb(txClient));
-  mocks.transaction.mockImplementation(async (callback) =>
+  mocks.transaction.mockImplementation(async (callback, txClient) =>
     callback({
+      ...txClient,
       $queryRaw: mocks.lockDoctor,
-      scheduleBlock: { findFirst: mocks.findFirstBlock },
+      scheduleBlock: {
+        findFirst: mocks.findFirstBlock,
+        deleteMany: mocks.deleteManyBlocks,
+      },
       appointment: {
+        findUnique: mocks.findUniqueAppointment,
         findFirst: mocks.findFirstAppointment,
+        findMany: mocks.findManyAppointments,
         create: mocks.createAppointment,
+        update: mocks.updateAppointment,
       },
     })
   );
@@ -435,7 +441,7 @@ describe("Reserva de Turnos: Validación de turnos vencidos y no re-selección",
       data: expect.objectContaining({
         patientId: PACIENTE_ID,
         doctorId: DOCTOR_ID,
-        status: AppointmentState.RESERVADO,
+        status: AppointmentState.CONFIRMADO,
       }),
     });
   });
