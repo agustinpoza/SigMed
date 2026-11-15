@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdministrador } from "@/lib/actor-guard";
 import { resolveReportPeriod } from "@/lib/report-period";
 import {
+  reporteIngresosAusentismo,
+  reporteIngresosAusentismoCsv,
+  reporteStockVacunas,
+  reporteStockVacunasCsv,
   reporteTurnosPorEspecialidad,
   reporteTurnosPorEspecialidadCsv,
 } from "@/lib/reports";
@@ -27,6 +31,36 @@ export async function GET(request: NextRequest) {
   }
 
   const { period } = resolved;
+  if (request.nextUrl.searchParams.get("modulo") === "stock-vacunas") {
+    const vaccineId = request.nextUrl.searchParams.get("vacuna");
+    const report = await reporteStockVacunas(
+      period,
+      vaccineId && vaccineId !== "todas" ? vaccineId : undefined,
+    );
+    const filename = `reporte-stock-vacunas_${period.desde}_${period.hasta}.csv`;
+
+    return new NextResponse(`\uFEFF${reporteStockVacunasCsv(report)}`, {
+      headers: {
+        "Content-Type": "text/csv; charset=utf-8",
+        "Content-Disposition": `attachment; filename="${filename}"`,
+        "Cache-Control": "no-store",
+      },
+    });
+  }
+
+  if (request.nextUrl.searchParams.get("modulo") === "ingresos-ausentismo") {
+    const report = await reporteIngresosAusentismo(period);
+    const filename = `reporte-ingresos-ausentismo_${period.desde}_${period.hasta}.csv`;
+
+    return new NextResponse(`\uFEFF${reporteIngresosAusentismoCsv(report)}`, {
+      headers: {
+        "Content-Type": "text/csv; charset=utf-8",
+        "Content-Disposition": `attachment; filename="${filename}"`,
+        "Cache-Control": "no-store",
+      },
+    });
+  }
+
   const report = await reporteTurnosPorEspecialidad(period);
   const filename = `reporte-turnos-especialidad_${period.desde}_${period.hasta}.csv`;
 
