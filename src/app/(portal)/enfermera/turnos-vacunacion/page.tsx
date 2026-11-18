@@ -43,11 +43,11 @@ export default async function TurnosVacunacionPage() {
 
   return (
     <div className="space-y-8">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
+      <header className="flex flex-col justify-start rounded-xl bg-linear-to-l from-slate-300 to-slate-200 px-3 py-2">
+        <h1 className="text-2xl font-semibold tracking-tight text-black">
           Turnos de vacunación
         </h1>
-        <p className="mt-1 text-sm text-zinc-600">
+        <p className="mt-1 text-sm text-gray-700">
           Asigná un turno y reservá una dosis del lote que vence primero.
         </p>
       </header>
@@ -58,12 +58,12 @@ export default async function TurnosVacunacionPage() {
       </section>
 
       <section>
-        <h2 className="text-lg font-semibold text-zinc-900">
+        <h2 className="text-lg font-semibold text-black">
           Turnos de vacunación programados
         </h2>
 
         {appointments.length === 0 ? (
-          <p className="mt-2 text-sm text-zinc-600">No hay turnos programados.</p>
+          <p className="mt-2 text-sm text-gray-700">No hay turnos programados.</p>
         ) : (
           <div className="mt-3 overflow-x-auto rounded-lg border border-zinc-200 bg-white shadow-sm">
             <table className="w-full min-w-180 text-left text-sm">

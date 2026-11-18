@@ -30,11 +30,11 @@ export default async function CoberturasPage() {
 
   return (
     <section className="flex flex-col gap-4">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
+      <header className="flex flex-col justify-start rounded-xl bg-linear-to-l from-slate-300 to-slate-200 px-3 py-2">
+        <h1 className="text-2xl font-semibold tracking-tight text-black">
           Validación de coberturas
         </h1>
-        <p className="text-sm text-zinc-600">
+        <p className="text-sm text-gray-700">
           Registrá el resultado de la validación de la obra social de cada
           paciente. Una cobertura solo cuenta como válida si la obra social está
           aceptada, el afiliado está informado y la validación fue aprobada.

@@ -16,7 +16,7 @@ export default async function EnfermeraPage() {
         <h1 className="text-2xl text-black font-bold">
           Bienvenido, Enfermero/a {enfermera?.firstName} {enfermera?.lastName}
         </h1>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-gray-700">
           Estas son las funciones disponibles para tu rol de enfermera
         </p>
       </div>
@@ -26,7 +26,7 @@ export default async function EnfermeraPage() {
           <h2 className="text-lg text-black font-semibold">
             Catálogo de vacunas
           </h2>
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-sm text-gray-600 mb-4">
             Consulta la gestión del catálogo de vacunas disponibles.
           </p>
           <Link href="/enfermera/vacunas"
@@ -39,7 +39,7 @@ export default async function EnfermeraPage() {
           <h2 className="text-lg text-black font-semibold">
             Turnos de vacunación
           </h2>
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-sm text-gray-600 mb-4">
             Consulta el control de los turnos de vacunación registrados.
           </p>
           <Link href="/enfermera/turnos-vacunacion"
@@ -48,11 +48,11 @@ export default async function EnfermeraPage() {
             Ir a Turnos de vacunación
           </Link>
         </section>
-        <section className="col-span-1 md:col-span-2 flex-col bg-white rounded-lg p-4">
+        <section className="flex-col bg-white rounded-lg p-4">
           <h2 className="text-lg text-black font-semibold">
             Stock
           </h2>
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-sm text-gray-600 mb-4">
             Consulta el control de stock, registro e historial disponible.
           </p>
           <Link href="/enfermera/inventario"
@@ -65,7 +65,7 @@ export default async function EnfermeraPage() {
           <h2 className="text-lg text-black font-semibold">
             Umbral crítico
           </h2>
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-sm text-gray-600 mb-4">
             Configurá el nivel de stock crítico de cada vacuna.
           </p>
           <Link href="/enfermera/umbral-critico"

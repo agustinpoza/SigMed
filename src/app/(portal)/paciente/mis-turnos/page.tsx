@@ -114,9 +114,9 @@ export default async function MisTurnosPage() {
   return (
     <div className="flex flex-col gap-6">
       {/* Título y Bajada */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-800">Mis turnos</h1>
-        <p className="text-sm text-slate-600">
+      <div className="flex flex-col justify-start rounded-xl bg-linear-to-l from-slate-300 to-slate-200 px-3 py-2">
+        <h1 className="text-2xl font-bold tracking-tight text-black">Mis turnos</h1>
+        <p className="text-sm text-gray-700">
           Consultá el estado de tus turnos, confirmá tu asistencia cuando corresponda, cancelá o reprogramá tu consulta.
         </p>
       </div>

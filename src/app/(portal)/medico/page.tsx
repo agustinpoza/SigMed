@@ -21,7 +21,7 @@ export default async function MedicoPage() {
         <h1 className="text-2xl text-black font-bold">
           Bienvenido, Doctor/a {medico?.firstName} {medico?.lastName}
         </h1>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-gray-700">
           Estas son las funciones disponibles para tu rol de médico
         </p>
       </div>
@@ -30,7 +30,7 @@ export default async function MedicoPage() {
           <h2 className="text-lg text-black font-semibold">
             Hoja de trabajo
           </h2>
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-sm text-gray-600 mb-4">
             Consulta su hoja de trabajo diaria disponibles por fecha.
           </p>
           <Link href="/medico/agenda"
@@ -43,7 +43,7 @@ export default async function MedicoPage() {
           <h2 className="text-lg text-black font-semibold">
             Disponibilidad mensual
           </h2>
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-sm text-gray-600 mb-4">
             Consulte, establezca y edite su disponibilidad mensual para la reserva de turnos.
           </p>
           <Link href="/medico/disponibilidad"
@@ -56,11 +56,11 @@ export default async function MedicoPage() {
           <h2 className="text-lg text-black font-semibold">
             Mi perfil
           </h2>
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-sm text-gray-600 mb-4">
             Consulta tus datos personales y modifica el valor de tu consulta particular.
           </p>
           <Link href="/medico/perfil"
-                className="block w-full text-black/75 hover:text-gray-200 bg-white hover:bg-slate-600 rounded-md border border-black/25 p-2"
+                className="text-black/75 hover:text-gray-200 bg-white hover:bg-slate-600 rounded-md border border-black/25 p-2"
           >
             Ir a Mi Perfil
           </Link>

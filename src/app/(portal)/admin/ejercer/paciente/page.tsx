@@ -26,7 +26,7 @@ export default async function EjercerComoPacientePage({
 
   return (
     <section className="flex flex-col gap-4">
-      <header>
+      <header className="flex flex-col justify-start rounded-xl bg-linear-to-l from-slate-300 to-slate-200 px-3 py-2">
         <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
           Ejercer como paciente
         </h1>

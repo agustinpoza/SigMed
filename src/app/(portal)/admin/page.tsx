@@ -17,7 +17,7 @@ export default async function AdminPage() {
         <h1 className="text-2xl text-black font-bold">
           Bienvenido, {admin?.firstName} {admin?.lastName}
         </h1>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-gray-700">
           Estas son las funciones disponibles para tu rol de administrador
         </p>
       </div>
@@ -34,7 +34,7 @@ export default async function AdminPage() {
           <h2 className="text-lg text-black font-semibold">
             Registrar personal
           </h2>
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-sm text-gray-600 mb-4">
             Consulta el personal disponible y registra un nuevo miembro.
           </p>
           <Link href="/admin/personal"
@@ -47,7 +47,7 @@ export default async function AdminPage() {
           <h2 className="text-lg text-black font-semibold">
             Gestionar horarios
           </h2>
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-sm text-gray-600 mb-4">
             Consulta y gestiona los horarios disponbiles para los médicos.
           </p>
           <Link href="/admin/horarios"
@@ -60,7 +60,7 @@ export default async function AdminPage() {
           <h2 className="text-lg text-black font-semibold">
             Validar coberturas
           </h2>
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-sm text-gray-600 mb-4">
             Registra el resultado de la validación de la obra social de cada paciente.
           </p>
           <Link href="/admin/coberturas"
@@ -73,7 +73,7 @@ export default async function AdminPage() {
           <h2 className="text-lg text-black font-semibold">
             Deudas por inasistencia
           </h2>
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-sm text-gray-600 mb-4">
             Consulta los cargos generados por ausencias y registra su cobro o condonación.
           </p>
           <Link href="/admin/inasistencias"
@@ -86,7 +86,7 @@ export default async function AdminPage() {
           <h2 className="text-lg text-black font-semibold">
             Reportes administrativos
           </h2>
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-sm text-gray-600 mb-4">
             Consulta los turnos atendidos y cancelados por especialidad en un período.
           </p>
           <Link href="/admin/reportes"
@@ -99,7 +99,7 @@ export default async function AdminPage() {
           <h2 className="text-lg text-black font-semibold">
             Ejecutar funciones
           </h2>
-          <p className="text-sm text-gray-400 mb-2">
+          <p className="text-sm text-gray-600 mb-2">
             Consulta y ejecuta las funciones disponibles para usuarios de distintos roles.
           </p>
           <div className="grid gap-2 sm:grid-cols-3">

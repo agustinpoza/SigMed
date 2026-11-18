@@ -33,11 +33,11 @@ export default async function InventarioPage() {
 
   return (
     <div className="space-y-8">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
+      <header className="flex flex-col justify-start rounded-xl bg-linear-to-l from-slate-300 to-slate-200 px-3 py-2">
+        <h1 className="text-2xl font-semibold tracking-tight text-black">
           Actualización de Stock
         </h1>
-        <p className="mt-1 text-sm text-zinc-600">
+        <p className="mt-1 text-sm text-gray-700">
           Registra ingresos y ajustes de dosis. Cada movimiento queda trazado
           con su responsable.
         </p>

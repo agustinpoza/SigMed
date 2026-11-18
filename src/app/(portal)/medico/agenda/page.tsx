@@ -161,7 +161,7 @@ export default async function HojaDeTrabajoMedicoPage({ searchParams }: { search
         <h1 className="text-2xl text-black font-bold tracking-tight">
           Hoja de trabajo
         </h1>
-        <p className="text-sm text-zinc-500">
+        <p className="text-sm text-gray-700">
           Registrá la asistencia de los pacientes a tus turnos.
         </p>
       </div>

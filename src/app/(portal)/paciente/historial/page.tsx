@@ -11,13 +11,13 @@ export default async function HistorialPage() {
 
   if (!actor || actor.role !== "PACIENTE") {
     return (
-      <div className="mx-auto w-full max-w-5xl overflow-hidden rounded-md border border-zinc-200 bg-white">
-        <header className="border-b border-zinc-200 px-5 py-4 sm:px-6">
-          <h1 className="text-xl font-semibold tracking-tight text-zinc-900">
+      <div className="flex flex-col gap-6">
+        <header className="flex flex-col justify-start rounded-xl bg-linear-to-l from-slate-300 to-slate-200 px-3 py-2">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-800">
             Mi historial clínico
           </h1>
         </header>
-        <p className="px-5 py-8 text-center text-sm text-zinc-600 sm:px-6">
+        <p className="w-full rounded-md border border-zinc-200 bg-white px-5 py-8 text-center text-sm text-zinc-600 sm:px-6">
           {!actor
             ? "No hay una sesión de paciente activa."
             : "No tenés acceso a esta sección."}
@@ -29,13 +29,18 @@ export default async function HistorialPage() {
   const entries = await obtenerHistorialPaciente(actor.id);
 
   return (
-    <section className="mx-auto w-full max-w-5xl overflow-hidden rounded-md border border-zinc-200 bg-white">
-      <header className="border-b border-zinc-200 px-5 py-4 sm:px-6">
-        <h1 className="text-xl font-semibold tracking-tight text-zinc-900">
+    <div className="flex flex-col gap-6">
+      <header className="flex flex-col justify-start rounded-xl bg-linear-to-l from-slate-300 to-slate-200 px-3 py-2">
+        <h1 className="text-2xl font-bold tracking-tight text-black">
           Mi historial clínico
         </h1>
+        <p className="text-sm text-gray-700">
+          Consultá tu historial clínico registrado.
+        </p>
       </header>
-      <ClinicalHistoryTable key={actor.id} records={entries} />
-    </section>
+      <section className="w-full rounded-md border border-zinc-200 bg-white">
+        <ClinicalHistoryTable key={actor.id} records={entries} />
+      </section>
+    </div>
   );
 }

@@ -9,10 +9,10 @@ import { AlertStatus, AppointmentState, MovementType, UserRole, Speciality } fro
 import { createVaccineWithInitialLot, registerStockMovement, StockRuleError } from "@/lib/stock";
 import HistorialPage from "@/app/(portal)/paciente/historial/page";
 import ClinicalHistoryTable, { type ClinicalHistoryEntry } from "@/app/(portal)/paciente/historial/clinical-history-table";
-import { createStockMovement, getLotAvailability } from "@/app/(portal)/enfermera/inventario/actions";
-import { MovementForm } from "@/app/(portal)/enfermera/inventario/movement-form";
-import InventarioPage from "@/app/(portal)/enfermera/inventario/page";
-import { StockAlertsPanel } from "@/app/(portal)/enfermera/inventario/stock-alerts-panel";
+import { createStockMovement, getLotAvailability } from "@/app/(portal)/enfermera/stock/actions";
+import { MovementForm } from "@/app/(portal)/enfermera/stock/movement-form";
+import InventarioPage from "@/app/(portal)/enfermera/stock/page";
+import { StockAlertsPanel } from "@/app/(portal)/enfermera/stock/stock-alerts-panel";
 import EnfermeraPage from "@/app/(portal)/enfermera/page";
 import { StockAlertBanner } from "@/app/(portal)/enfermera/stock-alert-banner";
 import { listLowStockVaccines } from "@/lib/stock-alerts";

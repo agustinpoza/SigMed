@@ -349,7 +349,7 @@ export default function InteractiveBooking({
         <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
           Buscar turnos disponibles
         </h1>
-        <p className="text-sm text-zinc-500">
+        <p className="text-sm text-gray-700">
           Consultá los horarios disponibles por especialidad, profesional o fecha.
         </p>
       </div>
@@ -460,7 +460,7 @@ export default function InteractiveBooking({
         </form>
 
         {/* Texto de ayuda inferior */}
-        <div className="mt-3 flex items-center gap-1.5 text-xs text-zinc-500">
+        <div className="mt-3 flex items-center gap-1.5 text-xs text-zinc-600">
           <svg
             className="h-4 w-4 text-zinc-400"
             fill="none"

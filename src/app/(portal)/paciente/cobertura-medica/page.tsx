@@ -38,17 +38,19 @@ export default async function ObraSocialPage() {
     };
 
     return(
-        <main className="flex flex-col bg-white p-6 rounded-lg gap-2">
-            <section>
-                <h1 className="text-2xl text-black font-bold m-1">
+        <main className="flex flex-col gap-2">
+            <section className="flex flex-col justify-start rounded-xl bg-linear-to-l from-slate-300 to-slate-200 px-3 py-2">
+                <h1 className="text-2xl text-black font-bold">
                     Mi Cobertura Médica
                 </h1>
-                <p className="text-gray-500 m-1">
+                <p className="text-sm text-gray-700">
                     Registrá o actualizá tu obra social o prepaga para agilizar la atención y facturación de tus consultas.
                 </p>
             </section>
-            <CoberturaMessage nombreCobertura={paciente.insurance?.name ?? null} plan={paciente.plan} estado={paciente.coverageStatus} />
-            <CoberturaForm idCobertura={paciente.insuranceId} nAfiliado={paciente.memberNumber} planCobertura={paciente.plan} prestadores={prestadores} />
+            <div className="flex flex-col bg-white p-4 rounded-lg gap-2">
+                <CoberturaMessage nombreCobertura={paciente.insurance?.name ?? null} plan={paciente.plan} estado={paciente.coverageStatus} />
+                <CoberturaForm idCobertura={paciente.insuranceId} nAfiliado={paciente.memberNumber} planCobertura={paciente.plan} prestadores={prestadores} />
+            </div>
         </main>
         );
 }

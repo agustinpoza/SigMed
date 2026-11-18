@@ -42,7 +42,7 @@ export default async function PerfilPage() {
                 <h1 className="text-2xl font-bold tracking-tight text-black">
                     Mi perfil
                 </h1>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-700">
                     Consulta y modifica el valor de tu consulta particular. Los turnos particulares se calculan con tu valor ingresado, no con una tarifa general.
                 </p>
             </div>

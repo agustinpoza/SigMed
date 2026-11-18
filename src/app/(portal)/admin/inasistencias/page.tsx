@@ -43,11 +43,11 @@ export default async function InasistenciasPage() {
 
   return (
     <section className="flex flex-col gap-4">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
+      <header className="flex flex-col justify-start rounded-xl bg-linear-to-l from-slate-300 to-slate-200 px-3 py-2">
+        <h1 className="text-2xl font-semibold tracking-tight text-black">
           Inasistencias y deudas
         </h1>
-        <p className="text-sm text-zinc-600">
+        <p className="text-sm text-gray-700">
           Cuando un turno se marca como ausente, el sistema imputa al paciente la
           deuda por el valor total de la consulta del profesional. No se generan
           cargos duplicados ni se cobra a turnos atendidos.

@@ -81,8 +81,8 @@ export default async function ReportesPage({
 
   return (
     <section className="mx-auto flex w-full max-w-3xl flex-col gap-5 rounded-lg bg-white p-6 shadow-sm print:max-w-none print:p-0 print:shadow-none">
-      <header className="border-b border-zinc-200 pb-3">
-        <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
+      <header >
+        <h1 className="text-2xl font-bold mb-6 border-b pb-4 text-slate-800">
           Reportes Administrativos
         </h1>
       </header>

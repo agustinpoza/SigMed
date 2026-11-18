@@ -11,7 +11,7 @@ export default async function PacientePage() {
         <h1 className="text-2xl text-black font-bold">
           Bienvenido, {paciente?.firstName} {paciente?.lastName}
         </h1>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-gray-700">
           Estas son las funciones disponibles para tu rol de paciente
         </p>
       </div>
@@ -20,7 +20,7 @@ export default async function PacientePage() {
           <h2 className="text-lg text-black font-semibold">
             Buscar turnos
           </h2>
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-sm text-gray-600 mb-4">
             Consulta los horarios disponibles por especialidad, profesional o fecha.
           </p>
           <Link href="/paciente/turnos"
@@ -33,7 +33,7 @@ export default async function PacientePage() {
           <h2 className="text-lg text-black font-semibold">
             Mi historial clínico
           </h2>
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-sm text-gray-600 mb-4">
             Consulta tus diagnósticos, tratamientos e indicaciones.
           </p>
           <Link href="/paciente/historial"
@@ -46,7 +46,7 @@ export default async function PacientePage() {
           <h2 className="text-lg text-black font-semibold">
             Mis turnos
           </h2>
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-sm text-gray-600 mb-4">
             Consulta tus turnos reservados y confirmalos.
           </p>
           <Link href="/paciente/mis-turnos"
@@ -59,7 +59,7 @@ export default async function PacientePage() {
           <h2 className="text-lg text-black font-semibold">
             Mi cobertura médica
           </h2>
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-sm text-gray-600 mb-4">
             Consulta y actualiza la información de tu cobertura médica.
           </p>
           <Link href="/paciente/cobertura-medica"
@@ -72,7 +72,7 @@ export default async function PacientePage() {
           <h2 className="text-lg text-black font-semibold">
             Pagos y coberturas
           </h2>
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-sm text-gray-600 mb-4">
             Abona consultas particulares y consulta tus deudas por inasistencia.
           </p>
           <Link href="/paciente/pagos"
@@ -85,7 +85,7 @@ export default async function PacientePage() {
           <h2 className="text-lg text-black font-semibold">
             Mis facturas
           </h2>
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-sm text-gray-600 mb-4">
             Consulta y descarga tus facturas o comprobantes digitales.
           </p>
           <Link href="/paciente/facturas"

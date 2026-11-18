@@ -39,7 +39,7 @@ export default async function HistorialPacientePage({
 
   return (
     <section className="mx-auto w-full max-w-5xl overflow-hidden rounded-md border border-zinc-200 bg-white">
-      <header className="border-b border-zinc-200 px-5 py-4 sm:px-6">
+      <header className="border-b border-zinc-200 bg-linear-to-l from-slate-300 to-slate-200 px-5 py-4 sm:px-6">
         <h1 className="text-xl font-semibold tracking-tight text-zinc-900">
           Historial clínico de {paciente.profile.lastName}, {paciente.profile.firstName}
         </h1>

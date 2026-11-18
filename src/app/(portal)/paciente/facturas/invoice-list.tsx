@@ -24,7 +24,7 @@ const STATUS_LABELS: Record<string, string> = {
 export default function InvoiceList({ invoices }: { invoices: InvoiceRow[] }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[720px] text-left text-sm">
+      <table className="w-full min-w-180 text-left text-sm">
         <thead className="border-b border-zinc-200 bg-white text-xs uppercase tracking-wide text-zinc-500">
           <tr>
             <th scope="col" className="px-4 py-3 font-medium">Fecha</th>

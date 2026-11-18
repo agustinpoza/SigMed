@@ -134,7 +134,8 @@ export default function CoberturaForm({ idCobertura, nAfiliado, planCobertura, p
                         {state.message}
                     </p>
                 ) : null}
-                <div className="flex justify-end border-t border-gray-200 space-x-2 my-2 py-2">
+                {/* Panel de botones */}
+                <div className="flex justify-end border-t border-gray-200 space-x-2 my-2">
                     <button onClick={handleDescartar} type="button"
                         className="font-semibold text-slate-600 border border-slate-400 rounded-sm p-2 px-3 m-2"
                     >
