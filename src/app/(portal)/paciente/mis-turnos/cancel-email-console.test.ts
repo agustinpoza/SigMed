@@ -20,8 +20,11 @@ describe("RF-10: copia del mail simulado en la consola del navegador", () => {
       },
     });
 
-    expect(info).toHaveBeenCalledOnce();
-    const output = String(info.mock.calls[0][0]);
+    expect(info).toHaveBeenCalledTimes(2);
+    const output = info.mock.calls
+      .map((args: unknown[]) => String(args[0]))
+      .find((line) => line.includes("Envio simulado"));
+    expect(output).toBeDefined();
     expect(output).toContain("[email:console] Envio simulado");
     expect(output).toContain("to: ana@example.com");
     expect(output).toContain("subject: Turno cancelado: Lunes, 12 de octubre");
@@ -59,14 +62,17 @@ describe("RF-10: copia del mail simulado en la consola del navegador", () => {
     expect(String(warn.mock.calls[1][0])).toContain("Resend caído");
   });
 
-  it("no imprime nada si se envió por Resend o no hay notificación", () => {
+  it("deja la huella diagnóstica pero no expone el mail si se envió por Resend o no hay notificación", () => {
     const info = vi.spyOn(console, "info").mockImplementation(() => {});
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
 
-    logCancelEmailInBrowser({ sent: true, provider: "resend" });
-    logCancelEmailInBrowser(undefined);
+    logCancelEmailInBrowser({ sent: true, provider: "resend" }, "turno-1");
+    logCancelEmailInBrowser(undefined, "turno-2");
 
-    expect(info).not.toHaveBeenCalled();
+    expect(info).toHaveBeenCalledTimes(2);
+    expect(String(info.mock.calls[0][0])).toContain("cancelarTurno (turno-1)");
+    expect(String(info.mock.calls[1][1])).toContain("sin notification");
+    expect(info.mock.calls.some((args: unknown[]) => String(args[0]).includes("Envio simulado"))).toBe(false);
     expect(warn).not.toHaveBeenCalled();
   });
 });

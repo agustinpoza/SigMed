@@ -113,7 +113,7 @@ export default function MisTurnosClient({
     startTransition(async () => {
       try {
         const result = await cancelarTurno(id);
-        logCancelEmailInBrowser(result.notification);
+        logCancelEmailInBrowser(result.notification, id);
 
         setTurnos((prev) => prev.filter((t) => t.id !== id));
         setTurnoACancelar(null);
