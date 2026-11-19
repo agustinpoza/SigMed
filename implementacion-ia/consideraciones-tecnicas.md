@@ -343,6 +343,15 @@ persistida:
   `reprogramarTurnoDominio` — que cancela el original por su cuenta — **no**
   envíe un aviso de cancelación. La reprogramación solo envía la confirmación
   del turno nuevo.
+- **Depuración en el navegador:** el `console.info` del transporte corre en el
+  servidor y no llega a DevTools. Por eso `notifyAppointmentCancelled` devuelve
+  un `preview` con el mail simulado, las acciones lo devuelven al cliente y
+  `src/app/(portal)/paciente/mis-turnos/cancel-email-console.ts` lo imprime en la
+  consola del navegador con el mismo prefijo `[email:console]`. Está gated por
+  `NODE_ENV !== "production"` y por `provider === "console"`: en producción o con
+  Resend configurado no se expone ningún dato del paciente. Los estados
+  `skipped` y `error` también se avisan por consola, para que no haya salidas
+  silenciosas.
 - `src/lib/email.ts`: transporte. Usa la API HTTP de Resend con `fetch` (sin
   agregar dependencias) si hay `RESEND_API_KEY`; si no, escribe el mail en la
   consola. En producción hace falta un dominio verificado en Resend y

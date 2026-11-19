@@ -56,7 +56,15 @@ describe("RF-10: notificacion de cancelacion", () => {
 
     const result = await notifyAppointmentCancelled(TURNO_ID);
 
-    expect(result).toEqual({ sent: true, provider: "console" });
+    expect(result).toEqual({
+      sent: true,
+      provider: "console",
+      preview: {
+        to: "ana@example.com",
+        subject: expect.stringContaining("Turno cancelado"),
+        text: expect.stringContaining("Urgencia del profesional"),
+      },
+    });
     expect(mocks.sendEmail).toHaveBeenCalledOnce();
 
     const message = mocks.sendEmail.mock.calls[0][0];
@@ -116,6 +124,16 @@ describe("RF-10: notificacion de cancelacion", () => {
     const result = await notifyAppointmentCancelled(TURNO_ID);
 
     expect(result).toEqual({ sent: true, provider: "resend" });
+  });
+
+  it("no expone la vista previa del mail en producción", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    mocks.findUnique.mockResolvedValue(cancelledAppointment());
+
+    const result = await notifyAppointmentCancelled(TURNO_ID);
+
+    expect(result).toEqual({ sent: true, provider: "console" });
+    vi.unstubAllEnvs();
   });
 
   it("usa 'specialty' si el profesional no trae 'speciality'", async () => {

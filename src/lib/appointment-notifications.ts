@@ -19,8 +19,20 @@ import { reprogramUrl } from "@/lib/app-url";
 import { buildCancellationEmail } from "@/lib/email-templates";
 import { sendEmail } from "@/lib/email";
 
+/**
+ * Copia del mensaje simulado, para mostrarlo en la consola del navegador durante
+ * el desarrollo. Solo se arma cuando el transporte cayó en consola (sin API key)
+ * y NODE_ENV no es production: nunca se expone el correo del paciente en la UI
+ * de un despliegue real.
+ */
+export type CancellationEmailPreview = {
+  to: string;
+  subject: string;
+  text: string;
+};
+
 export type NotifyCancellationResult =
-  | { sent: true; provider: "resend" | "console" }
+  | { sent: true; provider: "resend" | "console"; preview?: CancellationEmailPreview }
   | { sent: false; skipped: "not-found" | "not-cancelled" }
   | { sent: false; error: string };
 
@@ -65,14 +77,24 @@ export async function notifyAppointmentCancelled(
       reprogramUrl: reprogramUrl(appointment.id),
     });
 
-    const result = await sendEmail({
+    const message = {
       to: patient.email,
       subject: email.subject,
       html: email.html,
       text: email.text,
-    });
+    };
+    const result = await sendEmail(message);
 
-    return { sent: true, provider: result.provider };
+    const preview: CancellationEmailPreview | undefined =
+      process.env.NODE_ENV !== "production" && result.provider === "console"
+        ? { to: message.to, subject: message.subject, text: message.text }
+        : undefined;
+
+    return {
+      sent: true,
+      provider: result.provider,
+      ...(preview ? { preview } : {}),
+    };
   } catch (error) {
     const detail = errorDetail(error);
     console.error(

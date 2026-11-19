@@ -267,7 +267,10 @@ describe("US 2.4: Cancelación de turno por el paciente (RF-08)", () => {
     });
 
     const res = await cancelarTurno(APPOINTMENT_ID);
-    expect(res).toEqual({ success: true });
+    expect(res).toEqual({
+      success: true,
+      notification: { sent: true, provider: "console" },
+    });
     expect(mocks.transaction).toHaveBeenCalledTimes(1);
     expect(mocks.updateAppointment).toHaveBeenCalledWith({
       where: { id: APPOINTMENT_ID },
@@ -319,7 +322,10 @@ describe("US 2.4: Cancelación de turno por el paciente (RF-08)", () => {
     mocks.notifyCancelled.mockRejectedValue(new Error("mail caído"));
     const error = vi.spyOn(console, "error").mockImplementation(() => {});
 
-    await expect(cancelarTurno(APPOINTMENT_ID)).resolves.toEqual({ success: true });
+    await expect(cancelarTurno(APPOINTMENT_ID)).resolves.toEqual({
+      success: true,
+      notification: { sent: false, error: "mail caído" },
+    });
     expect(mocks.updateAppointment).toHaveBeenCalledWith({
       where: { id: APPOINTMENT_ID },
       data: expect.objectContaining({ status: AppointmentState.CANCELADO }),
@@ -339,7 +345,10 @@ describe("US 2.4: Cancelación de turno por el paciente (RF-08)", () => {
 
     const res = await cancelarTurnoPaciente(formData());
 
-    expect(res).toEqual({ success: true });
+    expect(res).toEqual({
+      success: true,
+      notification: { sent: true, provider: "console" },
+    });
     expect(mocks.transaction).toHaveBeenCalledTimes(1);
     expect(mocks.updateAppointment).toHaveBeenCalledWith({
       where: { id: APPOINTMENT_ID },

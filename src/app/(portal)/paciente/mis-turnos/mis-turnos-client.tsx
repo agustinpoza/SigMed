@@ -2,6 +2,7 @@
 
 import { confirmarTurno, cancelarTurno, reprogramarTurno, obtenerHorariosAlternativosAction, } from "@/app/(portal)/paciente/turnos/actions";
 import type { HorarioAlternativo } from "@/lib/agenda";
+import { logCancelEmailInBrowser } from "./cancel-email-console";
 import { useState, useTransition } from "react";
 import Swal from "sweetalert2";
 
@@ -111,7 +112,8 @@ export default function MisTurnosClient({
 
     startTransition(async () => {
       try {
-        await cancelarTurno(id);
+        const result = await cancelarTurno(id);
+        logCancelEmailInBrowser(result.notification);
 
         setTurnos((prev) => prev.filter((t) => t.id !== id));
         setTurnoACancelar(null);

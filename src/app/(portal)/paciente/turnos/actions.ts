@@ -7,7 +7,7 @@ import { AppointmentState } from '@/generated/prisma/client';
 import { eliminarTurnosVencidos } from '@/lib/turnos';
 import { AgendaRuleError, AGENDA_SPECIALITY_LABELS, cancelarTurnoDominio, formatearFechaHoraTurno, obtenerHorariosAlternativosProfesional, reprogramarTurnoDominio, type HorarioAlternativo, } from '@/lib/agenda';
 import { enviarConfirmacionTurnoEmail } from '@/lib/email';
-import { notifyAppointmentCancelled } from '@/lib/appointment-notifications';
+import { notifyAppointmentCancelled, type NotifyCancellationResult } from '@/lib/appointment-notifications';
 
 const SPECIALITY_LABELS: Record<string, string> = AGENDA_SPECIALITY_LABELS;
 
@@ -173,11 +173,12 @@ export async function confirmarTurno(input: FormData | string) {
  * Se llama desde las acciones, nunca desde `agenda.ts`, para que la reprogramación
  * (que cancela el turno original por su cuenta) no envíe un aviso de cancelación.
  */
-async function notificarCancelacionTurno(appointmentId: string): Promise<void> {
+async function notificarCancelacionTurno(appointmentId: string): Promise<NotifyCancellationResult> {
   try {
-    await notifyAppointmentCancelled(appointmentId);
+    return await notifyAppointmentCancelled(appointmentId);
   } catch (error) {
     console.error('[RF-10] No se pudo notificar la cancelación:', error);
+    return { sent: false, error: error instanceof Error ? error.message : 'error desconocido' };
   }
 }
 
@@ -228,16 +229,19 @@ export async function cancelarTurno(input: string | FormData) {
     } catch {}
   }
 
+  let notification: NotifyCancellationResult | undefined;
   if (UUID_REGEX.test(appointmentId)) {
     await cancelarTurnoDominio(paciente.id, appointmentId);
-    await notificarCancelacionTurno(appointmentId);
+    notification = await notificarCancelacionTurno(appointmentId);
   } else if (!removedFromCookie) {
     throw new AgendaRuleError('El turno no se encuentra disponible o pertenece a otro usuario.');
   }
 
   revalidatePath('/paciente/turnos');
   revalidatePath('/paciente/mis-turnos');
-  return { success: true };
+  // `notification` se devuelve solo para que el cliente pueda mostrar en consola
+  // el mail simulado durante el desarrollo; en producción no trae contenido.
+  return { success: true, notification };
 }
 
 /**
@@ -385,16 +389,17 @@ export async function cancelarTurnoPaciente(formData: FormData) {
   }
 
   // Dar de baja = transición a CANCELADO (no borrado físico) + aviso por email.
+  let notification: NotifyCancellationResult | undefined;
   if (UUID_REGEX.test(appointmentId)) {
     await cancelarTurnoDominio(paciente.id, appointmentId);
-    await notificarCancelacionTurno(appointmentId);
+    notification = await notificarCancelacionTurno(appointmentId);
   } else if (!removedFromCookie) {
     throw new Error('El turno no se encuentra disponible o pertenece a otro usuario.');
   }
 
   revalidatePath('/paciente/turnos');
   revalidatePath('/paciente/mis-turnos');
-  return { success: true };
+  return { success: true, notification };
 }
 
 export async function reservarTurno(formData: FormData) {

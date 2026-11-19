@@ -148,7 +148,18 @@ describe("US-2.7 / RF-10: cancelación con aviso por email (PostgreSQL real)", (
 
     const result = await cancelarTurno(turno.id);
 
-    expect(result).toEqual({ success: true });
+    expect(result).toEqual({
+      success: true,
+      notification: {
+        sent: true,
+        provider: "console",
+        preview: {
+          to: patient.email,
+          subject: expect.stringContaining("Turno cancelado"),
+          text: expect.stringContaining("Cancelado por el paciente"),
+        },
+      },
+    });
     const stored = await prisma.appointment.findUniqueOrThrow({
       where: { id: turno.id },
     });
@@ -172,7 +183,10 @@ describe("US-2.7 / RF-10: cancelación con aviso por email (PostgreSQL real)", (
 
     const result = await cancelarTurnoPaciente(formData(turno.id));
 
-    expect(result).toEqual({ success: true });
+    expect(result).toEqual({
+      success: true,
+      notification: expect.objectContaining({ sent: true, provider: "console" }),
+    });
     const stored = await prisma.appointment.findUnique({
       where: { id: turno.id },
     });
@@ -209,7 +223,10 @@ describe("US-2.7 / RF-10: cancelación con aviso por email (PostgreSQL real)", (
     vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("Resend caído"));
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
 
-    await expect(cancelarTurno(turno.id)).resolves.toEqual({ success: true });
+    await expect(cancelarTurno(turno.id)).resolves.toEqual({
+      success: true,
+      notification: expect.objectContaining({ sent: false }),
+    });
 
     const stored = await prisma.appointment.findUniqueOrThrow({
       where: { id: turno.id },
