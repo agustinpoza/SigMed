@@ -31,7 +31,7 @@ describe("US-3.4: banner de stock crítico del inicio", () => {
       screen
         .getByRole("link", { name: "Ver detalle de stock" })
         .getAttribute("href"),
-    ).toBe("/enfermera/inventario#alertas");
+    ).toBe("/enfermera/stock#alertas");
   });
 
   it("usa el plural cuando hay más de una vacuna", () => {

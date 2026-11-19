@@ -108,4 +108,51 @@ describe("RF-10: notificacion de cancelacion", () => {
     expect(result).toEqual({ sent: false, error: "db caida" });
     expect(error).toHaveBeenCalledOnce();
   });
+
+  it("informa el proveedor real cuando el correo sale por Resend", async () => {
+    mocks.findUnique.mockResolvedValue(cancelledAppointment());
+    mocks.sendEmail.mockResolvedValue({ provider: "resend", id: "msg-123" });
+
+    const result = await notifyAppointmentCancelled(TURNO_ID);
+
+    expect(result).toEqual({ sent: true, provider: "resend" });
+  });
+
+  it("usa 'specialty' si el profesional no trae 'speciality'", async () => {
+    mocks.findUnique.mockResolvedValue(
+      cancelledAppointment({
+        doctor: {
+          specialty: "PEDIATRA",
+          profile: { firstName: "Sofía", lastName: "Duarte" },
+        },
+      }),
+    );
+
+    await notifyAppointmentCancelled(TURNO_ID);
+
+    expect(mocks.sendEmail.mock.calls[0][0].text).toContain("Pediatría");
+  });
+
+  it("muestra 'Sin motivo informado.' cuando el turno no tiene motivo de cancelación", async () => {
+    mocks.findUnique.mockResolvedValue(
+      cancelledAppointment({ cancellationReason: null }),
+    );
+
+    await notifyAppointmentCancelled(TURNO_ID);
+
+    expect(mocks.sendEmail.mock.calls[0][0].text).toContain("Sin motivo informado.");
+  });
+
+  it("no lanza si el turno cancelado no tiene perfil de paciente", async () => {
+    mocks.findUnique.mockResolvedValue(
+      cancelledAppointment({ patient: { profile: null } }),
+    );
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const result = await notifyAppointmentCancelled(TURNO_ID);
+
+    expect(result).toEqual({ sent: false, error: expect.any(String) });
+    expect(mocks.sendEmail).not.toHaveBeenCalled();
+    expect(error).toHaveBeenCalledOnce();
+  });
 });

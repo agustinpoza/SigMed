@@ -7,7 +7,7 @@ type StockAlertBannerProps = {
 
 /**
  * Resumen de stock critico para el inicio de enfermeria. Solo aparece cuando
- * hay al menos una vacuna comprometida; el detalle vive en /enfermera/inventario.
+ * hay al menos una vacuna comprometida; el detalle vive en /enfermera/stock.
  */
 export function StockAlertBanner({ alerts }: StockAlertBannerProps) {
   if (alerts.length === 0) return null;
@@ -37,7 +37,7 @@ export function StockAlertBanner({ alerts }: StockAlertBannerProps) {
         ))}
       </ul>
       <Link
-        href="/enfermera/inventario#alertas"
+        href="/enfermera/stock#alertas"
         className="mt-3 inline-block rounded-md border border-red-300 bg-white px-3 py-2 text-sm font-medium text-red-800 transition hover:bg-red-100"
       >
         Ver detalle de stock

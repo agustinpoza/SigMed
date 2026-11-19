@@ -17,6 +17,10 @@ import EnfermeraPage from "@/app/(portal)/enfermera/page";
 import { StockAlertBanner } from "@/app/(portal)/enfermera/stock-alert-banner";
 import { listLowStockVaccines } from "@/lib/stock-alerts";
 
+// Sweetalert necesita matchMedia, que jsdom no provee; el feedback visual se
+// comprueba por el estado del formulario, no por el modal.
+vi.mock("sweetalert2", () => ({ default: { fire: vi.fn() } }));
+
 // Solo se simulan la identidad y la invalidación de Next. Prisma, SQL, triggers,
 // dominio, guard, acciones y componentes son reales. Esto no autentica una sesión.
 const boundary = vi.hoisted(() => ({ actor: null as UserProfile | null, revalidate: vi.fn() }));
@@ -245,7 +249,7 @@ describe("SIG-MEJ-03.3: stock, transacciones y trazabilidad con PostgreSQL real"
     expect(adjustment.actorId).not.toBe(otherNurse.id);
     expect(adjustment.createdAt.getTime()).toBeGreaterThanOrEqual(startedAt - 1_000);
     expect(adjustment.createdAt.getTime()).toBeLessThanOrEqual(Date.now());
-    expect(boundary.revalidate).toHaveBeenCalledWith("/enfermera/inventario");
+    expect(boundary.revalidate).toHaveBeenCalledWith("/enfermera/stock");
   });
 
   it("el formulario muestra el rechazo real, preserva los valores y permite un reintento válido", async () => {
@@ -385,7 +389,7 @@ describe("US-3.4: alertas visibles de stock crítico con PostgreSQL real", () =>
     expect(await prisma.stockAlert.count({ where: { vaccineId: vaccine.id } })).toBe(0);
   });
 
-  it("integra el panel completo en /enfermera/inventario", async () => {
+  it("integra el panel completo en /enfermera/stock", async () => {
     const { vaccine } = await inventory(3, 1);
     await registerStockMovement(movement(vaccine.id, -2));
 
@@ -395,5 +399,135 @@ describe("US-3.4: alertas visibles de stock crítico con PostgreSQL real", () =>
     const panel = screen.getByRole("region", { name: "Vacunas con stock crítico" });
     const row = within(panel).getByRole("row", { name: new RegExp(vaccine.name) });
     expect(row.textContent).toContain("Activa desde");
+  });
+});
+
+describe("RF-13: refuerzo de la alerta visual de stock con PostgreSQL real", () => {
+  it("un umbral 0 alerta cuando el stock llega a cero", async () => {
+    const { vaccine } = await inventory(3, 0);
+    await registerStockMovement(movement(vaccine.id, -3));
+
+    const row = (await listLowStockVaccines()).find(
+      (alert) => alert.vaccineId === vaccine.id,
+    );
+    expect(row).toMatchObject({
+      stock: 0,
+      criticalLevel: 0,
+      alertGeneratedAt: expect.any(Date),
+    });
+    const alert = await prisma.stockAlert.findFirstOrThrow({
+      where: { vaccineId: vaccine.id },
+    });
+    expect(alert).toMatchObject({
+      status: AlertStatus.ACTIVA,
+      stockWhenGenerated: 0,
+    });
+
+    render(<StockAlertBanner alerts={[row!]} />);
+    expect(screen.getByText(`${vaccine.name}: 0 en stock, umbral 0.`)).toBeTruthy();
+  });
+
+  it("reponer exactamente al umbral mantiene la alerta activa", async () => {
+    const { vaccine, lot } = await inventory(4, 2);
+    await registerStockMovement(movement(vaccine.id, -3)); // stock 1
+    expect((await listLowStockVaccines()).some((a) => a.vaccineId === vaccine.id)).toBe(true);
+
+    await registerStockMovement(movement(vaccine.id, 1)); // stock 2 = umbral
+    expect((await balance(lot.id)).quantity).toBe(2);
+    const row = (await listLowStockVaccines()).find(
+      (alert) => alert.vaccineId === vaccine.id,
+    );
+    expect(row).toMatchObject({ stock: 2, criticalLevel: 2 });
+    const alerts = await prisma.stockAlert.findMany({ where: { vaccineId: vaccine.id } });
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0].status).toBe(AlertStatus.ACTIVA);
+    expect(alerts[0].resolvedAt).toBeNull();
+  });
+
+  it("un lote vencido no suma al stock que muestra la alerta", async () => {
+    const { vaccine } = await inventory(3, 2);
+    await registerStockMovement({
+      ...movement(vaccine.id, 10),
+      movementType: MovementType.INGRESO,
+      lotNumber: "LOTE-VENCIDO",
+      expiresAt: future(),
+      reason: "Ingreso de prueba",
+    });
+    await prisma.vaccineLot.update({
+      where: {
+        vaccineId_lotNumber: { vaccineId: vaccine.id, lotNumber: "LOTE-VENCIDO" },
+      },
+      data: { expiresAt: new Date(Date.now() - 86_400_000) },
+    });
+    await registerStockMovement(movement(vaccine.id, -2)); // queda 1, no 11
+
+    const row = (await listLowStockVaccines()).find(
+      (alert) => alert.vaccineId === vaccine.id,
+    );
+    expect(row).toMatchObject({ stock: 1, criticalLevel: 2 });
+    const alert = await prisma.stockAlert.findFirstOrThrow({
+      where: { vaccineId: vaccine.id },
+    });
+    expect(alert.stockWhenGenerated).toBe(1);
+  });
+
+  it("editar el umbral sin mover stock actualiza el panel pero no emite alerta", async () => {
+    const { vaccine } = await inventory(2, null);
+    expect((await listLowStockVaccines()).some((a) => a.vaccineId === vaccine.id)).toBe(false);
+
+    await prisma.vaccine.update({
+      where: { id: vaccine.id },
+      data: { criticalLevel: 3 },
+    });
+
+    const row = (await listLowStockVaccines()).find(
+      (alert) => alert.vaccineId === vaccine.id,
+    );
+    expect(row).toMatchObject({
+      stock: 2,
+      criticalLevel: 3,
+      alertGeneratedAt: null,
+    });
+    expect(await prisma.stockAlert.count({ where: { vaccineId: vaccine.id } })).toBe(0);
+
+    render(<StockAlertsPanel alerts={[row!]} />);
+    const panelRow = screen.getByRole("row", { name: new RegExp(vaccine.name) });
+    expect(panelRow.textContent).toContain("Sin alerta activa");
+  });
+
+  it("ordena por diferencia stock-umbral y por nombre en caso de empate", async () => {
+    const tag = randomUUID().slice(0, 6);
+    const cases = [
+      { label: "A", quantity: 1, threshold: 3 }, // diferencia -2
+      { label: "B", quantity: 0, threshold: 1 }, // diferencia -1
+      { label: "C", quantity: 2, threshold: 3 }, // diferencia -1
+    ];
+    for (const item of cases) {
+      const name = `ZZ-Orden-${item.label}-${tag}`;
+      // El lote inicial no puede crearse con cantidad 0 (check de la BD), así
+      // que se parte de 1 y se descuenta para llegar al stock 0 del caso B.
+      await createVaccineWithInitialLot({
+        name,
+        laboratory: "Laboratorio ficticio",
+        criticalLevel: item.threshold,
+        lotNumber: "LOTE-PRUEBA",
+        expiresAt: future(),
+        quantity: item.quantity === 0 ? 1 : item.quantity,
+        actorId: nurse.id,
+      });
+      if (item.quantity === 0) {
+        const vaccine = await prisma.vaccine.findUniqueOrThrow({ where: { name } });
+        await registerStockMovement(movement(vaccine.id, -1));
+      }
+    }
+
+    const rows = (await listLowStockVaccines()).filter((alert) =>
+      alert.vaccineName.includes(tag),
+    );
+    expect(rows.map((alert) => alert.vaccineName)).toEqual([
+      `ZZ-Orden-A-${tag}`,
+      `ZZ-Orden-B-${tag}`,
+      `ZZ-Orden-C-${tag}`,
+    ]);
   });
 });

@@ -297,8 +297,12 @@ compartida y **no** se debe correr `prisma migrate reset` contra ella.
       prioridad actual.
 - [ ] No hay forma de desactivar una vacuna desde la UI, aunque `vaccine.is_active`
       ya exista en el schema. Ver [§11](#11-un-alta-de-vacuna-es-irreversible).
-- [ ] RF-10: la notificación de cancelación está lista, pero falta el flujo que la
-      dispare (la baja actual borra el turno). Ver §14.
+- [x] RF-10 (US-2.7): la cancelación del paciente ya dispara el email y la baja
+      directa dejó de borrar el turno. Ver §14. Queda RF-09 (cancelación por
+      médico/administrador) como deuda separada, fuera de esta US.
+- [ ] RF-09: exponer la cancelación para médico y administrador. El trigger
+      `fn_turno_reglas` ya lo permite y exige motivo; falta la acción y su UI.
+      Ver §14.
 - [ ] RF-32: editar `nivel_critico` no re-evalúa la alerta activa hasta el próximo
       movimiento de stock. Ver §15.
 
@@ -321,17 +325,31 @@ compartida y **no** se debe correr `prisma migrate reset` contra ella.
 
 ---
 
-## 14. RF-10: notificación de cancelación sin flujo de cancelación
+## 14. RF-10: notificación de cancelación (US-2.7 cerrada)
 
-**Decisión (US-2.7).** Se implementó la infraestructura de notificación, pero
-**no** la cancelación de turnos. El disparo queda listo para cuando exista:
+**Decisión (US-2.7).** El aviso por email ya se dispara desde las dos acciones
+de cancelación del paciente, después de que la transición a `CANCELADO` quedó
+persistida:
 
+- `src/app/(portal)/paciente/turnos/actions.ts`: `cancelarTurno` y
+  `cancelarTurnoPaciente` llaman al helper interno `notificarCancelacionTurno`,
+  que envuelve a `notifyAppointmentCancelled` en un `try/catch` adicional para
+  dejar explícito que un problema de correo no revierte la cancelación.
+- `cancelarTurnoPaciente` ya no hace `appointment.deleteMany`: dar de baja es una
+  transición a `CANCELADO` con `cancelledById`, `cancelledAt` y
+  `cancellationReason: "Cancelado por el paciente"`, con la misma trazabilidad
+  que `cancelarTurno`.
+- El gancho vive en las **acciones**, nunca en `src/lib/agenda.ts`, para que
+  `reprogramarTurnoDominio` — que cancela el original por su cuenta — **no**
+  envíe un aviso de cancelación. La reprogramación solo envía la confirmación
+  del turno nuevo.
 - `src/lib/email.ts`: transporte. Usa la API HTTP de Resend con `fetch` (sin
   agregar dependencias) si hay `RESEND_API_KEY`; si no, escribe el mail en la
   consola. En producción hace falta un dominio verificado en Resend y
   `MAIL_FROM`.
 - `src/lib/email-templates.ts`: plantilla pura con fecha/hora en
-  `America/Argentina/Buenos_Aires`, médico, especialidad, motivo y link.
+  `America/Argentina/Buenos_Aires`, médico, especialidad, motivo y link de
+  reprogramación (`/paciente/turnos?reprogramar=<id>`).
 - `src/lib/app-url.ts`: `APP_URL` → `VERCEL_URL` → `localhost`.
 - `src/lib/appointment-notifications.ts`:
   `notifyAppointmentCancelled(appointmentId)`. Carga el turno, exige estado
@@ -344,21 +362,24 @@ falla. Se descartó una tabla `notificacion` con reintentos para no sumar modelo
 y migración en esta fase. Si más adelante hace falta garantizar la entrega, ese
 es el siguiente paso.
 
-**Qué falta para cerrar RF-10 (CA1/CA2).**
+**Fuera de alcance de esta US.**
 
-1. Reemplazar el borrado de `cancelarTurnoPaciente` por una transición a
-   `CANCELADO` con `cancelledById`, `cancellationReason` y `cancelledAt`, y
-   llamar a `notifyAppointmentCancelled` después del commit.
-2. Exponer la cancelación para médico y administrador (RF-09). El trigger
+1. RF-09: exponer la cancelación para médico y administrador. El trigger
    `fn_turno_reglas` ya permite `confirmado → cancelado` y exige motivo para
-   esos roles.
-3. Que `/paciente/turnos` interprete `?reprogramar=<id>` y use
-   `getAvailableDoctorSlots` para mostrar alternativas reales.
+   esos roles, pero no hay acción ni UI. Queda como deuda (ver §12).
+2. Que `/paciente/turnos` interprete `?reprogramar=<id>` y use
+   `getAvailableDoctorSlots` para mostrar alternativas reales. El link ya se
+   envía en el mail; su destino es una pantalla pendiente.
 
-**Alcance de la prueba.** `src/lib/*.test.ts` cubre plantilla, transporte
-(consola y Resend con `fetch` mockeado) y el gancho (turno inexistente, turno no
-cancelado, envío exitoso y fallo del transporte). No hay cambios de schema ni
-migraciones.
+**Alcance de la prueba.** `src/lib/appointment-notifications.test.ts` cubre el
+gancho (turno inexistente, turno no cancelado, envío por consola y por Resend,
+fallo del transporte, motivo nulo, especialidad alternativa y perfil faltante) y
+`src/app/(portal)/paciente/turnos/actions.test.ts` cubre el disparo, el fallo del
+aviso sin revertir la cancelación, la baja sin borrado y la **no** emisión del
+mail en la reprogramación. En `tests/integration/notifications.test.tsx` se
+verifica con PostgreSQL real: CA1 (cancelación con mail al titular), CA2 (baja
+directa sin borrado), reprogramación sin aviso de cancelación y fallo de
+transporte sin revertir el estado. No hay cambios de schema ni migraciones.
 
 ---
 
@@ -374,13 +395,16 @@ el trigger: expone esa señal en la interfaz.
   CURRENT_DATE`) y `stock <= nivel_critico`. El `LEFT JOIN` con la alerta activa
   solo aporta `alertGeneratedAt`; la fila aparece aunque el umbral se haya
   editado después del último movimiento.
-- `stock-alerts-panel.tsx`: panel completo en `/enfermera/inventario#alertas`.
+- `stock-alerts-panel.tsx`: panel completo en `/enfermera/stock#alertas`.
   Muestra stock actual, umbral y "Activa desde …" cuando hay alerta activa.
 - `stock-alert-banner.tsx`: resumen en `/enfermera`. Solo se renderiza si hay al
   menos una vacuna comprometida; enlaza al panel.
-- Las acciones que mueven stock (`inventario`, `turnos-vacunacion`) y las que
-  crean o editan vacunas (`vacunas`) revalidan `/enfermera` además de su ruta,
-  para que el resumen no quede viejo.
+- Las acciones que mueven stock (`stock`, `turnos-vacunacion`) y las que crean o
+  editan vacunas (`vacunas`) revalidan `/enfermera` además de su ruta, para que
+  el resumen no quede viejo. `src/app/(portal)/enfermera/stock/actions.ts`
+  revalida `/enfermera/stock` (no la ruta vieja `/enfermera/inventario`).
+- RF-13 sigue siendo **solo alerta visual**: no hay email ni otro transporte por
+  stock bajo. Esta US no agrega notificaciones de inventario.
 
 **Umbral nulo.** `nivel_critico` sigue siendo nullable: `NULL` significa "sin
 alerta configurada" y la vacuna no aparece en el panel ni genera filas en
@@ -394,8 +418,13 @@ pero `alerta_stock` conserva el estado anterior. Queda para US-3.3.
 **Alcance de la prueba.** `stock-alerts-panel.test.tsx` y
 `stock-alert-banner.test.tsx` cubren los estados con y sin alertas. En
 `tests/integration/sprint-2.test.tsx` se verifica con PostgreSQL real: CA1 (caída
-al umbral), CA2 (reposición y resolución), umbral nulo, panel integrado en la
-página y resumen en el inicio.
+al umbral), CA2 (reposición y resolución), umbral nulo, panel integrado en
+`/enfermera/stock` y resumen en el inicio. El refuerzo de RF-13 agrega: umbral 0
+con stock 0, reposición exacta al umbral (sigue activa), lote vencido que no
+suma al stock de la alerta, edición de umbral sin movimiento (panel actualizado
+sin alerta nueva) y orden por diferencia `stock - umbral` con desempate por
+nombre. `actions.test.ts` y `stock-alert-banner.test.tsx` comprueban además la
+revalidación y el enlace a `/enfermera/stock#alertas`.
 ## 15. Sprint 3: coberturas, pagos online e inasistencias
 
 **US-4.2 · Validación de cobertura.** `src/lib/coverage.ts` clasifica la

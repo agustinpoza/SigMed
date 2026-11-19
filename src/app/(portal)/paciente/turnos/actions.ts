@@ -2,11 +2,12 @@
 
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/db';
-import { getCurrentActor } from '@/lib/dev-actor';
+import { getCurrentActor } from '@/lib/actor';
 import { AppointmentState } from '@/generated/prisma/client';
 import { eliminarTurnosVencidos } from '@/lib/turnos';
 import { AgendaRuleError, AGENDA_SPECIALITY_LABELS, cancelarTurnoDominio, formatearFechaHoraTurno, obtenerHorariosAlternativosProfesional, reprogramarTurnoDominio, type HorarioAlternativo, } from '@/lib/agenda';
 import { enviarConfirmacionTurnoEmail } from '@/lib/email';
+import { notifyAppointmentCancelled } from '@/lib/appointment-notifications';
 
 const SPECIALITY_LABELS: Record<string, string> = AGENDA_SPECIALITY_LABELS;
 
@@ -166,6 +167,21 @@ export async function confirmarTurno(input: FormData | string) {
 }
 
 /**
+ * US-2.7 / RF-10: avisa al paciente después de que la cancelación quedó persistida.
+ * El gancho ya es best-effort y nunca lanza; este try/catch adicional deja explícito
+ * que un problema de correo no puede revertir ni romper una cancelación confirmada.
+ * Se llama desde las acciones, nunca desde `agenda.ts`, para que la reprogramación
+ * (que cancela el turno original por su cuenta) no envíe un aviso de cancelación.
+ */
+async function notificarCancelacionTurno(appointmentId: string): Promise<void> {
+  try {
+    await notifyAppointmentCancelled(appointmentId);
+  } catch (error) {
+    console.error('[RF-10] No se pudo notificar la cancelación:', error);
+  }
+}
+
+/**
  * US-2.4: Acción para cancelar un turno por parte del paciente (CONFIRMADO o RESERVADO).
  * Cambia el estado del turno a CANCELADO y libera inmediatamente el horario original
  * mediante `prisma.$transaction`.
@@ -214,6 +230,7 @@ export async function cancelarTurno(input: string | FormData) {
 
   if (UUID_REGEX.test(appointmentId)) {
     await cancelarTurnoDominio(paciente.id, appointmentId);
+    await notificarCancelacionTurno(appointmentId);
   } else if (!removedFromCookie) {
     throw new AgendaRuleError('El turno no se encuentra disponible o pertenece a otro usuario.');
   }
@@ -326,6 +343,11 @@ export async function obtenerHorariosAlternativosAction(
   return obtenerHorariosAlternativosProfesional(doctorId, excludeAppointmentId);
 }
 
+/**
+ * Da de baja un turno desde la vista "Mis turnos". US-2.7 cerró la deuda que
+ * había acá: ya no se borra la fila, se transiciona a CANCELADO con trazabilidad
+ * y se envía el aviso al paciente titular.
+ */
 export async function cancelarTurnoPaciente(formData: FormData) {
   const actor = await getCurrentActor();
   if (!actor) throw new Error('No autorizado.');
@@ -362,18 +384,12 @@ export async function cancelarTurnoPaciente(formData: FormData) {
     } catch {}
   }
 
-  // Eliminar el turno físicamente de la base de datos (dar de baja)
+  // Dar de baja = transición a CANCELADO (no borrado físico) + aviso por email.
   if (UUID_REGEX.test(appointmentId)) {
-    const deleted = await prisma.appointment.deleteMany({
-      where: {
-        id: appointmentId,
-        patientId: paciente.id,
-      },
-    });
-
-    if (deleted.count === 0 && !removedFromCookie) {
-      throw new Error('El turno no se encuentra disponible o pertenece a otro usuario.');
-    }
+    await cancelarTurnoDominio(paciente.id, appointmentId);
+    await notificarCancelacionTurno(appointmentId);
+  } else if (!removedFromCookie) {
+    throw new Error('El turno no se encuentra disponible o pertenece a otro usuario.');
   }
 
   revalidatePath('/paciente/turnos');

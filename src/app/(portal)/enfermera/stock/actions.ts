@@ -172,7 +172,7 @@ export async function createStockMovement(
     throw error;
   }
 
-  revalidatePath("/enfermera/inventario");
+  revalidatePath("/enfermera/stock");
   revalidatePath("/enfermera"); // el panel de alertas del inicio
   revalidatePath("/enfermera/umbral-critico");
 

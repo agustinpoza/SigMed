@@ -24,6 +24,7 @@ const mocks = vi.hoisted(() => ({
   deleteMany: vi.fn(),
   findFirstBlock: vi.fn(),
   deleteManyBlocks: vi.fn(),
+  notifyCancelled: vi.fn(),
   revalidate: vi.fn(),
 }));
 
@@ -56,6 +57,10 @@ vi.mock("@/lib/actor", () => ({
 
 vi.mock("next/cache", () => ({
   revalidatePath: mocks.revalidate,
+}));
+
+vi.mock("@/lib/appointment-notifications", () => ({
+  notifyAppointmentCancelled: mocks.notifyCancelled,
 }));
 
 const PACIENTE_ID = "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d";
@@ -96,6 +101,7 @@ beforeEach(() => {
   mocks.deleteMany.mockResolvedValue({ count: 1 });
   mocks.findFirstBlock.mockResolvedValue(null);
   mocks.deleteManyBlocks.mockResolvedValue({ count: 0 });
+  mocks.notifyCancelled.mockResolvedValue({ sent: true, provider: "console" });
   mocks.transaction.mockImplementation(async (callback, txClient) =>
     callback({
       ...txClient,
@@ -277,19 +283,74 @@ describe("US 2.4: Cancelación de turno por el paciente (RF-08)", () => {
         endsAt,
       }),
     });
+    expect(mocks.notifyCancelled).toHaveBeenCalledWith(APPOINTMENT_ID);
     expect(mocks.revalidate).toHaveBeenCalledWith("/paciente/turnos");
     expect(mocks.revalidate).toHaveBeenCalledWith("/paciente/mis-turnos");
   });
 
-  it("elimina el turno mediante cancelarTurnoPaciente (compatibilidad baja directa)", async () => {
-    const res = await cancelarTurnoPaciente(formData());
-    expect(res).toEqual({ success: true });
-    expect(mocks.deleteMany).toHaveBeenCalledWith({
-      where: {
-        id: APPOINTMENT_ID,
-        patientId: PACIENTE_ID,
-      },
+  it("US-2.7: cancelarTurno avisa por email después de persistir el estado CANCELADO", async () => {
+    mocks.findUniqueAppointment.mockResolvedValue({
+      id: APPOINTMENT_ID,
+      patientId: PACIENTE_ID,
+      doctorId: DOCTOR_ID,
+      startsAt: new Date(Date.now() + 86400_000),
+      endsAt: new Date(Date.now() + 86400_000 + 30 * 60_000),
+      status: AppointmentState.CONFIRMADO,
     });
+
+    await cancelarTurno(APPOINTMENT_ID);
+
+    expect(mocks.updateAppointment).toHaveBeenCalledWith({
+      where: { id: APPOINTMENT_ID },
+      data: expect.objectContaining({ status: AppointmentState.CANCELADO }),
+    });
+    expect(mocks.notifyCancelled).toHaveBeenCalledWith(APPOINTMENT_ID);
+  });
+
+  it("US-2.7: un fallo del aviso no revierte ni rompe la cancelación", async () => {
+    mocks.findUniqueAppointment.mockResolvedValue({
+      id: APPOINTMENT_ID,
+      patientId: PACIENTE_ID,
+      doctorId: DOCTOR_ID,
+      startsAt: new Date(Date.now() + 86400_000),
+      endsAt: new Date(Date.now() + 86400_000 + 30 * 60_000),
+      status: AppointmentState.CONFIRMADO,
+    });
+    mocks.notifyCancelled.mockRejectedValue(new Error("mail caído"));
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await expect(cancelarTurno(APPOINTMENT_ID)).resolves.toEqual({ success: true });
+    expect(mocks.updateAppointment).toHaveBeenCalledWith({
+      where: { id: APPOINTMENT_ID },
+      data: expect.objectContaining({ status: AppointmentState.CANCELADO }),
+    });
+    expect(error).toHaveBeenCalledOnce();
+  });
+
+  it("US-2.7: cancelarTurnoPaciente transiciona a CANCELADO y avisa, sin borrar el turno", async () => {
+    mocks.findUniqueAppointment.mockResolvedValue({
+      id: APPOINTMENT_ID,
+      patientId: PACIENTE_ID,
+      doctorId: DOCTOR_ID,
+      startsAt: new Date(Date.now() + 86400_000),
+      endsAt: new Date(Date.now() + 86400_000 + 30 * 60_000),
+      status: AppointmentState.CONFIRMADO,
+    });
+
+    const res = await cancelarTurnoPaciente(formData());
+
+    expect(res).toEqual({ success: true });
+    expect(mocks.transaction).toHaveBeenCalledTimes(1);
+    expect(mocks.updateAppointment).toHaveBeenCalledWith({
+      where: { id: APPOINTMENT_ID },
+      data: expect.objectContaining({
+        status: AppointmentState.CANCELADO,
+        cancelledById: PACIENTE_ID,
+        cancellationReason: "Cancelado por el paciente",
+      }),
+    });
+    expect(mocks.notifyCancelled).toHaveBeenCalledWith(APPOINTMENT_ID);
+    expect(mocks.deleteMany).not.toHaveBeenCalled();
     expect(mocks.revalidate).toHaveBeenCalledWith("/paciente/mis-turnos");
   });
 });
@@ -348,6 +409,8 @@ describe("US 2.5: Reprogramación de turno por el paciente (RF-08)", () => {
         reservedById: PACIENTE_ID,
       }),
     });
+    // La reprogramación cancela el turno original, pero no es una baja: no va el mail de cancelación.
+    expect(mocks.notifyCancelled).not.toHaveBeenCalled();
     expect(mocks.revalidate).toHaveBeenCalledWith("/paciente/turnos");
     expect(mocks.revalidate).toHaveBeenCalledWith("/paciente/mis-turnos");
   });

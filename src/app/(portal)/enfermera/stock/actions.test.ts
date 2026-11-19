@@ -89,7 +89,7 @@ describe("SIG-MEJ-03.2: entrada positiva y signo interno", () => {
       actorId: "operador-identificado",
       audit: null,
     });
-    expect(mocks.revalidate).toHaveBeenCalledWith("/enfermera/inventario");
+    expect(mocks.revalidate).toHaveBeenCalledWith("/enfermera/stock");
     expect(mocks.revalidate).toHaveBeenCalledWith("/enfermera");
   });
 

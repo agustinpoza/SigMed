@@ -10,7 +10,7 @@ type StockAlertsPanelProps = {
 };
 
 /**
- * Panel completo de stock critico para /enfermera/inventario.
+ * Panel completo de stock critico para /enfermera/stock.
  * Se calcula con el stock actual contra el umbral vigente; la alerta activa
  * solo aporta la fecha de generacion.
  */
