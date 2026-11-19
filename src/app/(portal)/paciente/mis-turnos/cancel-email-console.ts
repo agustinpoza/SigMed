@@ -1,20 +1,18 @@
 import type { NotifyCancellationResult } from "@/lib/appointment-notifications";
 
 /**
- * RF-10 (solo desarrollo): el Server Action corre en el servidor, así que su
- * `console.info` no llega a DevTools. Replicamos acá el mail simulado para poder
- * verlo mientras se prueba la cancelación desde el navegador. En producción no
- * se expone ningún dato del paciente.
+ * RF-10: el Server Action corre en el servidor, así que su `console.info` no
+ * llega a DevTools. Replicamos acá el mail simulado para poder verlo al cancelar
+ * desde el navegador, también en preview/despliegue (decisión del equipo).
+ * Ojo: expone el correo del paciente en la consola del navegador.
  */
 export function logCancelEmailInBrowser(
   notification: NotifyCancellationResult | undefined,
   appointmentId?: string,
 ): void {
-  if (process.env.NODE_ENV === "production") return;
-
   // Huella diagnóstica: permite distinguir "el handler no corrió" (no aparece
   // nada), de "la acción no devolvió notification" (build/action stale), de un
-  // problema del transporte. Siempre se imprime en desarrollo.
+  // problema del transporte. Se imprime siempre, también en despliegue.
   console.info(
     `[email:console] cancelarTurno${appointmentId ? ` (${appointmentId})` : ""} →`,
     notification ?? "sin notification (reiniciá next dev y recargá)",

@@ -239,8 +239,8 @@ export async function cancelarTurno(input: string | FormData) {
 
   revalidatePath('/paciente/turnos');
   revalidatePath('/paciente/mis-turnos');
-  // `notification` se devuelve solo para que el cliente pueda mostrar en consola
-  // el mail simulado durante el desarrollo; en producción no trae contenido.
+  // `notification` se devuelve para que el cliente muestre en consola el mail
+  // simulado. Con Resend configurado no trae preview (no hay mail simulado).
   return { success: true, notification };
 }
 

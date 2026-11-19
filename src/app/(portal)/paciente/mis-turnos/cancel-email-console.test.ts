@@ -32,10 +32,9 @@ describe("RF-10: copia del mail simulado en la consola del navegador", () => {
     expect(output).toContain("    Tu turno fue cancelado.");
   });
 
-  it("no expone el correo del paciente en producción", () => {
+  it("muestra el mail también en producción", () => {
     vi.stubEnv("NODE_ENV", "production");
     const info = vi.spyOn(console, "info").mockImplementation(() => {});
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
 
     logCancelEmailInBrowser({
       sent: true,
@@ -47,8 +46,8 @@ describe("RF-10: copia del mail simulado en la consola del navegador", () => {
       },
     });
 
-    expect(info).not.toHaveBeenCalled();
-    expect(warn).not.toHaveBeenCalled();
+    expect(info).toHaveBeenCalledTimes(2);
+    expect(info.mock.calls.some((args: unknown[]) => String(args[0]).includes("Envio simulado"))).toBe(true);
   });
 
   it("aviso en consola cuando el aviso se omite o falla", () => {

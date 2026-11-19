@@ -347,9 +347,11 @@ persistida:
   servidor y no llega a DevTools. Por eso `notifyAppointmentCancelled` devuelve
   un `preview` con el mail simulado, las acciones lo devuelven al cliente y
   `src/app/(portal)/paciente/mis-turnos/cancel-email-console.ts` lo imprime en la
-  consola del navegador con el mismo prefijo `[email:console]`. Está gated por
-  `NODE_ENV !== "production"` y por `provider === "console"`: en producción o con
-  Resend configurado no se expone ningún dato del paciente. Los estados
+  consola del navegador con el mismo prefijo `[email:console]`. El `preview` se
+  arma solo cuando el proveedor es `console` (sin `RESEND_API_KEY`); con Resend
+  configurado no hay mail simulado que mostrar. **Decisión del equipo:** el log
+  se muestra también en preview/producción para poder depurar la cancelación en
+  un deploy; eso expone el correo del paciente en DevTools. Los estados
   `skipped` y `error` también se avisan por consola, para que no haya salidas
   silenciosas.
 - `src/lib/email.ts`: transporte. Usa la API HTTP de Resend con `fetch` (sin

@@ -20,10 +20,10 @@ import { buildCancellationEmail } from "@/lib/email-templates";
 import { sendEmail } from "@/lib/email";
 
 /**
- * Copia del mensaje simulado, para mostrarlo en la consola del navegador durante
- * el desarrollo. Solo se arma cuando el transporte cayó en consola (sin API key)
- * y NODE_ENV no es production: nunca se expone el correo del paciente en la UI
- * de un despliegue real.
+ * Copia del mensaje simulado, para mostrarlo en la consola del navegador.
+ * Solo se arma cuando el transporte cayó en consola (sin API key de Resend).
+ * Decisión del equipo: mostrarlo también en despliegues, para poder depurar la
+ * cancelación en preview. Ojo: eso expone el correo del paciente en DevTools.
  */
 export type CancellationEmailPreview = {
   to: string;
@@ -86,7 +86,7 @@ export async function notifyAppointmentCancelled(
     const result = await sendEmail(message);
 
     const preview: CancellationEmailPreview | undefined =
-      process.env.NODE_ENV !== "production" && result.provider === "console"
+      result.provider === "console"
         ? { to: message.to, subject: message.subject, text: message.text }
         : undefined;
 
